@@ -1,0 +1,25 @@
+{
+  "name": "hospital-management-system-enterprise",
+  "version": "1.0.0",
+  "description": "Comprehensive NABH & JCI Compliant Enterprise Hospital Management System (HMS/HIS)",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "server:dev": "npm --prefix server run dev",
+    "server:start": "npm --prefix server run start",
+    "migrate:up": "npm --prefix server run migrate:up"
+  },
+  "keywords": [
+    "hospital-management-system",
+    "his",
+    "emr",
+    "pacs",
+    "dicom",
+    "opd-billing",
+    "ipd-bed-board"
+  ],
+  "author": "Google Deepmind Agentic Architecture",
+  "license": "ISC"
+}
