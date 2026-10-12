@@ -1,0 +1,177 @@
+/* ==========================================================================
+   MEDICSPRIME HEALTHCARE SaaS DESIGN SYSTEM TOKENS
+   Inspired by premium clinical platforms: White, Soft Aqua, Deep Teal
+   ========================================================================== */
+
+:root {
+  /* Primary Healthcare Palette */
+  --color-primary-teal: #087F8C;
+  --color-primary-teal-hover: #066974;
+  --color-primary-teal-light: #0a9cb0;
+  
+  --color-secondary-teal: #119DA4;
+  --color-secondary-teal-hover: #0e858b;
+  
+  --color-aqua-accent: #64D8D0;
+  --color-aqua-accent-soft: rgba(100, 216, 208, 0.25);
+  
+  --color-bg-pale-aqua: #EAF8F7;
+  --color-bg-soft-cyan: #F2FBFC;
+  --color-bg-main: #F7FAFA;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-subtle: #FAFDFD;
+
+  /* Typography / Text Colors */
+  --color-text-primary: #183238;
+  --color-text-secondary: #687C80;
+  --color-text-muted: #8E9F9F;
+  --color-text-inverse: #FFFFFF;
+
+  /* Borders & Dividers */
+  --color-border: #DCE9E9;
+  --color-border-subtle: #E9F2F2;
+  --color-border-focus: #087F8C;
+
+  /* Clinical & Status Colors */
+  --color-success: #21856B;
+  --color-success-bg: #E7F6F1;
+  --color-success-border: #A6DDCF;
+
+  --color-warning: #C68A27;
+  --color-warning-bg: #FCF5E8;
+  --color-warning-border: #F3DCAC;
+
+  --color-error: #C94C55;
+  --color-error-bg: #FDF0F1;
+  --color-error-border: #F6C1C5;
+
+  --color-info: #4388C7;
+  --color-info-bg: #EEF5FC;
+  --color-info-border: #B7D6F3;
+
+  /* Blood Bank Special Clinical Warning */
+  --color-blood-crimson: #B91C1C;
+  --color-blood-bg: #FEF2F2;
+  --color-blood-border: #FECACA;
+
+  /* Shadows (Refined, soft, modern) */
+  --shadow-subtle: 0 1px 2px rgba(24, 50, 56, 0.04);
+  --shadow-card: 0 4px 16px -2px rgba(8, 127, 140, 0.06), 0 2px 6px -1px rgba(24, 50, 56, 0.03);
+  --shadow-card-hover: 0 10px 25px -4px rgba(8, 127, 140, 0.12), 0 4px 10px -2px rgba(24, 50, 56, 0.04);
+  --shadow-dropdown: 0 12px 30px -4px rgba(8, 127, 140, 0.15), 0 4px 12px -2px rgba(24, 50, 56, 0.06);
+  --shadow-modal: 0 20px 40px -6px rgba(8, 127, 140, 0.2), 0 10px 20px -3px rgba(24, 50, 56, 0.08);
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* Spacing Scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Font System */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.84375rem;  /* 13.5px */
+  --font-size-base: 0.9375rem; /* 15px */
+  --font-size-md: 1.0625rem;   /* 17px */
+  --font-size-lg: 1.25rem;     /* 20px */
+  --font-size-xl: 1.5rem;      /* 24px */
+  --font-size-2xl: 1.875rem;   /* 30px */
+
+  /* Layout dimensions */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 76px;
+  --topbar-height: 70px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-family);
+  background-color: var(--color-bg-main);
+  color: var(--color-text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography styles */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { font-size: var(--font-size-2xl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4 { font-size: var(--font-size-md); }
+
+p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+}
+
+a {
+  color: var(--color-primary-teal);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--color-primary-teal-hover);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all 0.2s ease;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBDAD9;
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A9BFBE;
+}
