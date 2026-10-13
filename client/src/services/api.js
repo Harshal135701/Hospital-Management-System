@@ -16,12 +16,19 @@ async function apiFetch(endpoint, options = {}) {
       ...options
     });
     const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || `Request failed with status ${res.status}`);
+      err.details = data.details || data.errors;
+      err.status = res.status;
+      throw err;
+    }
     return data;
   } catch (err) {
-    console.warn(`[API] Fallback for ${endpoint}:`, err.message);
-    return null;
+    console.warn(`[API] Error for ${endpoint}:`, err.message);
+    throw err;
   }
 }
+
 
 /* ==========================================================================
    PATIENTS & APPOINTMENTS SERVICES (Preserves existing schema)
@@ -694,5 +701,97 @@ export const BloodBankService = {
         }
       ]
     };
+  },
+
+  // 5.7 Blood Bank Mutations
+  async createDonor(donorData) {
+    return await apiFetch('/blood-bank/donors', {
+      method: 'POST',
+      body: JSON.stringify(donorData)
+    });
+  },
+
+  async recordScreening(screeningData) {
+    return await apiFetch('/blood-bank/screenings', {
+      method: 'POST',
+      body: JSON.stringify(screeningData)
+    });
+  },
+
+  async createCollection(collectionData) {
+    return await apiFetch('/blood-bank/donations', {
+      method: 'POST',
+      body: JSON.stringify(collectionData)
+    });
+  },
+
+  async createComponents(componentData) {
+    return await apiFetch('/blood-bank/components', {
+      method: 'POST',
+      body: JSON.stringify(componentData)
+    });
+  },
+
+  async recordGrouping(groupingData) {
+    return await apiFetch('/blood-bank/grouping-verifications', {
+      method: 'POST',
+      body: JSON.stringify(groupingData)
+    });
+  },
+
+  async recordSerologyTest(testData) {
+    return await apiFetch('/blood-bank/serology-tests', {
+      method: 'POST',
+      body: JSON.stringify(testData)
+    });
+  },
+
+  async authorizeSafeRelease(authData) {
+    return await apiFetch('/blood-bank/release-authorizations', {
+      method: 'POST',
+      body: JSON.stringify(authData)
+    });
+  },
+
+  async createRequisition(reqData) {
+    return await apiFetch('/blood-bank/requisitions', {
+      method: 'POST',
+      body: JSON.stringify(reqData)
+    });
+  },
+
+  async recordCrossmatch(xmData) {
+    return await apiFetch('/blood-bank/crossmatches', {
+      method: 'POST',
+      body: JSON.stringify(xmData)
+    });
+  },
+
+  async reserveComponent(reservationData) {
+    return await apiFetch('/blood-bank/reservations', {
+      method: 'POST',
+      body: JSON.stringify(reservationData)
+    });
+  },
+
+  async cancelReservation(cancellationData) {
+    return await apiFetch('/blood-bank/reservations/cancel', {
+      method: 'POST',
+      body: JSON.stringify(cancellationData)
+    });
+  },
+
+  async issueBlood(issueData) {
+    return await apiFetch('/blood-bank/issues', {
+      method: 'POST',
+      body: JSON.stringify(issueData)
+    });
+  },
+
+  async getAuditLogs(query = '') {
+    const remote = await apiFetch(`/blood-bank/audit-logs${query ? '?' + query : ''}`);
+    if (remote && remote.data) return { data: remote.data, isMock: false };
+    return { data: [], isMock: false };
   }
 };
+

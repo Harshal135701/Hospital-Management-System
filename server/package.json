@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "test": "node tests/blood-bank.test.mjs",
     "migrate:create": "node-pg-migrate create",
     "migrate:up": "dotenv run -f .env -- node-pg-migrate up"
   },

@@ -82,30 +82,39 @@ export const BloodBankView = () => {
     coldChainVerified: true
   });
 
-  useEffect(() => {
-    async function loadBloodBankData() {
-      const [donRes, colRes, compRes, seroRes, reqRes, issRes] = await Promise.all([
+  const [auditLogs, setAuditLogs] = useState([]);
+
+  const loadBloodBankData = async () => {
+    try {
+      const [donRes, colRes, compRes, seroRes, reqRes, issRes, audRes] = await Promise.all([
         BloodBankService.getDonors(),
         BloodBankService.getCollections(),
         BloodBankService.getComponents(),
         BloodBankService.getSerologyWorkbench(),
         BloodBankService.getRequisitions(),
-        BloodBankService.getIssues()
+        BloodBankService.getIssues(),
+        BloodBankService.getAuditLogs()
       ]);
 
-      if (donRes) setDonors(donRes.data || []);
-      if (colRes) setCollections(colRes.data || []);
-      if (compRes) setComponents(compRes.data || []);
-      if (seroRes) setSerologyWorkbenches(seroRes.data || []);
-      if (reqRes) setRequisitions(reqRes.data || []);
-      if (issRes) setIssues(issRes.data || []);
-      if (donRes?.isMock) setIsMock(true);
+      if (donRes?.data) setDonors(donRes.data);
+      if (colRes?.data) setCollections(colRes.data);
+      if (compRes?.data) setComponents(compRes.data);
+      if (seroRes?.data) setSerologyWorkbenches(seroRes.data);
+      if (reqRes?.data) setRequisitions(reqRes.data);
+      if (issRes?.data) setIssues(issRes.data);
+      if (audRes?.data) setAuditLogs(audRes.data);
+      setIsMock(Boolean(donRes?.isMock));
+    } catch (err) {
+      console.warn('Failed to load blood bank data:', err.message);
     }
+  };
+
+  useEffect(() => {
     loadBloodBankData();
   }, []);
 
   // Handle Screening Submission with strict database rules
-  const handleScreeningSubmit = (e) => {
+  const handleScreeningSubmit = async (e) => {
     e.preventDefault();
     setScreeningValidationMessage(null);
 
@@ -137,99 +146,132 @@ export const BloodBankView = () => {
       return;
     }
 
-    // Success transition
-    const updatedDonors = donors.map((d) => {
-      if (d.id === selectedDonorForScreening.id) {
-        return {
-          ...d,
-          donor_status: 'active',
-          last_screening: {
-            eligibility_status: 'approved',
-            hemoglobin_g_dl: hb,
-            weight_kg: wt,
-            blood_pressure: `${screeningVitals.systolic}/${screeningVitals.diastolic}`,
-            pulse_bpm: parseInt(screeningVitals.pulse, 10),
-            consent_obtained: true
-          }
-        };
+    try {
+      if (selectedDonorForScreening?.id) {
+        await BloodBankService.recordScreening({
+          donor_id: selectedDonorForScreening.id,
+          weight_kg: wt,
+          hemoglobin_g_dl: hb,
+          blood_pressure_systolic: parseInt(screeningVitals.systolic, 10),
+          blood_pressure_diastolic: parseInt(screeningVitals.diastolic, 10),
+          pulse_bpm: parseInt(screeningVitals.pulse, 10),
+          consent_obtained: screeningVitals.consent,
+          eligibility_status: screeningVitals.decision,
+          reviewed_by_name: 'Dr. Meenakshi Sundaram (Blood Bank Officer)',
+          deferral_reason: screeningVitals.deferralReason || (hb < 12.5 ? `Hemoglobin ${hb} g/dL below 12.5` : null)
+        });
       }
-      return d;
-    });
-
-    setDonors(updatedDonors);
-    setIsScreeningModalOpen(false);
+      await loadBloodBankData();
+      setIsScreeningModalOpen(false);
+    } catch (err) {
+      setScreeningValidationMessage({
+        type: 'error',
+        text: `Database Error: ${err.message}`
+      });
+    }
   };
 
   // Handle New Blood Bag Collection
-  const handleCollectionSubmit = (e) => {
+  const handleCollectionSubmit = async (e) => {
     e.preventDefault();
     const donor = donors.find((d) => d.id === collectionForm.donorId) || donors[0];
+    if (!donor) {
+      alert('Please select a donor.');
+      return;
+    }
+    const screeningId = donor?.last_screening?.id;
+    if (!screeningId) {
+      alert('Selected donor has no completed screening record. Please perform donor screening first.');
+      return;
+    }
 
-    const newCollection = {
-      id: `col-${Date.now()}`,
-      donation_number: `BLD-2026-0${Math.floor(100 + Math.random() * 900)}`,
-      donor_name: donor ? donor.full_name : 'Rahul Debnath',
-      donor_code: donor ? donor.donor_code : 'DNR-2026-0041',
-      primary_bag_barcode: collectionForm.barcode,
-      bag_type: collectionForm.bagType,
-      volume_ml: parseInt(collectionForm.volume, 10),
-      collection_status: 'completed',
-      phlebotomist_name: collectionForm.phlebotomist,
-      collection_started_at: new Date().toISOString(),
-      components_separated: ['PRBC-NEW', 'FFP-NEW']
-    };
-
-    setCollections([newCollection, ...collections]);
-    setIsCollectionModalOpen(false);
+    try {
+      await BloodBankService.createCollection({
+        donor_id: donor.id,
+        screening_id: screeningId,
+        primary_bag_barcode: collectionForm.barcode,
+        bag_type: collectionForm.bagType,
+        volume_ml: parseInt(collectionForm.volume, 10),
+        phlebotomist_name: collectionForm.phlebotomist
+      });
+      await loadBloodBankData();
+      setIsCollectionModalOpen(false);
+    } catch (err) {
+      alert(`Collection Failed: ${err.message}`);
+    }
   };
 
   // Handle Routine Issue & Cold Chain Handover
-  const handleHandoverSubmit = (e) => {
+  const handleHandoverSubmit = async (e) => {
     e.preventDefault();
     if (!handoverTargetReq) return;
 
-    const newIssue = {
-      id: `iss-${Date.now()}`,
-      issue_number: `ISS-2026-00${Math.floor(100 + Math.random() * 900)}`,
-      requisition_number: handoverTargetReq.requisition_number,
-      patient_name: handoverTargetReq.patient_name,
-      patient_uhid: handoverTargetReq.patient_uhid,
-      ward_name: 'Inpatient Transfusion Unit',
-      component_barcode: handoverTargetReq.crossmatch?.component_barcode || 'PRBC-2026-0899',
-      component_type: handoverTargetReq.requested_component,
-      blood_group: handoverTargetReq.patient_blood_group,
-      crossmatch_status: 'compatible',
-      issued_at: new Date().toISOString(),
-      dispatched_by: 'Tech Anirban Das (Transfusion Tech)',
-      received_by: handoverForm.recipientStaffName,
-      cold_chain_carrier_id: handoverForm.transportBoxId,
-      dispatch_temp_c: parseFloat(handoverForm.dispatchTemp) || 4.0,
-      handover_status: 'dispatched',
-      verification_checklist: {
-        patient_id_verified: handoverForm.patientIdVerified,
-        blood_group_matched: handoverForm.groupVerified,
-        expiry_date_verified: true,
-        visual_inspection_clear: true,
-        transport_box_chilled: handoverForm.coldChainVerified
-      }
-    };
+    const comp = components.find(c => c.component_barcode === handoverTargetReq.crossmatch?.component_barcode) ||
+                 components.find(c => c.status === 'reserved' || c.status === 'safe_for_release');
+    if (!comp) {
+      alert('Compatible unit not found in inventory.');
+      return;
+    }
 
-    setIssues([newIssue, ...issues]);
-
-    // Update requisition state (units_issued + 1)
-    setRequisitions(requisitions.map((r) => {
-      if (r.id === handoverTargetReq.id) {
-        return {
-          ...r,
-          units_issued: (r.units_issued || 0) + 1,
-          status: 'fulfilled'
-        };
-      }
-      return r;
-    }));
-
-    setIsHandoverModalOpen(false);
+    try {
+      await BloodBankService.issueBlood({
+        requisition_id: handoverTargetReq.id,
+        component_id: comp.id,
+        crossmatch_id: handoverTargetReq.crossmatch?.crossmatch_id,
+        issued_by_name: 'Tech Anirban Das (Transfusion Tech)',
+        verified_by_name: 'Tech Sourav Paul',
+        received_by_name: handoverForm.recipientStaffName,
+        received_by_designation: 'Staff Nurse',
+        transport_box_id: handoverForm.transportBoxId,
+        transport_temperature_c: parseFloat(handoverForm.dispatchTemp) || 4.0,
+        cold_chain_maintained: handoverForm.coldChainVerified
+      });
+      await loadBloodBankData();
+      setIsHandoverModalOpen(false);
+      alert('Blood unit handover successfully verified and dispatched.');
+    } catch (err) {
+      alert(`Handover Blocked: ${err.message}`);
+    }
   };
+
+  // Handle Emergency Uncrossed Blood Release
+  const handleEmergencySubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!emergencyForm.requisitionId) {
+      alert('Please select a target requisition.');
+      return;
+    }
+    const req = requisitions.find(r => r.id === emergencyForm.requisitionId);
+    if (!req) {
+      alert('Selected requisition not found.');
+      return;
+    }
+    const comp = components.find(c => c.status === 'safe_for_release') || components[0];
+    if (!comp) {
+      alert('No blood component in safe_for_release status available in inventory.');
+      return;
+    }
+
+    try {
+      await BloodBankService.issueBlood({
+        requisition_id: req.id,
+        component_id: comp.id,
+        issued_by_name: 'Dr. Meenakshi Sundaram (Blood Bank Officer)',
+        verified_by_name: 'Tech Anirban Das',
+        received_by_name: emergencyForm.authorizerName,
+        received_by_designation: 'Senior Clinician',
+        is_emergency_unmatched: true,
+        emergency_clinical_justification: emergencyForm.justification,
+        emergency_authorized_by_name: emergencyForm.authorizerName
+      });
+      await loadBloodBankData();
+      setIsEmergencyModalOpen(false);
+      alert('Emergency exception verified and logged with immutable audit record.');
+    } catch (err) {
+      alert(`Emergency Release Blocked: ${err.message}`);
+    }
+  };
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -337,7 +379,8 @@ export const BloodBankView = () => {
           { id: 'inventory', label: '3. Component Inventory & Cold Chain', icon: Layers },
           { id: 'serology', label: '4. Serology & Safe Release Gate', icon: FlaskConical },
           { id: 'requisitions', label: '5. Requisitions & Crossmatching', icon: FileCheck },
-          { id: 'handover', label: '6. Issue & Handover Dispatch', icon: Box }
+          { id: 'handover', label: '6. Issue & Handover Dispatch', icon: Box },
+          { id: 'audit', label: '7. Immutable Audit Trail', icon: ShieldCheck }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -1054,6 +1097,81 @@ export const BloodBankView = () => {
       )}
 
       {/* =========================================================================
+          TAB 7: IMMUTABLE AUDIT TRAIL
+          ========================================================================= */}
+      {activeTab === 'audit' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <Card
+            title="Immutable Inventory Audit Log & Movement Register"
+            subtitle="Database trigger enforced tamper-proof history of all component state transitions and clinical dispatches"
+            action={
+              <Badge variant="success" size="sm">
+                Tamper-Proof Triggers Active
+              </Badge>
+            }
+          >
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1.5px solid var(--color-border)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Timestamp</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Component Barcode</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Type / Group</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Status Transition</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Action Type</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Performed By</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Reason / Context</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        No audit records recorded yet in current session.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogs.map((log) => (
+                      <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
+                        <td style={{ padding: '14px', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                          {new Date(log.created_at).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
+                          {log.component_barcode}
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <span style={{ textTransform: 'uppercase', fontWeight: '500' }}>{log.component_type}</span>{' '}
+                          <Badge variant="teal" size="sm">{log.abo_group || ''}{log.rh_factor === 'positive' ? '+' : '-'}</Badge>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Badge variant="gray" size="sm">{log.previous_status || 'none'}</Badge>
+                            <ArrowRight size={12} color="var(--color-text-muted)" />
+                            <Badge variant={log.new_status === 'safe_for_release' ? 'success' : log.new_status === 'reactive' ? 'danger' : 'teal'} size="sm">
+                              {log.new_status}
+                            </Badge>
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px', fontWeight: '500' }}>
+                          <code>{log.action_type}</code>
+                        </td>
+                        <td style={{ padding: '14px', color: 'var(--color-text-primary)' }}>
+                          {log.performed_by_name}
+                        </td>
+                        <td style={{ padding: '14px', fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                          {log.reason || '—'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* =========================================================================
           SCREENING MODAL WITH STRICT DATABASE VALIDATION
           ========================================================================= */}
       <Modal
@@ -1286,10 +1404,7 @@ export const BloodBankView = () => {
             </Button>
             <Button
               variant="danger"
-              onClick={() => {
-                alert('Emergency exception verified and logged with immutable audit record.');
-                setIsEmergencyModalOpen(false);
-              }}
+              onClick={handleEmergencySubmit}
             >
               Authorize Emergency Release
             </Button>
