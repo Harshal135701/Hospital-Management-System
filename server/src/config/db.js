@@ -1,5 +1,8 @@
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
 require("./env");
+
+// Parse DATE type (OID 1082) as raw 'YYYY-MM-DD' string to avoid timezone corruption
+types.setTypeParser(1082, (val) => val);
 
 const pool = new Pool({
   host: process.env.DB_HOST,

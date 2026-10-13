@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "test": "node tests/test_appointment_system.js",
     "migrate:create": "node-pg-migrate create",
     "migrate:up": "dotenv -e .env -- node-pg-migrate up"
   },
