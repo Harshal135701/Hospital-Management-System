@@ -140,6 +140,7 @@ async function runTests() {
     console.log('\n--- SUITE 2: Donor Registration & Screening API ---');
     let donorId;
     let validScreeningId;
+    let deferredScreeningIdForTest;
     {
       // Register Donor
       const createDonorRes = await fetch(`${baseUrl}/blood-bank/donors`, {
@@ -185,6 +186,126 @@ async function runTests() {
       const donorAfterDefer = await donorAfterDeferRes.json();
       assert(donorAfterDefer.data.donor_status === 'temporarily_deferred', 'Donor status updated to temporarily_deferred');
 
+      // Boundary Test 1: Hemoglobin strict sub-threshold 12.4 g/dL
+      const hb124Res = await fetch(`${baseUrl}/blood-bank/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          weight_kg: 50.0,
+          hemoglobin_g_dl: 12.4, // Strict sub-threshold
+          blood_pressure_systolic: 120,
+          blood_pressure_diastolic: 80,
+          pulse_bpm: 72,
+          consent_obtained: true,
+          eligibility_status: 'approved',
+          reviewed_by_name: 'Dr. Meenakshi'
+        })
+      });
+      const hb124Data = await hb124Res.json();
+      assert(hb124Data.data.eligibility_status === 'temporarily_deferred', 'Hb = 12.4 g/dL boundary correctly deferred');
+
+      // Boundary Test 2: Weight strict sub-threshold 44.5 kg
+      const wt445Res = await fetch(`${baseUrl}/blood-bank/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          weight_kg: 44.5, // Strict sub-threshold
+          hemoglobin_g_dl: 13.0,
+          blood_pressure_systolic: 120,
+          blood_pressure_diastolic: 80,
+          pulse_bpm: 72,
+          consent_obtained: true,
+          eligibility_status: 'approved',
+          reviewed_by_name: 'Dr. Meenakshi'
+        })
+      });
+      const wt445Data = await wt445Res.json();
+      assert(wt445Data.data.eligibility_status === 'temporarily_deferred', 'Weight = 44.5 kg boundary correctly deferred');
+
+      // Boundary Test 3: Exact minimum thresholds Hb = 12.5 and Weight = 45.0 approved
+      const boundaryPassRes = await fetch(`${baseUrl}/blood-bank/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          weight_kg: 45.0,
+          hemoglobin_g_dl: 12.5,
+          blood_pressure_systolic: 120,
+          blood_pressure_diastolic: 80,
+          pulse_bpm: 70,
+          consent_obtained: true,
+          eligibility_status: 'approved',
+          reviewed_by_name: 'Dr. Meenakshi'
+        })
+      });
+      const boundaryPassData = await boundaryPassRes.json();
+      assert(boundaryPassData.data.eligibility_status === 'approved', 'Hb = 12.5 g/dL and Wt = 45.0 kg exact boundary approved');
+
+      // Questionnaire Test: Recent illness causes temporary deferral
+      const illnessRes = await fetch(`${baseUrl}/blood-bank/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          weight_kg: 60.0,
+          hemoglobin_g_dl: 14.0,
+          blood_pressure_systolic: 120,
+          blood_pressure_diastolic: 80,
+          pulse_bpm: 72,
+          consent_obtained: true,
+          questionnaire_answers: { recent_illness: true },
+          eligibility_status: 'approved',
+          reviewed_by_name: 'Dr. Meenakshi'
+        })
+      });
+      const illnessData = await illnessRes.json();
+      assert(illnessData.data.eligibility_status === 'temporarily_deferred', 'Questionnaire recent_illness causes temporary deferral');
+
+      // Questionnaire Test: High risk exposure causes permanent deferral
+      const highRiskRes = await fetch(`${baseUrl}/blood-bank/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          weight_kg: 60.0,
+          hemoglobin_g_dl: 14.0,
+          blood_pressure_systolic: 120,
+          blood_pressure_diastolic: 80,
+          pulse_bpm: 72,
+          consent_obtained: true,
+          questionnaire_answers: { high_risk_behavior: true },
+          eligibility_status: 'approved',
+          reviewed_by_name: 'Dr. Meenakshi'
+        })
+      });
+      const highRiskData = await highRiskRes.json();
+      assert(highRiskData.data.eligibility_status === 'permanently_deferred', 'Questionnaire high_risk_behavior causes permanent deferral');
+      const donorAfterHighRiskRes = await fetch(`${baseUrl}/blood-bank/donors/${donorId}`);
+      const donorAfterHighRisk = await donorAfterHighRiskRes.json();
+      assert(donorAfterHighRisk.data.donor_status === 'permanently_deferred', 'Donor status updated to permanently_deferred in master registry');
+
+      // Consent Test: Missing consent rejected
+      const noConsentRes = await fetch(`${baseUrl}/blood-bank/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          weight_kg: 60.0,
+          hemoglobin_g_dl: 14.0,
+          blood_pressure_systolic: 120,
+          blood_pressure_diastolic: 80,
+          pulse_bpm: 72,
+          consent_obtained: false, // Refused consent!
+          eligibility_status: 'approved',
+          reviewed_by_name: 'Dr. Meenakshi'
+        })
+      });
+      const noConsentData = await noConsentRes.json();
+      assert(noConsentData.data.eligibility_status === 'rejected', 'Missing consent auto-rejects screening');
+      deferredScreeningIdForTest = noConsentData.data.id;
+
       // Screening Test B: Valid screening with Hb >= 12.5 and consent
       const validScreeningRes = await fetch(`${baseUrl}/blood-bank/screenings`, {
         method: 'POST',
@@ -218,6 +339,23 @@ async function runTests() {
     console.log('\n--- SUITE 3: Phlebotomy & Bag Collection API ---');
     let donationId;
     {
+      // Safety Test 1: Blood collection on deferred/rejected screening strictly blocked
+      const badCollectionRes = await fetch(`${baseUrl}/blood-bank/donations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          screening_id: deferredScreeningIdForTest,
+          primary_bag_barcode: 'BB-REJECTED-001',
+          volume_ml: 450,
+          bag_type: 'triple',
+          collection_type: 'voluntary',
+          phlebotomist_name: 'Nurse Savitri Devi'
+        })
+      });
+      assert(badCollectionRes.status === 400, 'Collection from non-approved screening rejected (400)');
+
+      // Valid Primary Collection
       const bagBarcode = 'BB-2026-98745612301';
       const colRes = await fetch(`${baseUrl}/blood-bank/donations`, {
         method: 'POST',
@@ -238,10 +376,53 @@ async function runTests() {
       assert(colData.data.primary_bag_barcode === bagBarcode, 'Bag barcode recorded');
       donationId = colData.data.id;
 
+      // Safety Test 2: Duplicate primary bag barcode strictly blocked (409 Conflict)
+      const dupColRes = await fetch(`${baseUrl}/blood-bank/donations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          screening_id: validScreeningId,
+          primary_bag_barcode: bagBarcode, // DUPLICATE!
+          volume_ml: 450,
+          bag_type: 'triple',
+          collection_type: 'voluntary',
+          phlebotomist_name: 'Nurse Savitri Devi'
+        })
+      });
+      assert(dupColRes.status === 409, 'Duplicate primary bag barcode rejected (409 Conflict)');
+
+      // Requirement 5.2 & 5.4 Verification: Automatic Pilot Sample Tubes Created
+      const donDetailsRes = await fetch(`${baseUrl}/blood-bank/donations`);
+      const donDetails = await donDetailsRes.json();
+      const targetDon = donDetails.data.find(d => d.id === donationId);
+      assert(Array.isArray(targetDon.pilot_samples), 'Donation contains pilot_samples array');
+      assert(targetDon.pilot_samples.length === 3, 'Exactly 3 pilot sample tubes generated (-EDTA, -CLOT, -NAT)');
+      const tubeTypes = targetDon.pilot_samples.map(s => s.tube_type);
+      assert(tubeTypes.includes('edta') && tubeTypes.includes('plain_clot') && tubeTypes.includes('nat'), 'All required tube types (edta, plain_clot, nat) recorded');
+
+      // Requirement 5.2: Verification of All Bag Types (single, double, quadruple)
+      for (const bType of ['single', 'double', 'quadruple']) {
+        const testBagBarcode = `BB-TYPE-${bType.toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        const testBagRes = await fetch(`${baseUrl}/blood-bank/donations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donor_id: donorId,
+            screening_id: validScreeningId,
+            primary_bag_barcode: testBagBarcode,
+            volume_ml: bType === 'single' ? 350 : 450,
+            bag_type: bType,
+            phlebotomist_name: 'Nurse Savitri Devi'
+          })
+        });
+        assert(testBagRes.status === 201, `Collection with bag configuration '${bType}' successfully created`);
+      }
+
       // Verify donor donations count incremented
       const donorAfterColRes = await fetch(`${baseUrl}/blood-bank/donors/${donorId}`);
       const donorAfterCol = await donorAfterColRes.json();
-      assert(donorAfterCol.data.total_donations === 1, 'Donor total_donations incremented to 1');
+      assert(donorAfterCol.data.total_donations === 4, 'Donor total_donations incremented to 4');
     }
 
     // ========================================================================
@@ -342,7 +523,37 @@ async function runTests() {
       const workbenchDonation = seroWorkData.data.find(d => d.donation_id === donationId);
       assert(workbenchDonation.tti_tests.length === 5, 'All 5 TTI tests present in workbench');
 
-      // 3. Safe Release Authorization
+      // Safety Test 1: Safe release authorization without dual grouping verification strictly rejected (400)
+      const badRelease1 = await fetch(`${baseUrl}/blood-bank/release-authorizations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donation_id: donationId,
+          release_decision: 'approved_for_release',
+          all_tti_non_reactive: true,
+          dual_grouping_verified: false, // Incomplete!
+          authorized_by_name: 'Dr. Meenakshi Sundaram (BBO)',
+          notes: 'Attempted premature release'
+        })
+      });
+      assert(badRelease1.status === 400, 'Safe release without dual grouping verification strictly rejected (400)');
+
+      // Safety Test 2: Safe release authorization with reactive TTI strictly rejected (400)
+      const badRelease2 = await fetch(`${baseUrl}/blood-bank/release-authorizations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donation_id: donationId,
+          release_decision: 'approved_for_release',
+          all_tti_non_reactive: false, // Reactive infection!
+          dual_grouping_verified: true,
+          authorized_by_name: 'Dr. Meenakshi Sundaram (BBO)',
+          notes: 'Attempted release with reactive TTI'
+        })
+      });
+      assert(badRelease2.status === 400, 'Safe release with reactive/untested TTI strictly rejected (400)');
+
+      // 3. Valid Safe Release Authorization
       const releaseRes = await fetch(`${baseUrl}/blood-bank/release-authorizations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -373,8 +584,27 @@ async function runTests() {
     let requisitionId;
     let crossmatchId;
     let reservationId;
+    let expiredXmId;
+    let winningRequisitionId;
     {
-      // 1. Create Requisition
+      // Safety Test 1: Requisition for non-existent patient strictly blocked (404)
+      const badReqRes = await fetch(`${baseUrl}/blood-bank/requisitions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_uhid: 'UHID-NONEXISTENT-9999',
+          requested_component: 'prbc',
+          units_requested: 1,
+          urgency: 'routine',
+          clinical_indication: 'Invalid requisition check',
+          patient_blood_group: 'O',
+          patient_rh_factor: 'positive',
+          requester_name: 'Dr. Ghost'
+        })
+      });
+      assert(badReqRes.status === 404, 'Requisition with non-existent patient UHID rejected (404)');
+
+      // 1. Create Valid Requisition
       const reqRes = await fetch(`${baseUrl}/blood-bank/requisitions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -394,7 +624,66 @@ async function runTests() {
       assert(reqData.data.requisition_number.startsWith('REQ-'), 'Requisition has REQ number');
       requisitionId = reqData.data.id;
 
-      // 2. Perform Crossmatch (Compatible)
+      // Safety Test 2: Incompatible crossmatch cannot be reserved
+      const incompatibleXmRes = await fetch(`${baseUrl}/blood-bank/crossmatches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: requisitionId,
+          component_id: prbcComponentId,
+          technique: 'gel_card',
+          major_crossmatch: 'incompatible',
+          minor_crossmatch: 'compatible',
+          compatibility_result: 'incompatible',
+          performed_by_name: 'Tech Anirban Das'
+        })
+      });
+      const incompatibleXmData = await incompatibleXmRes.json();
+      assert(incompatibleXmRes.status === 201, 'Incompatible crossmatch recorded in lab');
+
+      const badReserveXmRes = await fetch(`${baseUrl}/blood-bank/reservations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: requisitionId,
+          component_id: prbcComponentId,
+          crossmatch_id: incompatibleXmData.data.id,
+          reserved_by_name: 'Dr. Meenakshi'
+        })
+      });
+      assert(badReserveXmRes.status === 400, 'Reservation using incompatible crossmatch strictly rejected (400)');
+
+      // Safety Test 3: Expired crossmatch cannot be reserved
+      const expiredXmClient = await pool.connect();
+      try {
+        const expXmRes = await expiredXmClient.query(
+          `INSERT INTO blood_crossmatches (
+            requisition_id, patient_id, component_id, technique,
+            major_crossmatch, compatibility_result, performed_by_name,
+            tested_at
+          ) VALUES ($1, (SELECT patient_id FROM blood_requisitions WHERE id = $1), $2, 'gel_card',
+            'compatible', 'compatible', 'Tech S. Paul', NOW() - INTERVAL '5 days')
+          RETURNING id`,
+          [requisitionId, prbcComponentId]
+        );
+        expiredXmId = expXmRes.rows[0].id;
+      } finally {
+        expiredXmClient.release();
+      }
+
+      const expiredReserveRes = await fetch(`${baseUrl}/blood-bank/reservations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: requisitionId,
+          component_id: prbcComponentId,
+          crossmatch_id: expiredXmId,
+          reserved_by_name: 'Dr. Meenakshi'
+        })
+      });
+      assert(expiredReserveRes.status === 400, 'Reservation using expired crossmatch strictly rejected (400)');
+
+      // 2. Perform Valid Compatible Crossmatch
       const xmRes = await fetch(`${baseUrl}/blood-bank/crossmatches`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -452,20 +741,58 @@ async function runTests() {
       const targetReqAfterCancel = reqCheckAfterCancelData.data.find(r => r.id === requisitionId);
       assert(targetReqAfterCancel.units_reserved === 0, 'Requisition units_reserved decremented to 0');
 
-      // Re-reserve for issue testing
-      const reReserveRes = await fetch(`${baseUrl}/blood-bank/reservations`, {
+      // 5. Concurrency Race Test: Two simultaneous reservation requests for the same available component unit
+      // Create second requisition
+      const req2Res = await fetch(`${baseUrl}/blood-bank/requisitions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requisition_id: requisitionId,
-          component_id: prbcComponentId,
-          crossmatch_id: crossmatchId,
-          reserved_by_name: 'Dr. Meenakshi'
+          patient_uhid: 'UHID-2026-TEST01',
+          requested_component: 'prbc',
+          units_requested: 1,
+          urgency: 'routine',
+          clinical_indication: 'Concurrent reservation race test',
+          patient_blood_group: 'O',
+          patient_rh_factor: 'positive',
+          requester_name: 'Dr. Subhash Bose'
         })
       });
-      const reReserveData = await reReserveRes.json();
-      assert(reReserveRes.status === 201, 'Re-reserved component for issue test');
-      reservationId = reReserveData.data.id;
+      const req2Data = await req2Res.json();
+      assert(req2Res.status === 201, 'Second requisition created for concurrency test');
+      const req2Id = req2Data.data.id;
+
+      // Parallel reservation attempts for prbcComponentId
+      const [race1, race2] = await Promise.all([
+        fetch(`${baseUrl}/blood-bank/reservations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requisition_id: requisitionId,
+            component_id: prbcComponentId,
+            crossmatch_id: crossmatchId,
+            reserved_by_name: 'Dr. Worker 1'
+          })
+        }),
+        fetch(`${baseUrl}/blood-bank/reservations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requisition_id: req2Id,
+            component_id: prbcComponentId,
+            crossmatch_id: crossmatchId,
+            reserved_by_name: 'Dr. Worker 2'
+          })
+        })
+      ]);
+
+      const raceStatuses = [race1.status, race2.status];
+      assert(raceStatuses.includes(201), 'Concurrency race: exactly one reservation succeeds (201)');
+      assert(raceStatuses.includes(409), 'Concurrency race: the colliding reservation receives 409 Conflict');
+
+      // Ensure reservationId points to the winning reservation for downstream issue testing
+      const winData = race1.status === 201 ? await race1.json() : await race2.json();
+      reservationId = winData.data.id;
+      winningRequisitionId = race1.status === 201 ? requisitionId : req2Id;
     }
 
     // ========================================================================
@@ -478,7 +805,7 @@ async function runTests() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requisition_id: requisitionId,
+          requisition_id: winningRequisitionId,
           component_id: prbcComponentId,
           is_emergency_unmatched: false,
           issued_by_name: 'Tech Anirban Das',
@@ -495,7 +822,7 @@ async function runTests() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requisition_id: requisitionId, // Urgency is 'urgent', NOT 'stat_emergency'
+          requisition_id: winningRequisitionId, // Urgency is 'urgent' or 'routine', NOT 'stat_emergency'
           component_id: prbcComponentId,
           is_emergency_unmatched: true,
           emergency_clinical_justification: 'Exsanguinating hemorrhage',
@@ -508,12 +835,30 @@ async function runTests() {
       });
       assert(badEmergencyRes.status === 400, 'Emergency uncrossed release on non-stat requisition strictly blocked');
 
+      // Safety Test 3: Routine issue with expired crossmatch MUST fail
+      const badExpiredIssueRes = await fetch(`${baseUrl}/blood-bank/issues`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: winningRequisitionId,
+          component_id: prbcComponentId,
+          reservation_id: reservationId,
+          crossmatch_id: expiredXmId, // Expired!
+          is_emergency_unmatched: false,
+          issued_by_name: 'Tech Anirban Das',
+          verified_by_name: 'Tech Sourav Paul',
+          received_by_name: 'Nurse Savitri',
+          received_by_designation: 'Staff Nurse'
+        })
+      });
+      assert(badExpiredIssueRes.status === 400, 'Routine issue with expired crossmatch strictly rejected (400)');
+
       // Valid Routine Issue: Compatible crossmatch + valid reservation
       const validIssueRes = await fetch(`${baseUrl}/blood-bank/issues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requisition_id: requisitionId,
+          requisition_id: winningRequisitionId,
           component_id: prbcComponentId,
           reservation_id: reservationId,
           crossmatch_id: crossmatchId,
@@ -539,7 +884,7 @@ async function runTests() {
       // Verify requisition units_issued incremented
       const reqAfterIssueRes = await fetch(`${baseUrl}/blood-bank/requisitions`);
       const reqAfterIssueData = await reqAfterIssueRes.json();
-      const targetReqAfterIssue = reqAfterIssueData.data.find(r => r.id === requisitionId);
+      const targetReqAfterIssue = reqAfterIssueData.data.find(r => r.id === winningRequisitionId);
       assert(targetReqAfterIssue.units_issued === 1, 'Requisition units_issued incremented to 1');
       assert(targetReqAfterIssue.status === 'fulfilled', 'Requisition status transitioned to fulfilled');
     }

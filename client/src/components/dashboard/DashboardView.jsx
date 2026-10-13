@@ -110,11 +110,11 @@ export const DashboardView = ({ onNavigate }) => {
     },
     {
       title: 'Blood Bank Releasable Stock',
-      value: `${releasableBloodCount || 18} Units`,
-      badge: 'Audited Safe',
-      subtitle: `${reservedBloodCount || 2} reserved • ${quarantinedBloodCount || 1} in quarantine`,
+      value: `${releasableBloodCount} Units`,
+      badge: releasableBloodCount > 0 ? 'Audited Safe' : 'Empty Stock',
+      subtitle: `${reservedBloodCount} reserved • ${quarantinedBloodCount} in quarantine`,
       icon: Droplet,
-      trend: '100% Tested',
+      trend: releasableBloodCount > 0 ? '100% Tested' : 'No Active Units',
       accent: 'var(--color-blood-crimson)',
       actionText: 'Open Blood Bank',
       actionRoute: 'bloodbank'

@@ -55,6 +55,12 @@ class BloodBankService {
     if (!data.consent_obtained) {
       finalEligibility = 'rejected';
       finalReason = 'Donor informed consent was not provided';
+    } else if (data.questionnaire_answers?.high_risk_behavior) {
+      finalEligibility = 'permanently_deferred';
+      finalReason = 'High-risk clinical exposure or behavior reported on questionnaire';
+    } else if (data.questionnaire_answers?.recent_illness) {
+      finalEligibility = 'temporarily_deferred';
+      finalReason = 'Recent illness or fever reported within 14 days';
     } else if (hb < 12.5) {
       finalEligibility = 'temporarily_deferred';
       finalReason = `Hemoglobin (${hb} g/dL) is below the minimum safe threshold (12.5 g/dL)`;
@@ -63,25 +69,27 @@ class BloodBankService {
       finalReason = `Body weight (${wt} kg) is below the minimum safe threshold (45.0 kg)`;
     }
 
-    const screening = await bloodBankRepository.createScreening({
-      ...data,
-      screening_number: screeningNumber,
-      eligibility_status: finalEligibility,
-      deferral_reason: finalReason
+    return await bloodBankRepository.withTransaction(async (client) => {
+      const screening = await bloodBankRepository.createScreening({
+        ...data,
+        screening_number: screeningNumber,
+        eligibility_status: finalEligibility,
+        deferral_reason: finalReason
+      }, client);
+
+      // Update donor status based on screening outcome
+      let donorStatus = 'active';
+      if (finalEligibility === 'temporarily_deferred') donorStatus = 'temporarily_deferred';
+      else if (finalEligibility === 'permanently_deferred') donorStatus = 'permanently_deferred';
+      else if (finalEligibility === 'rejected') donorStatus = 'inactive';
+
+      await bloodBankRepository.updateDonor(donor.id, {
+        donor_status: donorStatus,
+        permanent_deferral_reason: finalEligibility === 'permanently_deferred' ? finalReason : null
+      }, client);
+
+      return screening;
     });
-
-    // Update donor status based on screening outcome
-    let donorStatus = 'active';
-    if (finalEligibility === 'temporarily_deferred') donorStatus = 'temporarily_deferred';
-    else if (finalEligibility === 'permanently_deferred') donorStatus = 'permanently_deferred';
-    else if (finalEligibility === 'rejected') donorStatus = 'inactive';
-
-    await bloodBankRepository.updateDonor(donor.id, {
-      donor_status: donorStatus,
-      permanent_deferral_reason: finalEligibility === 'permanently_deferred' ? finalReason : null
-    });
-
-    return screening;
   }
 
   // =========================================================================
@@ -112,19 +120,21 @@ class BloodBankService {
     const donationNumber = this._generateCode('BLD');
     const bagBarcode = data.primary_bag_barcode || `BB-${Math.floor(10000000000 + Math.random() * 90000000000)}`;
 
-    const donation = await bloodBankRepository.createDonation({
-      ...data,
-      donation_number: donationNumber,
-      primary_bag_barcode: bagBarcode
-    });
+    return await bloodBankRepository.withTransaction(async (client) => {
+      const donation = await bloodBankRepository.createDonation({
+        ...data,
+        donation_number: donationNumber,
+        primary_bag_barcode: bagBarcode
+      }, client);
 
-    // Increment donor total donations and update last donation date
-    await bloodBankRepository.updateDonor(donor.id, {
-      total_donations: (donor.total_donations || 0) + 1,
-      last_donation_date: new Date().toISOString().split('T')[0]
-    });
+      // Increment donor total donations and update last donation date
+      await bloodBankRepository.updateDonor(donor.id, {
+        total_donations: (donor.total_donations || 0) + 1,
+        last_donation_date: new Date().toISOString().split('T')[0]
+      }, client);
 
-    return donation;
+      return donation;
+    });
   }
 
   // =========================================================================
@@ -222,6 +232,14 @@ class BloodBankService {
     const donation = await bloodBankRepository.findDonationById(data.donation_id);
     if (!donation) throw ApiError.notFound(`Donation with ID '${data.donation_id}' not found`);
 
+    if (data.release_decision === 'approved_for_release') {
+      if (!data.all_tti_non_reactive || !data.dual_grouping_verified) {
+        throw ApiError.badRequest(
+          'Safe release approval strictly requires both all_tti_non_reactive=true and dual_grouping_verified=true'
+        );
+      }
+    }
+
     const auth = await bloodBankRepository.createReleaseAuthorization(data);
 
     // If approved, transition all quarantined components to safe_for_release
@@ -266,6 +284,9 @@ class BloodBankService {
       const patient = await patientRepository.findByUhid(data.patient_uhid);
       if (!patient) throw ApiError.notFound(`Patient with UHID '${data.patient_uhid}' not found in patient registry`);
       patientId = patient.id;
+    } else if (patientId) {
+      const patient = await patientRepository.findById(patientId);
+      if (!patient) throw ApiError.notFound(`Patient with ID '${patientId}' not found in patient registry`);
     }
 
     if (!patientId) {
@@ -298,6 +319,19 @@ class BloodBankService {
   // =========================================================================
 
   async reserveComponent(data) {
+    if (data.crossmatch_id) {
+      const crossmatch = await bloodBankRepository.findCrossmatchById(data.crossmatch_id);
+      if (!crossmatch) {
+        throw ApiError.notFound(`Crossmatch with ID '${data.crossmatch_id}' not found`);
+      }
+      if (crossmatch.compatibility_result !== 'compatible') {
+        throw ApiError.badRequest(`Cannot reserve unit: Crossmatch result is '${crossmatch.compatibility_result}'. Only compatible units may be reserved.`);
+      }
+      const crossmatchAgeHours = crossmatch.tested_at ? (Date.now() - new Date(crossmatch.tested_at).getTime()) / (1000 * 3600) : 0;
+      if (crossmatchAgeHours > 72 || (crossmatch.expires_at && new Date(crossmatch.expires_at) < new Date())) {
+        throw ApiError.badRequest('Cannot reserve unit: Crossmatch has expired (>72h). Pre-transfusion testing must be repeated.');
+      }
+    }
     return await bloodBankRepository.withTransaction(async (client) => {
       return await bloodBankRepository.createReservation(data, client);
     });
@@ -343,6 +377,10 @@ class BloodBankService {
       }
       if (crossmatch.compatibility_result !== 'compatible') {
         throw ApiError.badRequest(`Cannot issue unit: Crossmatch result is '${crossmatch.compatibility_result}'. Incompatible or unverified units must never be issued.`);
+      }
+      const crossmatchAgeHours = crossmatch.tested_at ? (Date.now() - new Date(crossmatch.tested_at).getTime()) / (1000 * 3600) : 0;
+      if (crossmatchAgeHours > 72 || (crossmatch.expires_at && new Date(crossmatch.expires_at) < new Date())) {
+        throw ApiError.badRequest('Cannot issue unit: Crossmatch has expired (>72h). Pre-transfusion testing must be repeated.');
       }
       if (crossmatch.patient_id !== requisition.patient_id || crossmatch.component_id !== component.id) {
         throw ApiError.badRequest('Crossmatch patient or component does not match the issue request');

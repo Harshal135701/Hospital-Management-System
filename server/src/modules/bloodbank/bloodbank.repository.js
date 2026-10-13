@@ -1,4 +1,5 @@
 const pool = require('../../config/db');
+const ApiError = require('../../utils/ApiError');
 
 class BloodBankRepository {
   async withTransaction(callback) {
@@ -39,6 +40,8 @@ class BloodBankRepository {
             'pulse_bpm', s.pulse_bpm,
             'temperature_c', s.temperature_c,
             'consent_obtained', s.consent_obtained,
+            'questionnaire_answers', s.questionnaire_answers,
+            'medical_history_notes', s.medical_history_notes,
             'eligibility_status', s.eligibility_status,
             'deferral_reason', s.deferral_reason,
             'deferred_until', s.deferred_until,
@@ -88,6 +91,8 @@ class BloodBankRepository {
             'pulse_bpm', s.pulse_bpm,
             'temperature_c', s.temperature_c,
             'consent_obtained', s.consent_obtained,
+            'questionnaire_answers', s.questionnaire_answers,
+            'medical_history_notes', s.medical_history_notes,
             'eligibility_status', s.eligibility_status,
             'deferral_reason', s.deferral_reason,
             'deferred_until', s.deferred_until,
@@ -220,7 +225,21 @@ class BloodBankRepository {
             WHERE c.parent_donation_id = don.id
           ),
           '[]'::json
-        ) AS components_separated
+        ) AS components_separated,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'sample_barcode', s.sample_barcode,
+                'tube_type', s.tube_type,
+                'status', s.status
+              )
+            )
+            FROM blood_samples s
+            WHERE s.donation_id = don.id
+          ),
+          '[]'::json
+        ) AS pilot_samples
       FROM blood_donations don
       JOIN blood_donors d ON don.donor_id = d.id
       ORDER BY don.collection_started_at DESC
@@ -234,7 +253,21 @@ class BloodBankRepository {
     const query = `
       SELECT 
         don.*,
-        d.full_name AS donor_name, d.donor_code, d.blood_group, d.rh_factor
+        d.full_name AS donor_name, d.donor_code, d.blood_group, d.rh_factor,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'sample_barcode', s.sample_barcode,
+                'tube_type', s.tube_type,
+                'status', s.status
+              )
+            )
+            FROM blood_samples s
+            WHERE s.donation_id = don.id
+          ),
+          '[]'::json
+        ) AS pilot_samples
       FROM blood_donations don
       JOIN blood_donors d ON don.donor_id = d.id
       WHERE don.id = $1
@@ -264,7 +297,25 @@ class BloodBankRepository {
         data.donation_notes || null
       ]
     );
-    return res.rows[0];
+    const donation = res.rows[0];
+
+    // Automatically generate linked traceable pilot sample tubes (Requirement 5.2 & 5.4)
+    const tubes = [
+      { type: 'edta', suffix: 'EDTA' },
+      { type: 'plain_clot', suffix: 'CLOT' },
+      { type: 'nat', suffix: 'NAT' }
+    ];
+    for (const tube of tubes) {
+      const sampleBarcode = `${data.primary_bag_barcode}-${tube.suffix}`;
+      await client.query(
+        `INSERT INTO blood_samples (donation_id, sample_barcode, tube_type, status)
+         VALUES ($1, $2, $3, 'collected')
+         ON CONFLICT (sample_barcode) DO NOTHING`,
+        [donation.id, sampleBarcode, tube.type]
+      );
+    }
+
+    return donation;
   }
 
   // =========================================================================
@@ -665,7 +716,7 @@ class BloodBankRepository {
       [data.requisition_id]
     );
     const requisition = reqRes.rows[0];
-    if (!requisition) throw new Error('Requisition not found');
+    if (!requisition) throw ApiError.notFound('Requisition not found');
 
     // 2. Lock component (Order 2)
     const compRes = await client.query(
@@ -673,9 +724,9 @@ class BloodBankRepository {
       [data.component_id]
     );
     const component = compRes.rows[0];
-    if (!component) throw new Error('Component not found');
+    if (!component) throw ApiError.notFound('Component not found');
     if (component.status !== 'safe_for_release') {
-      throw new Error(`Component is not safe for release (current status: ${component.status})`);
+      throw ApiError.conflict(`Component is not safe for release (current status: ${component.status})`);
     }
 
     // 3. Insert reservation (trg_blood_reservation_safety will transition component to reserved,

@@ -19,15 +19,17 @@ import {
   Info,
   Box,
   Truck,
-  CheckSquare
+  CheckSquare,
+  RefreshCw,
+  FileText
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Modal } from '../common/UIPrimitives';
 import { BloodBankService } from '../../services/api';
 import { HEALTHCARE_IMAGES } from '../../assets/images';
 
 export const BloodBankView = () => {
-  const [activeTab, setActiveTab] = useState('donors'); // 'donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover'
-  
+  const [activeTab, setActiveTab] = useState('donors'); // 'donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover', 'audit'
+
   // Data states
   const [donors, setDonors] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -35,7 +37,27 @@ export const BloodBankView = () => {
   const [serologyWorkbenches, setSerologyWorkbenches] = useState([]);
   const [requisitions, setRequisitions] = useState([]);
   const [issues, setIssues] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [isMock, setIsMock] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
+
+  // Register Voluntary Donor Modal State (Submodule 5.1)
+  const [isDonorModalOpen, setIsDonorModalOpen] = useState(false);
+  const [donorForm, setDonorForm] = useState({
+    full_name: '',
+    date_of_birth: '1995-01-01',
+    gender: 'male',
+    blood_group: 'O',
+    rh_factor: 'positive',
+    mobile: '',
+    email: '',
+    national_id: '',
+    address: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: ''
+  });
+  const [donorFormError, setDonorFormError] = useState(null);
 
   // Screening Modal State
   const [isScreeningModalOpen, setIsScreeningModalOpen] = useState(false);
@@ -50,6 +72,12 @@ export const BloodBankView = () => {
     decision: 'approved',
     deferralReason: ''
   });
+  const [screeningQuestionnaire, setScreeningQuestionnaire] = useState({
+    recent_illness: false,
+    travel_endemic: false,
+    high_risk_behavior: false,
+    medication_notes: ''
+  });
   const [screeningValidationMessage, setScreeningValidationMessage] = useState(null);
 
   // New Collection Modal State
@@ -61,6 +89,20 @@ export const BloodBankView = () => {
     barcode: `BB-${Math.floor(10000000000 + Math.random() * 90000000000)}`,
     phlebotomist: 'Nurse Savitri Devi'
   });
+
+  // Requisition Creation Modal State (Submodule 5.5)
+  const [isRequisitionModalOpen, setIsRequisitionModalOpen] = useState(false);
+  const [requisitionForm, setRequisitionForm] = useState({
+    patient_uhid: '',
+    requested_component: 'prbc',
+    units_requested: 1,
+    urgency: 'routine',
+    clinical_indication: '',
+    patient_blood_group: 'O',
+    patient_rh_factor: 'positive',
+    requester_name: 'Dr. Arindam Mitra'
+  });
+  const [requisitionFormError, setRequisitionFormError] = useState(null);
 
   // Emergency Issue Modal State
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
@@ -82,9 +124,9 @@ export const BloodBankView = () => {
     coldChainVerified: true
   });
 
-  const [auditLogs, setAuditLogs] = useState([]);
-
   const loadBloodBankData = async () => {
+    setIsLoading(true);
+    setApiError(null);
     try {
       const [donRes, colRes, compRes, seroRes, reqRes, issRes, audRes] = await Promise.all([
         BloodBankService.getDonors(),
@@ -96,22 +138,86 @@ export const BloodBankView = () => {
         BloodBankService.getAuditLogs()
       ]);
 
-      if (donRes?.data) setDonors(donRes.data);
-      if (colRes?.data) setCollections(colRes.data);
-      if (compRes?.data) setComponents(compRes.data);
-      if (seroRes?.data) setSerologyWorkbenches(seroRes.data);
-      if (reqRes?.data) setRequisitions(reqRes.data);
-      if (issRes?.data) setIssues(issRes.data);
-      if (audRes?.data) setAuditLogs(audRes.data);
-      setIsMock(Boolean(donRes?.isMock));
+      setDonors(donRes?.data || []);
+      setCollections(colRes?.data || []);
+      setComponents(compRes?.data || []);
+      setSerologyWorkbenches(seroRes?.data || []);
+      setRequisitions(reqRes?.data || []);
+      setIssues(issRes?.data || []);
+      setAuditLogs(audRes?.data || []);
+      setIsMock(false);
     } catch (err) {
       console.warn('Failed to load blood bank data:', err.message);
+      setApiError(err.message || 'Unable to connect to the Blood Bank backend service.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadBloodBankData();
   }, []);
+
+  // Handle Voluntary Donor Registration (Submodule 5.1)
+  const handleDonorSubmit = async (e) => {
+    e.preventDefault();
+    setDonorFormError(null);
+    if (!donorForm.full_name || !donorForm.mobile) {
+      setDonorFormError('Full name and mobile number are mandatory.');
+      return;
+    }
+    try {
+      await BloodBankService.createDonor(donorForm);
+      await loadBloodBankData();
+      setIsDonorModalOpen(false);
+      setDonorForm({
+        full_name: '',
+        date_of_birth: '1995-01-01',
+        gender: 'male',
+        blood_group: 'O',
+        rh_factor: 'positive',
+        mobile: '',
+        email: '',
+        national_id: '',
+        address: '',
+        emergency_contact_name: '',
+        emergency_contact_phone: ''
+      });
+    } catch (err) {
+      setDonorFormError(`Registration Failed: ${err.message}`);
+    }
+  };
+
+  // Handle New Blood Requisition (Submodule 5.5)
+  const handleRequisitionSubmit = async (e) => {
+    e.preventDefault();
+    setRequisitionFormError(null);
+    if (!requisitionForm.patient_uhid) {
+      setRequisitionFormError('Patient UHID is required.');
+      return;
+    }
+    if (!requisitionForm.clinical_indication) {
+      setRequisitionFormError('Clinical indication is required.');
+      return;
+    }
+    try {
+      await BloodBankService.createRequisition(requisitionForm);
+      await loadBloodBankData();
+      setIsRequisitionModalOpen(false);
+      setRequisitionForm({
+        patient_uhid: '',
+        requested_component: 'prbc',
+        units_requested: 1,
+        urgency: 'routine',
+        clinical_indication: '',
+        patient_blood_group: 'O',
+        patient_rh_factor: 'positive',
+        requester_name: 'Dr. Arindam Mitra'
+      });
+    } catch (err) {
+      setRequisitionFormError(`Requisition Submission Failed: ${err.message}`);
+    }
+  };
 
   // Handle Screening Submission with strict database rules
   const handleScreeningSubmit = async (e) => {
@@ -148,6 +254,23 @@ export const BloodBankView = () => {
 
     try {
       if (selectedDonorForScreening?.id) {
+        let decision = screeningVitals.decision;
+        let reason = screeningVitals.deferralReason;
+
+        if (screeningQuestionnaire.high_risk_behavior) {
+          decision = 'permanently_deferred';
+          reason = 'High-risk clinical exposure or behavior reported on questionnaire';
+        } else if (screeningQuestionnaire.recent_illness) {
+          decision = 'temporarily_deferred';
+          reason = 'Recent acute illness or fever reported within 14 days';
+        } else if (hb < 12.5) {
+          decision = 'temporarily_deferred';
+          reason = `Hemoglobin ${hb} g/dL below 12.5 g/dL threshold`;
+        } else if (wt < 45.0) {
+          decision = 'temporarily_deferred';
+          reason = `Body weight ${wt} kg below 45.0 kg threshold`;
+        }
+
         await BloodBankService.recordScreening({
           donor_id: selectedDonorForScreening.id,
           weight_kg: wt,
@@ -156,9 +279,11 @@ export const BloodBankView = () => {
           blood_pressure_diastolic: parseInt(screeningVitals.diastolic, 10),
           pulse_bpm: parseInt(screeningVitals.pulse, 10),
           consent_obtained: screeningVitals.consent,
-          eligibility_status: screeningVitals.decision,
+          questionnaire_answers: screeningQuestionnaire,
+          medical_history_notes: screeningQuestionnaire.medication_notes,
+          eligibility_status: decision,
           reviewed_by_name: 'Dr. Meenakshi Sundaram (Blood Bank Officer)',
-          deferral_reason: screeningVitals.deferralReason || (hb < 12.5 ? `Hemoglobin ${hb} g/dL below 12.5` : null)
+          deferral_reason: reason || null
         });
       }
       await loadBloodBankData();
@@ -174,9 +299,9 @@ export const BloodBankView = () => {
   // Handle New Blood Bag Collection
   const handleCollectionSubmit = async (e) => {
     e.preventDefault();
-    const donor = donors.find((d) => d.id === collectionForm.donorId) || donors[0];
+    const donor = donors.find((d) => d.id === collectionForm.donorId);
     if (!donor) {
-      alert('Please select a donor.');
+      alert('Please select an approved donor.');
       return;
     }
     const screeningId = donor?.last_screening?.id;
@@ -307,14 +432,24 @@ export const BloodBankView = () => {
               variant="primary"
               size="sm"
               icon={Plus}
+              onClick={() => setIsDonorModalOpen(true)}
+            >
+              Register Donor
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={CheckSquare}
               onClick={() => {
                 if (donors.length > 0) {
                   setSelectedDonorForScreening(donors[0]);
                   setIsScreeningModalOpen(true);
+                } else {
+                  alert('No donors registered yet. Please click "Register Donor" first.');
                 }
               }}
             >
-              Perform Donor Screening
+              Screen Donor
             </Button>
             <Button
               variant="outline"
@@ -323,6 +458,14 @@ export const BloodBankView = () => {
               onClick={() => setIsCollectionModalOpen(true)}
             >
               New Bag Collection
+            </Button>
+            <Button
+              variant="soft"
+              size="sm"
+              icon={FileCheck}
+              onClick={() => setIsRequisitionModalOpen(true)}
+            >
+              New Requisition
             </Button>
           </div>
         </div>
@@ -363,7 +506,45 @@ export const BloodBankView = () => {
         </div>
       </div>
 
-      {/* Six Submodule Navigation Tabs */}
+      {/* Backend API Connection Error & Retry Action */}
+      {apiError && (
+        <div
+          style={{
+            padding: '16px 20px',
+            backgroundColor: 'var(--color-error-bg)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-error-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            boxShadow: 'var(--shadow-card)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <AlertOctagon size={24} color="var(--color-error)" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: '700', fontSize: 'var(--font-size-sm)', color: 'var(--color-error)' }}>
+                Database Connection Error
+              </div>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-primary)', marginTop: '2px' }}>
+                {apiError} (Empty state displayed — mock fallback disabled).
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="danger"
+            size="sm"
+            icon={RefreshCw}
+            loading={isLoading}
+            onClick={loadBloodBankData}
+          >
+            Retry Connection
+          </Button>
+        </div>
+      )}
+
+      {/* Seven Submodule Navigation Tabs */}
       <div
         style={{
           display: 'flex',
@@ -423,17 +604,29 @@ export const BloodBankView = () => {
             title="Blood Donors & Eligibility Screening Directory"
             subtitle="Strict validation requiring Hb >= 12.5 g/dL, weight >= 45 kg, and confirmed consent"
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                onClick={() => {
-                  setSelectedDonorForScreening(donors[0] || null);
-                  setIsScreeningModalOpen(true);
-                }}
-              >
-                Screen Donor
-              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Plus}
+                  onClick={() => setIsDonorModalOpen(true)}
+                >
+                  Register Donor
+                </Button>
+                {donors.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={CheckSquare}
+                    onClick={() => {
+                      setSelectedDonorForScreening(donors[0] || null);
+                      setIsScreeningModalOpen(true);
+                    }}
+                  >
+                    Screen Donor
+                  </Button>
+                )}
+              </div>
             }
           >
             <div style={{ overflowX: 'auto' }}>
@@ -450,61 +643,72 @@ export const BloodBankView = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {donors.map((d) => {
-                    const scr = d.last_screening || {};
-                    const isApproved = scr.eligibility_status === 'approved';
-                    return (
-                      <tr key={d.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
-                        <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                          {d.donor_code}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{d.full_name}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{d.mobile} • {d.gender}</div>
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <Badge variant="teal">
-                            {d.blood_group} {d.rh_factor === 'positive' ? '+' : '-'}
-                          </Badge>
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <Badge variant={d.donor_status === 'active' ? 'success' : 'warning'}>
-                            {d.donor_status.replace('_', ' ')}
-                          </Badge>
-                        </td>
-                        <td style={{ padding: '14px', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)' }}>
-                          {scr.hemoglobin_g_dl ? (
-                            <div>
-                              <span>Hb: <strong>{scr.hemoglobin_g_dl} g/dL</strong></span> • 
-                              <span> Wt: <strong>{scr.weight_kg} kg</strong></span> • 
-                              <span> BP: {scr.blood_pressure}</span>
-                            </div>
-                          ) : (
-                            <span style={{ color: 'var(--color-text-muted)' }}>Screening pending</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          {isApproved ? (
-                            <Badge variant="success" size="sm">✓ Approved for Phlebotomy</Badge>
-                          ) : (
-                            <Badge variant="warning" size="sm">Deferred / Ineligible</Badge>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDonorForScreening(d);
-                              setIsScreeningModalOpen(true);
-                            }}
-                          >
-                            Re-Screen
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {donors.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '4px' }}>No donors registered yet</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)' }}>
+                          Click "Register Donor" above to register a voluntary donor in the database.
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    donors.map((d) => {
+                      const scr = d.last_screening || {};
+                      const isApproved = scr.eligibility_status === 'approved';
+                      return (
+                        <tr key={d.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
+                          <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
+                            {d.donor_code}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{d.full_name}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{d.mobile} • {d.gender}</div>
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <Badge variant="teal">
+                              {d.blood_group} {d.rh_factor === 'positive' ? '+' : '-'}
+                            </Badge>
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <Badge variant={d.donor_status === 'active' ? 'success' : 'warning'}>
+                              {d.donor_status.replace('_', ' ')}
+                            </Badge>
+                          </td>
+                          <td style={{ padding: '14px', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                            {scr.hemoglobin_g_dl ? (
+                              <div>
+                                <span>Hb: <strong>{scr.hemoglobin_g_dl} g/dL</strong></span> •
+                                <span> Wt: <strong>{scr.weight_kg} kg</strong></span> •
+                                <span> BP: {scr.blood_pressure}</span>
+                              </div>
+                            ) : (
+                              <span style={{ color: 'var(--color-text-muted)' }}>Screening pending</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            {isApproved ? (
+                              <Badge variant="success" size="sm">✓ Approved for Phlebotomy</Badge>
+                            ) : (
+                              <Badge variant="warning" size="sm">Deferred / Ineligible</Badge>
+                            )}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDonorForScreening(d);
+                                setIsScreeningModalOpen(true);
+                              }}
+                            >
+                              Re-Screen
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -545,41 +749,52 @@ export const BloodBankView = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {collections.map((col) => (
-                    <tr key={col.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
-                      <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                        {col.donation_number}
-                      </td>
-                      <td style={{ padding: '14px', fontFamily: 'monospace', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <QrCode size={14} color="var(--color-primary-teal)" />
-                          {col.primary_bag_barcode}
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{col.donor_name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{col.donor_code}</div>
-                      </td>
-                      <td style={{ padding: '14px', textTransform: 'capitalize' }}>
-                        <Badge variant="teal">{col.bag_type} Bag</Badge>
-                      </td>
-                      <td style={{ padding: '14px', fontWeight: '500' }}>
-                        {col.volume_ml} mL
-                      </td>
-                      <td style={{ padding: '14px', color: 'var(--color-text-secondary)' }}>
-                        {col.phlebotomist_name}
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                          {col.components_separated.map((c, i) => (
-                            <span key={i} style={{ padding: '2px 6px', fontSize: '0.7rem', backgroundColor: 'var(--color-bg-pale-aqua)', borderRadius: 'var(--radius-sm)', color: 'var(--color-primary-teal)', fontWeight: '600' }}>
-                              {c}
-                            </span>
-                          ))}
+                  {collections.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '4px' }}>No blood bag collections recorded yet</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)' }}>
+                          Screen an approved donor to record a donation and generate traceable barcoded bags.
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    collections.map((col) => (
+                      <tr key={col.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
+                        <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
+                          {col.donation_number}
+                        </td>
+                        <td style={{ padding: '14px', fontFamily: 'monospace', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <QrCode size={14} color="var(--color-primary-teal)" />
+                            {col.primary_bag_barcode}
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{col.donor_name}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{col.donor_code}</div>
+                        </td>
+                        <td style={{ padding: '14px', textTransform: 'capitalize' }}>
+                          <Badge variant="teal">{col.bag_type} Bag</Badge>
+                        </td>
+                        <td style={{ padding: '14px', fontWeight: '500' }}>
+                          {col.volume_ml} mL
+                        </td>
+                        <td style={{ padding: '14px', color: 'var(--color-text-secondary)' }}>
+                          {col.phlebotomist_name}
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            {(col.components_separated || []).map((c, i) => (
+                              <span key={i} style={{ padding: '2px 6px', fontSize: '0.7rem', backgroundColor: 'var(--color-bg-pale-aqua)', borderRadius: 'var(--radius-sm)', color: 'var(--color-primary-teal)', fontWeight: '600' }}>
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -627,7 +842,9 @@ export const BloodBankView = () => {
                 <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', color: 'var(--color-primary-teal)', textTransform: 'uppercase' }}>
                   Central Transfusion Storage Telemetry
                 </span>
-                <Badge variant="success" size="sm">Cold Chain 100% Intact</Badge>
+                <Badge variant={components.length > 0 ? "success" : "gray"} size="sm">
+                  {components.length > 0 ? "Cold Chain 100% Intact" : "Standby"}
+                </Badge>
               </div>
               <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)', marginTop: '2px' }}>
                 Refrigerated PRBC (2°C to 6°C), Deep-Frozen Plasma (-34°C), and Agitated Platelet Incubators
@@ -657,52 +874,63 @@ export const BloodBankView = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {components.map((cmp) => {
-                    const statusVariant = {
-                      safe_for_release: 'success',
-                      reserved: 'warning',
-                      quarantined: 'gray',
-                      reactive: 'danger',
-                      issued: 'info'
-                    }[cmp.status] || 'default';
+                  {components.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ padding: '36px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '4px' }}>No blood components found in inventory</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)' }}>
+                          Components are derived from bag collections and appear here under quarantine until safe release verification.
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    components.map((cmp) => {
+                      const statusVariant = {
+                        safe_for_release: 'success',
+                        reserved: 'warning',
+                        quarantined: 'gray',
+                        reactive: 'danger',
+                        issued: 'info'
+                      }[cmp.status] || 'default';
 
-                    return (
-                      <tr key={cmp.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
-                        <td style={{ padding: '14px', fontFamily: 'monospace', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                          {cmp.component_barcode}
-                        </td>
-                        <td style={{ padding: '14px', textTransform: 'uppercase', fontWeight: '600' }}>
-                          {cmp.component_type}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <Badge variant="teal">
-                            {cmp.abo_group} {cmp.rh_factor === 'positive' ? '+' : '-'}
-                          </Badge>
-                        </td>
-                        <td style={{ padding: '14px', fontWeight: '500' }}>
-                          {cmp.volume_ml} mL
-                        </td>
-                        <td style={{ padding: '14px', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)' }}>
-                          <div>{cmp.storage_location}</div>
-                          <div style={{ color: 'var(--color-text-muted)' }}>Target: {cmp.storage_min_temp_c}°C to {cmp.storage_max_temp_c}°C</div>
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                            <Thermometer size={14} color="var(--color-primary-teal)" />
-                            {cmp.current_temp_c}°C
-                          </div>
-                        </td>
-                        <td style={{ padding: '14px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                          {new Date(cmp.expires_at).toLocaleDateString()}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <Badge variant={statusVariant}>
-                            {cmp.status.replace(/_/g, ' ')}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={cmp.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
+                          <td style={{ padding: '14px', fontFamily: 'monospace', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
+                            {cmp.component_barcode}
+                          </td>
+                          <td style={{ padding: '14px', textTransform: 'uppercase', fontWeight: '600' }}>
+                            {cmp.component_type}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <Badge variant="teal">
+                              {cmp.abo_group} {cmp.rh_factor === 'positive' ? '+' : '-'}
+                            </Badge>
+                          </td>
+                          <td style={{ padding: '14px', fontWeight: '500' }}>
+                            {cmp.volume_ml} mL
+                          </td>
+                          <td style={{ padding: '14px', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                            <div>{cmp.storage_location}</div>
+                            <div style={{ color: 'var(--color-text-muted)' }}>Target: {cmp.storage_min_temp_c}°C to {cmp.storage_max_temp_c}°C</div>
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                              <Thermometer size={14} color="var(--color-primary-teal)" />
+                              {cmp.current_temp_c}°C
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                            {new Date(cmp.expires_at).toLocaleDateString()}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <Badge variant={statusVariant}>
+                              {cmp.status.replace(/_/g, ' ')}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -766,112 +994,141 @@ export const BloodBankView = () => {
             subtitle="Requires all 5 mandatory TTI markers (HIV, HBV, HCV, Syphilis, Malaria) non-reactive and dual-technician ABO/Rh concurrence"
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {serologyWorkbenches.map((sero, idx) => {
-                const isReleased = sero.release_authorization?.status === 'approved_for_release';
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      border: '1.5px solid var(--color-border)',
-                      borderRadius: 'var(--radius-lg)',
-                      padding: '20px 24px',
-                      backgroundColor: isReleased ? '#FAFDFD' : '#FFFDFD',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '16px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h4 style={{ margin: 0, fontSize: 'var(--font-size-md)', color: 'var(--color-text-primary)' }}>
-                            Donation: {sero.donation_number}
-                          </h4>
-                          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                            Donor: {sero.donor_name}
-                          </span>
-                        </div>
-                      </div>
+              {serologyWorkbenches.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+                  <ShieldCheck size={44} color="var(--color-text-muted)" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.5 }} />
+                  <div style={{ fontSize: 'var(--font-size-md)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                    No Serology Workbenches Recorded
+                  </div>
+                  <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                    New collections will appear here awaiting dual ABO/Rh grouping and mandatory 5-pathogen TTI screening.
+                  </div>
+                </div>
+              ) : (
+                serologyWorkbenches.map((sero, idx) => {
+                  const isReleased = sero.release_authorization?.status === 'approved_for_release';
+                  const determinedGroup = sero.dual_grouping?.determined_group || 'Pending Dual Grouping';
+                  const tech1 = sero.dual_grouping?.technician1 || 'Unassigned';
+                  const tech2 = sero.dual_grouping?.technician2 || 'Unassigned';
+                  const hasGrouping = Boolean(sero.dual_grouping);
+                  const concur = Boolean(sero.dual_grouping?.concur);
+                  const ttiList = Array.isArray(sero.tti_tests) ? sero.tti_tests : [];
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {isReleased ? (
-                          <Badge variant="success">✓ Approved for Safe Release</Badge>
-                        ) : (
-                          <Badge variant="warning">⚠ Quarantined: Testing Incomplete</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Dual Grouping Check */}
+                  return (
                     <div
+                      key={idx}
                       style={{
-                        padding: '12px 16px',
-                        backgroundColor: '#FFFFFF',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--color-border-subtle)',
+                        border: '1.5px solid var(--color-border)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '20px 24px',
+                        backgroundColor: isReleased ? '#FAFDFD' : '#FFFDFD',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '10px'
+                        flexDirection: 'column',
+                        gap: '16px'
                       }}
                     >
-                      <div>
-                        <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-                          Dual-Technician ABO/Rh Grouping Verification
-                        </div>
-                        <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)', marginTop: '2px' }}>
-                          Determined: {sero.dual_grouping.determined_group} (Tech 1: {sero.dual_grouping.technician1} • Tech 2: {sero.dual_grouping.technician2})
-                        </div>
-                      </div>
-                      <Badge variant={sero.dual_grouping.concur ? 'success' : 'danger'}>
-                        {sero.dual_grouping.concur ? 'Technicians Concur' : 'Grouping Discrepancy'}
-                      </Badge>
-                    </div>
-
-                    {/* 5 Mandatory TTI Results Grid */}
-                    <div>
-                      <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                        Mandatory Infection Markers (5 TTI Tests)
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-                        {sero.tti_tests.map((t, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              padding: '10px 12px',
-                              borderRadius: 'var(--radius-md)',
-                              backgroundColor: '#FFFFFF',
-                              border: `1px solid ${t.result === 'non_reactive' ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`
-                            }}
-                          >
-                            <div style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
-                              {t.name}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                              <Badge variant={t.result === 'non_reactive' ? 'success' : 'warning'} size="sm">
-                                {t.result.replace('_', ' ')}
-                              </Badge>
-                              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>{t.method}</span>
-                            </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h4 style={{ margin: 0, fontSize: 'var(--font-size-md)', color: 'var(--color-text-primary)' }}>
+                              Donation: {sero.donation_number}
+                            </h4>
+                            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                              Donor: {sero.donor_name}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
 
-                    {/* Authorization Details */}
-                    {isReleased ? (
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border-subtle)', paddingTop: '8px' }}>
-                        Release authorized by: <strong>{sero.release_authorization.authorized_by}</strong> at {new Date(sero.release_authorization.authorized_at).toLocaleString()}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {isReleased ? (
+                            <Badge variant="success">✓ Approved for Safe Release</Badge>
+                          ) : (
+                            <Badge variant="warning">⚠ Quarantined: Testing Incomplete</Badge>
+                          )}
+                        </div>
                       </div>
-                    ) : (
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-error)', borderTop: '1px solid var(--color-border-subtle)', paddingTop: '8px' }}>
-                        Hold reason: {sero.release_authorization.notes}
+
+                      {/* Dual Grouping Check */}
+                      <div
+                        style={{
+                          padding: '12px 16px',
+                          backgroundColor: '#FFFFFF',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--color-border-subtle)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '10px'
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+                            Dual-Technician ABO/Rh Grouping Verification
+                          </div>
+                          <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)', marginTop: '2px' }}>
+                            Determined: {determinedGroup} {hasGrouping ? `(Tech 1: ${tech1} • Tech 2: ${tech2})` : '(Pending Technician Verification)'}
+                          </div>
+                        </div>
+                        {hasGrouping ? (
+                          <Badge variant={concur ? 'success' : 'danger'}>
+                            {concur ? 'Technicians Concur' : 'Grouping Discrepancy'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="gray">Awaiting Technicians</Badge>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+
+                      {/* 5 Mandatory TTI Results Grid */}
+                      <div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                          Mandatory Infection Markers (5 TTI Tests)
+                        </div>
+                        {ttiList.length === 0 ? (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic', padding: '8px 0' }}>
+                            TTI testing in progress or pending lab entry.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                            {ttiList.map((t, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  padding: '10px 12px',
+                                  borderRadius: 'var(--radius-md)',
+                                  backgroundColor: '#FFFFFF',
+                                  border: `1px solid ${t.result === 'non_reactive' ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`
+                                }}
+                              >
+                                <div style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
+                                  {t.name}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                                  <Badge variant={t.result === 'non_reactive' ? 'success' : 'warning'} size="sm">
+                                    {(t.result || 'pending').replace('_', ' ')}
+                                  </Badge>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>{t.method || 'CLIA / Rapid'}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Authorization Details */}
+                      {isReleased ? (
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border-subtle)', paddingTop: '8px' }}>
+                          Release authorized by: <strong>{sero.release_authorization?.authorized_by || 'Senior Medical Officer'}</strong> at {sero.release_authorization?.authorized_at ? new Date(sero.release_authorization.authorized_at).toLocaleString() : 'N/A'}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-error)', borderTop: '1px solid var(--color-border-subtle)', paddingTop: '8px' }}>
+                          Hold reason: {sero.release_authorization?.notes || 'Mandatory Serology Screening / Dual Grouping Pending'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </Card>
         </div>
@@ -886,14 +1143,24 @@ export const BloodBankView = () => {
             title="Patient Blood Requisitions & Pre-Transfusion Crossmatching"
             subtitle="Requires unexpired compatible crossmatch for patient; incompatible bypass is strictly prohibited"
             action={
-              <Button
-                variant="danger"
-                size="sm"
-                icon={ShieldAlert}
-                onClick={() => setIsEmergencyModalOpen(true)}
-              >
-                Emergency Uncrossed Release
-              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Plus}
+                  onClick={() => setIsRequisitionModalOpen(true)}
+                >
+                  New Requisition
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  icon={ShieldAlert}
+                  onClick={() => setIsEmergencyModalOpen(true)}
+                >
+                  Emergency Uncrossed Release
+                </Button>
+              </div>
             }
           >
             <div style={{ overflowX: 'auto' }}>
@@ -910,66 +1177,78 @@ export const BloodBankView = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {requisitions.map((req) => {
-                    const hasCompatibleXm = req.crossmatch && req.crossmatch.compatibility === 'compatible';
-                    return (
-                      <tr key={req.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
-                        <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                          {req.requisition_number}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{req.patient_name}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{req.patient_uhid} • Group: {req.patient_blood_group}</div>
-                        </td>
-                        <td style={{ padding: '14px', textTransform: 'uppercase', fontWeight: '500' }}>
-                          {req.requested_component}
-                        </td>
-                        <td style={{ padding: '14px', fontWeight: '600' }}>
-                          {req.units_requested} Req / {req.units_reserved} Res / {req.units_issued} Iss
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          <Badge variant={req.urgency === 'urgent' ? 'warning' : 'teal'}>
-                            {req.urgency}
-                          </Badge>
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          {hasCompatibleXm ? (
-                            <div>
-                              <Badge variant="success" size="sm">✓ Compatible ({req.crossmatch.technique})</Badge>
-                              <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                                Unit: {req.crossmatch.component_barcode}
+                  {requisitions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        <FileText size={40} color="var(--color-text-muted)" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.5 }} />
+                        <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>No Blood Requisitions Recorded</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                          Submit a requisition using the button above to request compatible units for hospital inpatients.
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    requisitions.map((req) => {
+                      const hasCompatibleXm = req.crossmatch && req.crossmatch.compatibility === 'compatible';
+                      return (
+                        <tr key={req.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
+                          <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
+                            {req.requisition_number}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{req.patient_name}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{req.patient_uhid} • Group: {req.patient_blood_group}</div>
+                          </td>
+                          <td style={{ padding: '14px', textTransform: 'uppercase', fontWeight: '500' }}>
+                            {req.requested_component}
+                          </td>
+                          <td style={{ padding: '14px', fontWeight: '600' }}>
+                            {req.units_requested} Req / {req.units_reserved} Res / {req.units_issued} Iss
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <Badge variant={req.urgency === 'urgent' ? 'warning' : 'teal'}>
+                              {req.urgency}
+                            </Badge>
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            {hasCompatibleXm ? (
+                              <div>
+                                <Badge variant="success" size="sm">✓ Compatible ({req.crossmatch.technique})</Badge>
+                                <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                  Unit: {req.crossmatch.component_barcode}
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <Badge variant="gray" size="sm">Awaiting Crossmatch</Badge>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px' }}>
-                          {hasCompatibleXm ? (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => {
-                                setHandoverTargetReq(req);
-                                setIsHandoverModalOpen(true);
-                              }}
-                            >
-                              Dispatch Handover
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              title="Requires completed crossmatch test before release"
-                            >
-                              Crossmatch Pending
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                            ) : (
+                              <Badge variant="gray" size="sm">Awaiting Crossmatch</Badge>
+                            )}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            {hasCompatibleXm ? (
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => {
+                                  setHandoverTargetReq(req);
+                                  setIsHandoverModalOpen(true);
+                                }}
+                              >
+                                Dispatch Handover
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                title="Requires completed crossmatch test before release"
+                              >
+                                Crossmatch Pending
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -999,11 +1278,11 @@ export const BloodBankView = () => {
               <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontWeight: '600', textTransform: 'uppercase' }}>
                 Cold Chain Transit Integrity
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--color-success)', marginTop: '4px' }}>
-                100% Compliant
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: issues.length > 0 ? 'var(--color-success)' : 'var(--color-text-muted)', marginTop: '4px' }}>
+                {issues.length > 0 ? '100% Compliant' : 'No Dispatches'}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                Validated carrier temperature between 2°C – 6°C
+                {issues.length > 0 ? 'Validated carrier temperature between 2°C – 6°C' : 'Awaiting first issue dispatch'}
               </div>
             </div>
 
@@ -1055,40 +1334,52 @@ export const BloodBankView = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {issues.map((iss) => (
-                    <tr key={iss.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
-                      <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                        <div>{iss.issue_number}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{new Date(iss.issued_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{iss.patient_name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{iss.patient_uhid} • {iss.ward_name}</div>
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <div style={{ fontWeight: '600', textTransform: 'uppercase' }}>{iss.component_barcode}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{iss.component_type?.toUpperCase()} • {iss.blood_group}</div>
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Box size={14} color="var(--color-primary-teal)" />
-                          <span style={{ fontWeight: '500' }}>{iss.cold_chain_carrier_id}</span>
+                  {issues.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        <Box size={40} color="var(--color-text-muted)" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.5 }} />
+                        <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>No Blood Units Dispatched Today</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                          Compatible blood requisitions will appear here once dispatched through clinical handover.
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                          <Thermometer size={12} /> {iss.dispatch_temp_c}°C (Chilled)
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <div style={{ fontSize: '0.78rem' }}><strong>Out:</strong> {iss.dispatched_by}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}><strong>In:</strong> {iss.received_by}</div>
-                      </td>
-                      <td style={{ padding: '14px' }}>
-                        <Badge variant={iss.handover_status === 'transfusion_started' ? 'teal' : 'success'} size="sm">
-                          {iss.handover_status === 'transfusion_started' ? 'Transfusion Active' : 'Dispatched / In Transit'}
-                        </Badge>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    issues.map((iss) => (
+                      <tr key={iss.id} style={{ borderBottom: '1px solid var(--color-border-subtle)', fontSize: 'var(--font-size-sm)' }}>
+                        <td style={{ padding: '14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
+                          <div>{iss.issue_number}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{new Date(iss.issued_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{iss.patient_name}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{iss.patient_uhid} • {iss.ward_name}</div>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontWeight: '600', textTransform: 'uppercase' }}>{iss.component_barcode}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{iss.component_type?.toUpperCase()} • {iss.blood_group}</div>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Box size={14} color="var(--color-primary-teal)" />
+                            <span style={{ fontWeight: '500' }}>{iss.cold_chain_carrier_id}</span>
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            <Thermometer size={12} /> {iss.dispatch_temp_c}°C (Chilled)
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontSize: '0.78rem' }}><strong>Out:</strong> {iss.dispatched_by}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}><strong>In:</strong> {iss.received_by}</div>
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <Badge variant={iss.handover_status === 'transfusion_started' ? 'teal' : 'success'} size="sm">
+                            {iss.handover_status === 'transfusion_started' ? 'Transfusion Active' : 'Dispatched / In Transit'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1242,6 +1533,62 @@ export const BloodBankView = () => {
               type="number"
               value={screeningVitals.pulse}
               onChange={(e) => setScreeningVitals({ ...screeningVitals, pulse: e.target.value })}
+            />
+          </div>
+
+          {/* Standardized Medical History Questionnaire (Submodule 5.1) */}
+          <div
+            style={{
+              padding: '14px 16px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}
+          >
+            <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', color: 'var(--color-primary-teal)', textTransform: 'uppercase' }}>
+              Standardized Medical History Questionnaire
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: 'var(--font-size-xs)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={screeningQuestionnaire.recent_illness}
+                onChange={(e) => setScreeningQuestionnaire({ ...screeningQuestionnaire, recent_illness: e.target.checked })}
+                style={{ marginTop: '2px' }}
+              />
+              <span>Recent acute illness, dental procedure, or unexplained fever in past 14 days (Triggers temporary deferral)</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: 'var(--font-size-xs)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={screeningQuestionnaire.travel_endemic}
+                onChange={(e) => setScreeningQuestionnaire({ ...screeningQuestionnaire, travel_endemic: e.target.checked })}
+                style={{ marginTop: '2px' }}
+              />
+              <span>Recent travel to malaria / endemic transmission region within past 6 months (Triggers clinical review)</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: 'var(--font-size-xs)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={screeningQuestionnaire.high_risk_behavior}
+                onChange={(e) => setScreeningQuestionnaire({ ...screeningQuestionnaire, high_risk_behavior: e.target.checked })}
+                style={{ marginTop: '2px' }}
+              />
+              <span style={{ color: screeningQuestionnaire.high_risk_behavior ? 'var(--color-error)' : 'inherit', fontWeight: screeningQuestionnaire.high_risk_behavior ? '600' : 'normal' }}>
+                High-risk clinical exposure, IV drug history, or confirmed viral hepatitis contact (Triggers PERMANENT deferral)
+              </span>
+            </label>
+
+            <Input
+              label="Current Medications / Clinical Notes"
+              placeholder="e.g. None reported; or Paracetamol 500mg 3 days ago"
+              value={screeningQuestionnaire.medication_notes}
+              onChange={(e) => setScreeningQuestionnaire({ ...screeningQuestionnaire, medication_notes: e.target.value })}
             />
           </div>
 
@@ -1440,10 +1787,10 @@ export const BloodBankView = () => {
               <Badge variant="success" size="sm">Dual Technician Sign-Off</Badge>
             </div>
             <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
-              Component Barcode: <strong>{handoverTargetReq?.crossmatch?.component_barcode || 'PRBC-2026-0899'}</strong> (Type: {handoverTargetReq?.requested_component?.toUpperCase()} • {handoverTargetReq?.patient_blood_group})
+              Component Barcode: <strong>{handoverTargetReq?.crossmatch?.component_barcode || handoverTargetReq?.crossmatch_barcode || 'Pending Allocation'}</strong> (Type: {handoverTargetReq?.requested_component?.toUpperCase()} • {handoverTargetReq?.patient_blood_group})
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-              Crossmatch ID: {handoverTargetReq?.crossmatch?.crossmatch_id || 'XM-2026-0901'} • Compatible (AHG Gel Card Method)
+              Crossmatch ID: {handoverTargetReq?.crossmatch?.crossmatch_id || handoverTargetReq?.id || '—'} • Compatible (AHG Gel Card Method)
             </div>
           </div>
 
@@ -1512,6 +1859,274 @@ export const BloodBankView = () => {
               disabled={!handoverForm.patientIdVerified || !handoverForm.groupVerified || !handoverForm.coldChainVerified}
             >
               Sign & Dispatch Handover
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* =========================================================================
+          REGISTER VOLUNTARY DONOR MODAL (Submodule 5.1)
+          ========================================================================= */}
+      <Modal
+        isOpen={isDonorModalOpen}
+        onClose={() => setIsDonorModalOpen(false)}
+        title="Register Voluntary Blood Donor"
+        subtitle="Enrolls donor into hospital master registry with demographic & contact verification"
+      >
+        <form onSubmit={handleDonorSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {donorFormError && (
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-error-bg)',
+                border: '1px solid var(--color-error-border)',
+                color: 'var(--color-error)',
+                fontSize: 'var(--font-size-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <AlertOctagon size={18} />
+              <span>{donorFormError}</span>
+            </div>
+          )}
+
+          <Input
+            label="Full Legal Name"
+            required
+            placeholder="e.g. Ramesh Kumar Verma"
+            value={donorForm.full_name}
+            onChange={(e) => setDonorForm({ ...donorForm, full_name: e.target.value })}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Input
+              label="Date of Birth"
+              required
+              type="date"
+              value={donorForm.date_of_birth}
+              onChange={(e) => setDonorForm({ ...donorForm, date_of_birth: e.target.value })}
+            />
+            <Select
+              label="Gender"
+              required
+              value={donorForm.gender}
+              onChange={(e) => setDonorForm({ ...donorForm, gender: e.target.value })}
+              options={[
+                { value: 'male', label: 'Male' },
+                { value: 'female', label: 'Female' },
+                { value: 'other', label: 'Other' }
+              ]}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="ABO Blood Group"
+              required
+              value={donorForm.blood_group}
+              onChange={(e) => setDonorForm({ ...donorForm, blood_group: e.target.value })}
+              options={[
+                { value: 'A', label: 'Blood Group A' },
+                { value: 'B', label: 'Blood Group B' },
+                { value: 'AB', label: 'Blood Group AB' },
+                { value: 'O', label: 'Blood Group O' }
+              ]}
+            />
+            <Select
+              label="Rh Factor"
+              required
+              value={donorForm.rh_factor}
+              onChange={(e) => setDonorForm({ ...donorForm, rh_factor: e.target.value })}
+              options={[
+                { value: 'positive', label: 'Rh Positive (+)' },
+                { value: 'negative', label: 'Rh Negative (-)' }
+              ]}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Input
+              label="Mobile Phone Number"
+              required
+              placeholder="e.g. +91 98765 43210"
+              value={donorForm.mobile}
+              onChange={(e) => setDonorForm({ ...donorForm, mobile: e.target.value })}
+            />
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="e.g. ramesh.verma@example.com"
+              value={donorForm.email}
+              onChange={(e) => setDonorForm({ ...donorForm, email: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Input
+              label="National ID / Aadhaar"
+              placeholder="e.g. 1234-5678-9012"
+              value={donorForm.national_id}
+              onChange={(e) => setDonorForm({ ...donorForm, national_id: e.target.value })}
+            />
+            <Input
+              label="Residential Address"
+              placeholder="e.g. 42 Park Avenue, Civil Lines"
+              value={donorForm.address}
+              onChange={(e) => setDonorForm({ ...donorForm, address: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Input
+              label="Emergency Contact Person"
+              placeholder="e.g. Sunita Verma"
+              value={donorForm.emergency_contact_name}
+              onChange={(e) => setDonorForm({ ...donorForm, emergency_contact_name: e.target.value })}
+            />
+            <Input
+              label="Emergency Contact Phone"
+              placeholder="e.g. +91 98765 00000"
+              value={donorForm.emergency_contact_phone}
+              onChange={(e) => setDonorForm({ ...donorForm, emergency_contact_phone: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+            <Button variant="ghost" onClick={() => setIsDonorModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Register Voluntary Donor
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* =========================================================================
+          CREATE BLOOD REQUISITION MODAL (Submodule 5.5)
+          ========================================================================= */}
+      <Modal
+        isOpen={isRequisitionModalOpen}
+        onClose={() => setIsRequisitionModalOpen(false)}
+        title="Create Patient Blood Requisition"
+        subtitle="Crossmatch order for inpatients with UHID verification & clinical indication"
+      >
+        <form onSubmit={handleRequisitionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {requisitionFormError && (
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-error-bg)',
+                border: '1px solid var(--color-error-border)',
+                color: 'var(--color-error)',
+                fontSize: 'var(--font-size-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <AlertOctagon size={18} />
+              <span>{requisitionFormError}</span>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px' }}>
+            <Input
+              label="Patient UHID"
+              required
+              placeholder="e.g. UHID-2026-0001"
+              value={requisitionForm.patient_uhid}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, patient_uhid: e.target.value })}
+              helperText="Must match an enrolled hospital patient"
+            />
+            <Input
+              label="Units Requested"
+              required
+              type="number"
+              min="1"
+              max="10"
+              value={requisitionForm.units_requested}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, units_requested: parseInt(e.target.value, 10) || 1 })}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Requested Component"
+              required
+              value={requisitionForm.requested_component}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, requested_component: e.target.value })}
+              options={[
+                { value: 'prbc', label: 'Packed Red Blood Cells (PRBC)' },
+                { value: 'ffp', label: 'Fresh Frozen Plasma (FFP)' },
+                { value: 'platelets', label: 'Random Donor Platelets (RDP)' },
+                { value: 'cryo', label: 'Cryoprecipitate' },
+                { value: 'whole_blood', label: 'Whole Blood' }
+              ]}
+            />
+            <Select
+              label="Clinical Urgency"
+              required
+              value={requisitionForm.urgency}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, urgency: e.target.value })}
+              options={[
+                { value: 'routine', label: 'Routine (Elective / Ward)' },
+                { value: 'urgent', label: 'Urgent (Required within 2 hours)' },
+                { value: 'stat_emergency', label: 'STAT Emergency (Immediate)' }
+              ]}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Patient ABO Blood Group"
+              required
+              value={requisitionForm.patient_blood_group}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, patient_blood_group: e.target.value })}
+              options={[
+                { value: 'A', label: 'Group A' },
+                { value: 'B', label: 'Group B' },
+                { value: 'AB', label: 'Group AB' },
+                { value: 'O', label: 'Group O' }
+              ]}
+            />
+            <Select
+              label="Patient Rh Factor"
+              required
+              value={requisitionForm.patient_rh_factor}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, patient_rh_factor: e.target.value })}
+              options={[
+                { value: 'positive', label: 'Rh Positive (+)' },
+                { value: 'negative', label: 'Rh Negative (-)' }
+              ]}
+            />
+          </div>
+
+          <Input
+            label="Clinical Indication / Diagnosis"
+            required
+            placeholder="e.g. Acute upper GI bleeding with severe anaemia (Hb 6.8 g/dL)"
+            value={requisitionForm.clinical_indication}
+            onChange={(e) => setRequisitionForm({ ...requisitionForm, clinical_indication: e.target.value })}
+          />
+
+          <Input
+            label="Prescribing Clinician / Department"
+            required
+            value={requisitionForm.requester_name}
+            onChange={(e) => setRequisitionForm({ ...requisitionForm, requester_name: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+            <Button variant="ghost" onClick={() => setIsRequisitionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Submit Blood Requisition
             </Button>
           </div>
         </form>
