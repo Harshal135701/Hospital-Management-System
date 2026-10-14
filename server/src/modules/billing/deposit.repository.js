@@ -52,8 +52,11 @@ const findDepositsByAdmission = async (admissionId) => {
        d.status,
        d.created_at,
        COALESCE(a.adjusted_amount, 0) AS adjusted_amount,
+       COALESCE(r.refunded_amount, 0) AS refunded_amount,
        GREATEST(
-         d.amount - COALESCE(a.adjusted_amount, 0),
+         d.amount
+         - COALESCE(a.adjusted_amount, 0)
+         - COALESCE(r.refunded_amount, 0),
          0
        ) AS remaining_amount
      FROM advance_deposits d
@@ -62,6 +65,13 @@ const findDepositsByAdmission = async (admissionId) => {
        FROM deposit_adjustments
        GROUP BY deposit_id
      ) a ON a.deposit_id = d.id
+     LEFT JOIN (
+       SELECT advance_deposit_id, SUM(amount) AS refunded_amount
+       FROM refunds
+       WHERE status = 'processed'
+         AND advance_deposit_id IS NOT NULL
+       GROUP BY advance_deposit_id
+     ) r ON r.advance_deposit_id = d.id
      WHERE d.admission_id = $1
      ORDER BY d.created_at DESC`,
     [admissionId]
@@ -83,8 +93,11 @@ const findDepositById = async (depositId) => {
        d.status,
        d.created_at,
        COALESCE(a.adjusted_amount, 0) AS adjusted_amount,
+       COALESCE(r.refunded_amount, 0) AS refunded_amount,
        GREATEST(
-         d.amount - COALESCE(a.adjusted_amount, 0),
+         d.amount
+         - COALESCE(a.adjusted_amount, 0)
+         - COALESCE(r.refunded_amount, 0),
          0
        ) AS remaining_amount
      FROM advance_deposits d
@@ -93,6 +106,13 @@ const findDepositById = async (depositId) => {
        FROM deposit_adjustments
        GROUP BY deposit_id
      ) a ON a.deposit_id = d.id
+     LEFT JOIN (
+       SELECT advance_deposit_id, SUM(amount) AS refunded_amount
+       FROM refunds
+       WHERE status = 'processed'
+         AND advance_deposit_id IS NOT NULL
+       GROUP BY advance_deposit_id
+     ) r ON r.advance_deposit_id = d.id
      WHERE d.id = $1`,
     [depositId]
   );

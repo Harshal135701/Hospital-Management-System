@@ -14,6 +14,7 @@ const billingRoutes = require("./modules/billing/billing.routes");
 const ipdBillingRoutes = require("./modules/billing/ipd-billing.routes");
 const dischargeBillingRoutes = require("./modules/billing/discharge-billing.routes");
 const depositRoutes = require("./modules/billing/deposit.routes");
+const refundRoutes = require("./modules/billing/refund.routes");
 
 const app = express();
 
@@ -78,6 +79,9 @@ app.use("/api/billing/ipd", dischargeBillingRoutes);
 
 // Module 4.4: Deposite Billing
 app.use("/api/billing/deposits", depositRoutes);
+
+// Module 4.5: My Refunds
+app.use("/api/billing/refunds", refundRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
