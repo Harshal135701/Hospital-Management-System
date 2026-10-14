@@ -11,6 +11,7 @@ const pool = require("./config/db");
 const notificationRoutes = require("./modules/notifications/notification.routes");
 const startNotificationScheduler = require("./modules/notifications/notification.scheduler");
 const billingRoutes = require("./modules/billing/billing.routes");
+const ipdBillingRoutes = require("./modules/billing/ipd-billing.routes");
 
 const app = express();
 
@@ -66,6 +67,9 @@ app.use("/api/notifications", notificationRoutes);
 
 // Module 4.1: Billing & Payments
 app.use("/api/billing", billingRoutes);
+
+// Module 4.2: IPD Interim Billing
+app.use("/api/billing/ipd", ipdBillingRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
