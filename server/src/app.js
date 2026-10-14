@@ -15,6 +15,7 @@ const ipdBillingRoutes = require("./modules/billing/ipd-billing.routes");
 const dischargeBillingRoutes = require("./modules/billing/discharge-billing.routes");
 const depositRoutes = require("./modules/billing/deposit.routes");
 const refundRoutes = require("./modules/billing/refund.routes");
+const settlementRoutes = require("./modules/billing/settlement.routes");
 
 const app = express();
 
@@ -82,6 +83,9 @@ app.use("/api/billing/deposits", depositRoutes);
 
 // Module 4.5: My Refunds
 app.use("/api/billing/refunds", refundRoutes);
+
+// Module 4.6: Day-End Cashier Settlement
+app.use("/api/billing/settlement", settlementRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
