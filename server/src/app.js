@@ -10,7 +10,7 @@ const errorHandler = require("./middleware/error.middleware");
 const pool = require("./config/db");
 const notificationRoutes = require("./modules/notifications/notification.routes");
 const startNotificationScheduler = require("./modules/notifications/notification.scheduler");
-
+const billingRoutes = require("./modules/billing/billing.routes");
 
 const app = express();
 
@@ -64,6 +64,8 @@ app.use("/api/queue", queueRoutes);
 
 app.use("/api/notifications", notificationRoutes);
 
+// Module 4.1: Billing & Payments
+app.use("/api/billing", billingRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
