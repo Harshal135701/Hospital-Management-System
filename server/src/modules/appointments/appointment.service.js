@@ -1,14 +1,19 @@
+
 const repo = require("./appointment.repository");
 const ApiError = require("../../utils/ApiError");
+const notificationService = require("../notifications/notification.service");
 
 const calculateEndTime = (startTime, durationMinutes = 15) => {
   const [h, m] = startTime.split(":").map(Number);
   const total = h * 60 + m + durationMinutes;
-  if (total > 1440) {
+
+  if (total >= 1440) {
     throw ApiError.badRequest("Appointment time exceeds 24:00 boundary");
   }
+
   const endH = String(Math.floor(total / 60)).padStart(2, "0");
   const endM = String(total % 60).padStart(2, "0");
+
   return `${endH}:${endM}`;
 };
 
@@ -16,78 +21,130 @@ const getTodayDateStr = () => {
   return new Date().toISOString().slice(0, 10);
 };
 
+// Notification errors must never undo a successfully saved appointment.
+const scheduleNotificationsSafely = async (callback) => {
+  try {
+    await callback();
+  } catch (error) {
+    console.error(
+      "Appointment saved, but notification scheduling failed:",
+      error.message
+    );
+  }
+};
+
+// ======================================================
+// 1. CREATE APPOINTMENT
+// ======================================================
+
 const createAppointment = async (data) => {
   const today = getTodayDateStr();
+
   if (data.appointmentDate < today) {
     throw ApiError.badRequest("Appointment date cannot be in the past");
   }
 
-  // 1. Verify Patient
+  // Verify patient.
   const patient = await repo.findPatientById(data.patientId);
+
   if (!patient) {
     throw ApiError.notFound("Patient not found");
   }
 
-  // 2. Verify Doctor
+  // Verify doctor.
   const doctor = await repo.findDoctorById(data.doctorId);
+
   if (!doctor) {
     throw ApiError.notFound("Doctor not found or currently inactive");
   }
 
-  // 3. Verify Department
+  // Verify department.
   const department = await repo.findDepartmentById(data.departmentId);
+
   if (!department) {
     throw ApiError.notFound("Department not found or currently inactive");
   }
 
-  if (doctor.department_id !== data.departmentId) {
-    throw ApiError.badRequest("Doctor does not belong to the selected department");
-  }
-
-  // 4. Check Doctor Approved Leave
-  const leave = await repo.isDoctorOnLeave(data.doctorId, data.appointmentDate);
-  if (leave) {
-    const sDate = typeof leave.start_date === "string" ? leave.start_date : leave.start_date.toISOString().slice(0, 10);
-    const eDate = typeof leave.end_date === "string" ? leave.end_date : leave.end_date.toISOString().slice(0, 10);
+  if (String(doctor.department_id) !== String(data.departmentId)) {
     throw ApiError.badRequest(
-      `Doctor is on approved leave from ${sDate} to ${eDate}. Reason: ${leave.reason || "Personal"}`
+      "Doctor does not belong to the selected department"
     );
   }
 
-  // 5. Calculate slot end time
+  // Check approved doctor leave.
+  const leave = await repo.isDoctorOnLeave(
+    data.doctorId,
+    data.appointmentDate
+  );
+
+  if (leave) {
+    const startDate =
+      typeof leave.start_date === "string"
+        ? leave.start_date
+        : leave.start_date.toISOString().slice(0, 10);
+
+    const endDate =
+      typeof leave.end_date === "string"
+        ? leave.end_date
+        : leave.end_date.toISOString().slice(0, 10);
+
+    throw ApiError.badRequest(
+      `Doctor is on approved leave from ${startDate} to ${endDate}. Reason: ${
+        leave.reason || "Personal"
+      }`
+    );
+  }
+
   const endTime = calculateEndTime(data.startTime, 15);
 
-  // 6. Check Published Roster or Fallback Schedule for shift match & room
-  const publishedRosters = await repo.getPublishedRoster(data.doctorId, data.appointmentDate);
+  // Find a matching published roster and room.
+  const publishedRosters = await repo.getPublishedRoster(
+    data.doctorId,
+    data.appointmentDate
+  );
+
   let matchedRosterId = null;
   let assignedRoomId = data.roomId || doctor.room_id || null;
 
   if (publishedRosters.length > 0) {
     const shift = publishedRosters.find(
-      (r) => data.startTime >= r.start_time.slice(0, 5) && endTime <= r.end_time.slice(0, 5)
+      (roster) =>
+        data.startTime >= String(roster.start_time).slice(0, 5) &&
+        endTime <= String(roster.end_time).slice(0, 5)
     );
+
     if (shift) {
       matchedRosterId = shift.id;
+
       if (!assignedRoomId && shift.room_id) {
         assignedRoomId = shift.room_id;
       }
+    } else {
+      throw ApiError.badRequest(
+        "Requested time is outside the doctor's published roster"
+      );
     }
   }
 
-  // 7. Verify Room if provided
+  // Verify the room if one has been assigned.
   if (assignedRoomId) {
     const room = await repo.findRoomById(assignedRoomId);
+
     if (!room) {
       assignedRoomId = null;
     }
   }
 
-  // 8. Execute booking atomically in a transaction to prevent race conditions
+  // Save the appointment within a transaction.
   const client = await repo.pool.connect();
+
+  let transactionStarted = false;
+  let created;
+
   try {
     await client.query("BEGIN");
+    transactionStarted = true;
 
-    // Check slot collision inside transaction
     const slotTaken = await repo.isSlotBooked(
       data.doctorId,
       data.appointmentDate,
@@ -96,18 +153,20 @@ const createAppointment = async (data) => {
       null,
       client
     );
+
     if (slotTaken) {
-      throw ApiError.conflict("The requested appointment slot is already booked");
+      throw ApiError.conflict(
+        "The requested appointment slot is already booked"
+      );
     }
 
-    // Get sequential token number safely
     const tokenNumber = await repo.getNextTokenNumber(
       data.doctorId,
       data.appointmentDate,
       client
     );
 
-    const created = await repo.createAppointmentWithClient(
+    created = await repo.createAppointmentWithClient(
       {
         ...data,
         endTime,
@@ -119,19 +178,42 @@ const createAppointment = async (data) => {
     );
 
     await client.query("COMMIT");
-
-    // Return detailed representation
-    return await repo.findAppointmentById(created.id);
+    transactionStarted = false;
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (transactionStarted) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Appointment transaction rollback failed:", rollbackError.message);
+      }
+    }
+
     throw error;
   } finally {
     client.release();
   }
+
+  // Schedule notifications only after the appointment is committed.
+  await scheduleNotificationsSafely(async () => {
+    await notificationService.scheduleEvent(
+      created.id,
+      "booking_confirmation",
+      ["sms"]
+    );
+
+    await notificationService.scheduleAppointmentReminders(created.id);
+  });
+
+  return created;
 };
+
+// ======================================================
+// 2. RESCHEDULE APPOINTMENT
+// ======================================================
 
 const rescheduleAppointment = async (id, data) => {
   const existing = await repo.findAppointmentById(id);
+
   if (!existing) {
     throw ApiError.notFound("Appointment not found");
   }
@@ -143,40 +225,74 @@ const rescheduleAppointment = async (id, data) => {
   }
 
   const today = getTodayDateStr();
+
   if (data.appointmentDate < today) {
-    throw ApiError.badRequest("New appointment date cannot be in the past");
+    throw ApiError.badRequest(
+      "New appointment date cannot be in the past"
+    );
   }
 
-  // Check Doctor Leave on new date
-  const leave = await repo.isDoctorOnLeave(existing.doctor_id, data.appointmentDate);
+  // Check approved leave on the new date.
+  const leave = await repo.isDoctorOnLeave(
+    existing.doctor_id,
+    data.appointmentDate
+  );
+
   if (leave) {
     throw ApiError.badRequest(
-      `Doctor is on approved leave on ${data.appointmentDate}. Reason: ${leave.reason || "Personal"}`
+      `Doctor is on approved leave on ${data.appointmentDate}. Reason: ${
+        leave.reason || "Personal"
+      }`
     );
   }
 
   const endTime = calculateEndTime(data.startTime, 15);
 
-  // Check published roster for new date
-  const publishedRosters = await repo.getPublishedRoster(existing.doctor_id, data.appointmentDate);
+  // Find a matching roster and room for the new date.
+  const publishedRosters = await repo.getPublishedRoster(
+    existing.doctor_id,
+    data.appointmentDate
+  );
+
   let matchedRosterId = null;
   let assignedRoomId = data.roomId || existing.room_id || null;
 
   if (publishedRosters.length > 0) {
     const shift = publishedRosters.find(
-      (r) => data.startTime >= r.start_time.slice(0, 5) && endTime <= r.end_time.slice(0, 5)
+      (roster) =>
+        data.startTime >= String(roster.start_time).slice(0, 5) &&
+        endTime <= String(roster.end_time).slice(0, 5)
     );
+
     if (shift) {
       matchedRosterId = shift.id;
+
       if (!assignedRoomId && shift.room_id) {
         assignedRoomId = shift.room_id;
       }
+    } else {
+      throw ApiError.badRequest(
+        "Requested time is outside the doctor's published roster"
+      );
+    }
+  }
+
+  if (assignedRoomId) {
+    const room = await repo.findRoomById(assignedRoomId);
+
+    if (!room) {
+      assignedRoomId = null;
     }
   }
 
   const client = await repo.pool.connect();
+
+  let transactionStarted = false;
+  let updated;
+
   try {
     await client.query("BEGIN");
+    transactionStarted = true;
 
     const slotTaken = await repo.isSlotBooked(
       existing.doctor_id,
@@ -186,8 +302,11 @@ const rescheduleAppointment = async (id, data) => {
       id,
       client
     );
+
     if (slotTaken) {
-      throw ApiError.conflict("Requested new appointment slot is already booked");
+      throw ApiError.conflict(
+        "Requested new appointment slot is already booked"
+      );
     }
 
     const tokenNumber = await repo.getNextTokenNumber(
@@ -196,7 +315,7 @@ const rescheduleAppointment = async (id, data) => {
       client
     );
 
-    const updated = await repo.rescheduleAppointmentWithClient(
+    updated = await repo.rescheduleAppointmentWithClient(
       id,
       {
         ...data,
@@ -208,19 +327,51 @@ const rescheduleAppointment = async (id, data) => {
       client
     );
 
-    await client.query("COMMIT");
+    if (!updated) {
+      throw ApiError.notFound(
+        "Appointment could not be rescheduled"
+      );
+    }
 
-    return await repo.findAppointmentById(updated.id);
+    await client.query("COMMIT");
+    transactionStarted = false;
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (transactionStarted) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Reschedule transaction rollback failed:", rollbackError.message);
+      }
+    }
+
     throw error;
   } finally {
     client.release();
   }
+
+  // Cancel old reminders and create notifications for the new schedule.
+  await scheduleNotificationsSafely(async () => {
+    await notificationService.cancelPendingForAppointment(id);
+
+    await notificationService.scheduleEvent(
+      id,
+      "rescheduled",
+      ["sms"]
+    );
+
+    await notificationService.scheduleAppointmentReminders(id);
+  });
+
+  return updated;
 };
+
+// ======================================================
+// 3. CANCEL APPOINTMENT
+// ======================================================
 
 const cancelAppointment = async (id, reason) => {
   const existing = await repo.findAppointmentById(id);
+
   if (!existing) {
     throw ApiError.notFound("Appointment not found");
   }
@@ -232,17 +383,44 @@ const cancelAppointment = async (id, reason) => {
   }
 
   const cancelled = await repo.cancelAppointment(id, reason);
-  return await repo.findAppointmentById(cancelled.id);
+
+  if (!cancelled) {
+    throw ApiError.badRequest(
+      "Appointment could not be cancelled"
+    );
+  }
+
+  await scheduleNotificationsSafely(async () => {
+    await notificationService.cancelPendingForAppointment(id);
+
+    await notificationService.scheduleEvent(
+      id,
+      "cancellation",
+      ["sms"]
+    );
+  });
+
+  return cancelled;
 };
 
+// ======================================================
+// 4. GET AVAILABLE SLOTS
+// ======================================================
+
 const getAvailableSlots = async (doctorId, date, duration = 15) => {
+  if (!Number.isInteger(duration) || duration <= 0 || duration > 1440) {
+    throw ApiError.badRequest("Duration must be a positive number of minutes");
+  }
+
   const doctor = await repo.findDoctorById(doctorId);
+
   if (!doctor) {
     throw ApiError.notFound("Doctor not found or currently inactive");
   }
 
-  // 1. Check leave
+  // Check doctor leave.
   const leave = await repo.isDoctorOnLeave(doctorId, date);
+
   if (leave) {
     return {
       doctorId,
@@ -256,70 +434,93 @@ const getAvailableSlots = async (doctorId, date, duration = 15) => {
     };
   }
 
-  // 2. Published Rosters or Fallback Recurring Schedule
+  // Use published rosters or fall back to recurring schedules.
   let workingWindows = [];
+
   const publishedRosters = await repo.getPublishedRoster(doctorId, date);
 
   if (publishedRosters.length > 0) {
-    workingWindows = publishedRosters.map((r) => ({
-      shiftType: r.shift_type,
-      startTime: r.start_time.slice(0, 5),
-      endTime: r.end_time.slice(0, 5),
-      roomId: r.room_id,
+    workingWindows = publishedRosters.map((roster) => ({
+      shiftType: roster.shift_type,
+      startTime: String(roster.start_time).slice(0, 5),
+      endTime: String(roster.end_time).slice(0, 5),
+      roomId: roster.room_id,
     }));
   } else {
-    // Check master schedule for day of week (0=Sunday ... 6=Saturday)
-    const dayOfWeek = new Date(date).getUTCDay();
-    const schedules = await repo.getRecurringSchedule(doctorId, dayOfWeek);
+    const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
+    const schedules = await repo.getRecurringSchedule(
+      doctorId,
+      dayOfWeek
+    );
+
     if (schedules.length > 0) {
-      workingWindows = schedules.map((s) => ({
-        shiftType: s.shift_type,
-        startTime: s.start_time.slice(0, 5),
-        endTime: s.end_time.slice(0, 5),
-        roomId: s.room_id,
+      workingWindows = schedules.map((schedule) => ({
+        shiftType: schedule.shift_type,
+        startTime: String(schedule.start_time).slice(0, 5),
+        endTime: String(schedule.end_time).slice(0, 5),
+        roomId: schedule.room_id,
       }));
     } else {
-      // Standard default OPD shift fallback: 09:00 - 13:00, 14:00 - 17:00
       workingWindows = [
-        { shiftType: "morning", startTime: "09:00", endTime: "13:00" },
-        { shiftType: "evening", startTime: "14:00", endTime: "17:00" },
+        {
+          shiftType: "morning",
+          startTime: "09:00",
+          endTime: "13:00",
+        },
+        {
+          shiftType: "evening",
+          startTime: "14:00",
+          endTime: "17:00",
+        },
       ];
     }
   }
 
-  // 3. Existing Bookings
-  const existingBookings = await repo.getAppointmentsForDoctor(doctorId, date);
+  // Retrieve existing bookings.
+  const existingBookings = await repo.getAppointmentsForDoctor(
+    doctorId,
+    date
+  );
 
-  // 4. Generate Slots
   const slots = [];
   let availableCount = 0;
 
+  // Generate slots and mark conflicts.
   for (const window of workingWindows) {
-    const [sh, sm] = window.startTime.split(":").map(Number);
-    const [eh, em] = window.endTime.split(":").map(Number);
-    const startMins = sh * 60 + sm;
-    const endMins = eh * 60 + em;
+    const [startHour, startMinute] = window.startTime.split(":").map(Number);
+    const [endHour, endMinute] = window.endTime.split(":").map(Number);
 
-    for (let t = startMins; t + duration <= endMins; t += duration) {
-      const sH = String(Math.floor(t / 60)).padStart(2, "0");
-      const sM = String(t % 60).padStart(2, "0");
-      const slotStart = `${sH}:${sM}`;
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+
+    for (
+      let minutes = startMinutes;
+      minutes + duration <= endMinutes;
+      minutes += duration
+    ) {
+      const hour = String(Math.floor(minutes / 60)).padStart(2, "0");
+      const minute = String(minutes % 60).padStart(2, "0");
+      const slotStart = `${hour}:${minute}`;
       const slotEnd = calculateEndTime(slotStart, duration);
 
-      const conflict = existingBookings.some((b) => {
-        const bStart = String(b.start_time).slice(0, 5);
-        const bEnd = String(b.end_time).slice(0, 5);
-        return slotStart < bEnd && slotEnd > bStart;
+      const conflict = existingBookings.some((booking) => {
+        const bookingStart = String(booking.start_time).slice(0, 5);
+        const bookingEnd = String(booking.end_time).slice(0, 5);
+
+        return slotStart < bookingEnd && slotEnd > bookingStart;
       });
 
-      const isAvailable = !conflict;
-      if (isAvailable) availableCount++;
+      const available = !conflict;
+
+      if (available) {
+        availableCount++;
+      }
 
       slots.push({
         shiftType: window.shiftType,
         startTime: slotStart,
         endTime: slotEnd,
-        available: isAvailable,
+        available,
       });
     }
   }
@@ -336,24 +537,40 @@ const getAvailableSlots = async (doctorId, date, duration = 15) => {
   };
 };
 
+// ======================================================
+// 5. GET APPOINTMENT BY ID
+// ======================================================
+
 const getAppointmentById = async (id) => {
   const appointment = await repo.findAppointmentById(id);
+
   if (!appointment) {
     throw ApiError.notFound("Appointment not found");
   }
+
   return appointment;
 };
 
+// ======================================================
+// 6. LIST APPOINTMENTS
+// ======================================================
+
 const listAppointments = async (filters) => {
-  return await repo.listAppointments(filters);
+  return repo.listAppointments(filters);
 };
+
+// ======================================================
+// 7. GET PATIENT APPOINTMENT HISTORY
+// ======================================================
 
 const getPatientHistory = async (patientId) => {
   const patient = await repo.findPatientById(patientId);
+
   if (!patient) {
     throw ApiError.notFound("Patient not found");
   }
-  return await repo.getPatientHistory(patientId);
+
+  return repo.getPatientHistory(patientId);
 };
 
 module.exports = {

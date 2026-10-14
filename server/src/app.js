@@ -8,6 +8,9 @@ const queueRoutes = require("./modules/queue/queue.routes");
 const notFound = require("./middleware/not-found.middleware");
 const errorHandler = require("./middleware/error.middleware");
 const pool = require("./config/db");
+const notificationRoutes = require("./modules/notifications/notification.routes");
+const startNotificationScheduler = require("./modules/notifications/notification.scheduler");
+
 
 const app = express();
 
@@ -57,8 +60,16 @@ app.use("/api/rosters", rosterRoutes);
 // 3.3 Token Queue / Waiting Room Display
 app.use("/api/queue", queueRoutes);
 
+// 3.4 Message apis
+
+app.use("/api/notifications", notificationRoutes);
+
+
 // 404 & Global Error Handling
 app.use(notFound);
 app.use(errorHandler);
+
+startNotificationScheduler();
+
 
 module.exports = app;
