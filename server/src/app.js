@@ -13,6 +13,7 @@ const startNotificationScheduler = require("./modules/notifications/notification
 const billingRoutes = require("./modules/billing/billing.routes");
 const ipdBillingRoutes = require("./modules/billing/ipd-billing.routes");
 const dischargeBillingRoutes = require("./modules/billing/discharge-billing.routes");
+const depositRoutes = require("./modules/billing/deposit.routes");
 
 const app = express();
 
@@ -74,6 +75,9 @@ app.use("/api/billing/ipd", ipdBillingRoutes);
 
 // Module 4.3: Discharge Final Billing
 app.use("/api/billing/ipd", dischargeBillingRoutes);
+
+// Module 4.4: Deposite Billing
+app.use("/api/billing/deposits", depositRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
