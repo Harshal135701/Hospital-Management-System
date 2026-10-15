@@ -27,6 +27,8 @@ const clinicalNotesRoutes = require("./modules/clinical-notes/clinical-notes.rou
 const preauthorizationRoutes = require("./modules/insurance-tpa/preauthorization.routes");
 const enhancementRoutes = require("./modules/insurance-tpa/enhancement.routes");
 const claimDossierRoutes = require("./modules/insurance-tpa/claim-dossier.routes");
+const responsibilityRoutes = require("./modules/insurance-tpa/responsibility.routes");
+const reconciliationRoutes = require("./modules/insurance-tpa/reconciliation.routes");
 
 const app = express();
 
@@ -126,6 +128,12 @@ app.use("/api/insurance/enhancements", enhancementRoutes);
 
 // 7.3  Claim Dossier Compilation & Submission
 app.use("/api/insurance/claims", claimDossierRoutes);
+
+// 7.4 Co-Payment & Deductible Collection
+app.use("/api/insurance/responsibilities", responsibilityRoutes);
+
+// 7.5 TPA Reconciliation & Payment Posting
+app.use("/api/insurance/reconciliations", reconciliationRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
