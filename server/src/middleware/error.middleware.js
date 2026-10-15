@@ -27,12 +27,14 @@ function errorHandler(err, req, res, next) {
 
   // 3. PostgreSQL Database Errors
   if (err.code) {
+    const isProd = process.env.NODE_ENV === 'production';
+
     // Unique violation (e.g. duplicate donor_code, bag_barcode, requisition_number)
     if (err.code === '23505') {
       return res.status(409).json({
         success: false,
         message: 'Conflict: A record with this unique identifier already exists.',
-        detail: err.detail
+        ...(isProd ? {} : { detail: err.detail })
       });
     }
 
@@ -41,7 +43,7 @@ function errorHandler(err, req, res, next) {
       return res.status(400).json({
         success: false,
         message: 'Invalid reference: The referenced record does not exist.',
-        detail: err.detail
+        ...(isProd ? {} : { detail: err.detail })
       });
     }
 
@@ -49,8 +51,8 @@ function errorHandler(err, req, res, next) {
     if (err.code === '23514') {
       return res.status(400).json({
         success: false,
-        message: `Database constraint violation: ${err.message}`,
-        constraint: err.constraint
+        message: isProd ? 'Database check constraint failed.' : `Database constraint violation: ${err.message}`,
+        ...(isProd ? {} : { constraint: err.constraint })
       });
     }
 
@@ -59,16 +61,17 @@ function errorHandler(err, req, res, next) {
       return res.status(422).json({
         success: false,
         message: err.message,
-        hint: err.hint
+        ...(isProd ? {} : { hint: err.hint })
       });
     }
   }
 
   // Fallback 500 Internal Error
   console.error('[Unhandled Error]', err);
+  const isProd = process.env.NODE_ENV === 'production';
   return res.status(500).json({
     success: false,
-    message: err.message || 'Internal server error'
+    message: isProd ? 'Internal server error' : (err.message || 'Internal server error')
   });
 }
 

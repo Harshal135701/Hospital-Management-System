@@ -2,6 +2,16 @@ import pg from 'pg';
 const { Pool } = pg;
 import path from 'path';
 import http from 'http';
+import crypto from 'crypto';
+
+import dotenv from 'dotenv';
+dotenv.config();
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return `scrypt$${salt}$${derivedKey.toString('hex')}`;
+}
 
 // ============================================================================
 // STRICT SAFETY GUARD: ENSURE DISPOSABLE TEST DATABASE ONLY
@@ -13,11 +23,12 @@ if (TEST_DB === DEV_DB) {
   throw new Error('FATAL: TEST_DB cannot be the same as DEV_DB!');
 }
 
+// Strictly force DB_NAME to TEST_DB regardless of what is in .env
 process.env.DB_NAME = TEST_DB;
 process.env.DB_HOST = process.env.DB_HOST || 'localhost';
 process.env.DB_PORT = process.env.DB_PORT || '5432';
 process.env.DB_USER = process.env.DB_USER || 'postgres';
-process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'Krishna@01';
+process.env.DB_PASSWORD = process.env.DB_PASSWORD || '';
 
 console.log('------------------------------------------------------------');
 console.log('SAFETY VERIFICATION: Automated Integration Test Suite');
@@ -65,7 +76,39 @@ async function setupDatabase() {
     console.log('[Setup] Applying Migration 3: 1791785895061_blood-bank-refinements.js...');
     await executeMigration(client, 'migrations/1791785895061_blood-bank-refinements.js');
 
-    console.log(`✓ All migrations successfully applied to ${TEST_DB}`);
+    console.log('[Setup] Applying Migration 4: 1791800000000_staff-accounts-and-rbac.js...');
+    await executeMigration(client, 'migrations/1791800000000_staff-accounts-and-rbac.js');
+
+    // Pre-populate Department & Doctor in Disposable DB
+    const deptRes = await client.query("INSERT INTO departments (name, code) VALUES ('Transfusion Medicine', 'TM') RETURNING id");
+    const deptId = deptRes.rows[0].id;
+    const traumaDeptRes = await client.query("INSERT INTO departments (name, code) VALUES ('Trauma Surgery', 'TS') RETURNING id");
+    const traumaDeptId = traumaDeptRes.rows[0].id;
+
+    const docRes = await client.query(
+      "INSERT INTO doctors (employee_code, full_name, mobile, department_id, is_active) VALUES ('DOC-TR-01', 'Dr. Arindam Mitra', '9830000001', $1, TRUE) RETURNING id",
+      [traumaDeptId]
+    );
+    const doctorId = docRes.rows[0].id;
+
+    // Pre-populate staff accounts with salted scrypt hashes
+    const testAccounts = [
+      { code: 'EMP-BBO-01', name: 'Dr. Meenakshi Sundaram', email: 'bbo@hospital.test', pass: 'BBO#Secure2026!', role: 'blood_bank_officer', docId: null, deptId, pin: null },
+      { code: 'EMP-LAB-01', name: 'Anirban Das', email: 'tech@hospital.test', pass: 'Tech#Pass2026!', role: 'lab_technician', docId: null, deptId, pin: null },
+      { code: 'EMP-PHL-01', name: 'Savitri Devi', email: 'phleb@hospital.test', pass: 'Phleb#Pass2026!', role: 'phlebotomist', docId: null, deptId, pin: null },
+      { code: 'EMP-DOC-01', name: 'Dr. Arindam Mitra', email: 'doctor@hospital.test', pass: 'Doc#Pass2026!', role: 'clinician_doctor', docId: doctorId, deptId: traumaDeptId, pin: '123456' },
+      { code: 'EMP-REC-01', name: 'Alok Roy', email: 'reception@hospital.test', pass: 'Recept#Pass2026!', role: 'receptionist', docId: null, deptId, pin: null }
+    ];
+
+    for (const acc of testAccounts) {
+      await client.query(
+        `INSERT INTO staff_accounts (employee_code, full_name, email, password_hash, emergency_pin_hash, role, doctor_id, department_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [acc.code, acc.name, acc.email, hashPassword(acc.pass), acc.pin ? hashPassword(acc.pin) : null, acc.role, acc.docId, acc.deptId]
+      );
+    }
+
+    console.log(`✓ All migrations and staff seed accounts successfully applied to ${TEST_DB}`);
   } finally {
     client.release();
   }
@@ -101,6 +144,39 @@ async function runTests() {
     baseUrl = `http://localhost:${port}/api`;
     console.log(`[Server] Test Express server listening on ephemeral port ${port} -> ${baseUrl}`);
 
+    // Obtain auth tokens for test personas
+    const nativeFetch = globalThis.fetch;
+
+    const bboLoginRes = await nativeFetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'bbo@hospital.test', password: 'BBO#Secure2026!' })
+    });
+    const bboLoginData = await bboLoginRes.json();
+    const bboToken = bboLoginData.data.token;
+
+    const recLoginRes = await nativeFetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'reception@hospital.test', password: 'Recept#Pass2026!' })
+    });
+    const recLoginData = await recLoginRes.json();
+    const receptionToken = recLoginData.data.token;
+
+    // Define smart fetch wrapper that injects Authorization headers automatically
+    const fetch = (url, options = {}) => {
+      const opts = { ...options };
+      opts.headers = { ...(opts.headers || {}) };
+      if (!opts.headers['Authorization'] && !opts.headers['authorization']) {
+        if (url.includes('/api/patients') && (opts.method || 'GET').toUpperCase() === 'POST') {
+          opts.headers['Authorization'] = `Bearer ${receptionToken}`;
+        } else if (!url.endsWith('/health') && !url.includes('/auth/login')) {
+          opts.headers['Authorization'] = `Bearer ${bboToken}`;
+        }
+      }
+      return nativeFetch(url, opts);
+    };
+
     // ========================================================================
     // SUITE 1: HEALTH & PATIENT API
     // ========================================================================
@@ -127,11 +203,16 @@ async function runTests() {
       assert(createPatRes.status === 201, 'POST /patients creates patient (201)');
       assert(patData.data.uhid === 'UHID-2026-TEST01', 'Patient has correct UHID');
 
-      // Fetch Patient by UHID
+      // Step 2: Confirm patient physically persisted in PostgreSQL table
+      const patDbCheck = await pool.query('SELECT * FROM patients WHERE uhid = $1', ['UHID-2026-TEST01']);
+      assert(patDbCheck.rows.length === 1, 'Step 2: Patient confirmed physically persisted in PostgreSQL');
+      assert(patDbCheck.rows[0].full_name === 'Ananya Mukherjee', 'Step 2: Patient DB record full_name matches');
+
+      // Fetch Patient by UHID (Step 3)
       const getPatRes = await fetch(`${baseUrl}/patients/UHID-2026-TEST01`);
       const getPatData = await getPatRes.json();
-      assert(getPatRes.status === 200, 'GET /patients/:uhid returns HTTP 200');
-      assert(getPatData.data.full_name === 'Ananya Mukherjee', 'Patient full_name matches');
+      assert(getPatRes.status === 200, 'GET /patients/:uhid returns HTTP 200 (Step 3)');
+      assert(getPatData.data.full_name === 'Ananya Mukherjee', 'Patient full_name matches (Step 3)');
     }
 
     // ========================================================================
@@ -160,6 +241,16 @@ async function runTests() {
       assert(createDonorRes.status === 201, 'POST /blood-bank/donors returns 201');
       assert(donorData.data.donor_code.startsWith('DNR-'), 'Donor has sequential donor_code');
       donorId = donorData.data.id;
+
+      // Step 5: Verify donor is saved in PostgreSQL and appears in donor API response
+      const donorDbCheck = await pool.query('SELECT * FROM blood_donors WHERE id = $1', [donorId]);
+      assert(donorDbCheck.rows.length === 1, 'Step 5: Donor confirmed physically persisted in PostgreSQL');
+      assert(donorDbCheck.rows[0].donor_code.startsWith('DNR-'), 'Step 5: Donor DB record has valid DNR- code');
+
+      const donorApiRes = await fetch(`${baseUrl}/blood-bank/donors/${donorId}`);
+      const donorApiData = await donorApiRes.json();
+      assert(donorApiRes.status === 200, 'Step 5: GET /blood-bank/donors/:id returns 200');
+      assert(donorApiData.data.full_name === 'Vikramaditya Roy', 'Step 5: Donor name matches in API response');
 
       // Screening Test A: Hemoglobin < 12.5 g/dL should defer donor
       const deferScreeningRes = await fetch(`${baseUrl}/blood-bank/screenings`, {
@@ -355,7 +446,23 @@ async function runTests() {
       });
       assert(badCollectionRes.status === 400, 'Collection from non-approved screening rejected (400)');
 
-      // Valid Primary Collection
+      // Step 7: Blood collection from an unscreened donor strictly rejected
+      const unscreenedColRes = await fetch(`${baseUrl}/blood-bank/donations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donor_id: donorId,
+          screening_id: 'a0000000-0000-0000-0000-000000000001', // Non-existent screening
+          primary_bag_barcode: 'BB-UNSCREENED-001',
+          volume_ml: 450,
+          bag_type: 'single',
+          collection_type: 'voluntary',
+          phlebotomist_name: 'Nurse Savitri Devi'
+        })
+      });
+      assert(unscreenedColRes.status === 400 || unscreenedColRes.status === 404, 'Step 7: Collection from unscreened donor rejected by backend (400/404)');
+
+      // Valid Primary Collection (Step 8)
       const bagBarcode = 'BB-2026-98745612301';
       const colRes = await fetch(`${baseUrl}/blood-bank/donations`, {
         method: 'POST',
@@ -376,7 +483,7 @@ async function runTests() {
       assert(colData.data.primary_bag_barcode === bagBarcode, 'Bag barcode recorded');
       donationId = colData.data.id;
 
-      // Safety Test 2: Duplicate primary bag barcode strictly blocked (409 Conflict)
+      // Safety Test 2 (Step 9): Duplicate primary bag barcode strictly blocked (409 Conflict)
       const dupColRes = await fetch(`${baseUrl}/blood-bank/donations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -390,9 +497,13 @@ async function runTests() {
           phlebotomist_name: 'Nurse Savitri Devi'
         })
       });
-      assert(dupColRes.status === 409, 'Duplicate primary bag barcode rejected (409 Conflict)');
+      assert(dupColRes.status === 409, 'Step 9: Duplicate primary bag barcode rejected (409 Conflict)');
 
-      // Requirement 5.2 & 5.4 Verification: Automatic Pilot Sample Tubes Created
+      // Step 9: Database confirms no duplicate donation or sample rows created
+      const dupDbCheck = await pool.query('SELECT COUNT(*) FROM blood_donations WHERE primary_bag_barcode = $1', [bagBarcode]);
+      assert(parseInt(dupDbCheck.rows[0].count, 10) === 1, 'Step 9: Database confirms duplicate attempt did not create duplicate donation');
+
+      // Requirement 5.2 & 5.4 Verification: Automatic Pilot Sample Tubes Created (Step 8)
       const donDetailsRes = await fetch(`${baseUrl}/blood-bank/donations`);
       const donDetails = await donDetailsRes.json();
       const targetDon = donDetails.data.find(d => d.id === donationId);
@@ -400,6 +511,10 @@ async function runTests() {
       assert(targetDon.pilot_samples.length === 3, 'Exactly 3 pilot sample tubes generated (-EDTA, -CLOT, -NAT)');
       const tubeTypes = targetDon.pilot_samples.map(s => s.tube_type);
       assert(tubeTypes.includes('edta') && tubeTypes.includes('plain_clot') && tubeTypes.includes('nat'), 'All required tube types (edta, plain_clot, nat) recorded');
+
+      // Step 8: Confirm physical persistence of 3 pilot sample tubes in PostgreSQL
+      const samplesDbCheck = await pool.query('SELECT * FROM blood_samples WHERE donation_id = $1 ORDER BY tube_type ASC', [donationId]);
+      assert(samplesDbCheck.rows.length === 3, 'Step 8: Exactly 3 pilot sample tubes physically persisted in PostgreSQL');
 
       // Requirement 5.2: Verification of All Bag Types (single, double, quadruple)
       for (const bType of ['single', 'double', 'quadruple']) {
@@ -466,10 +581,15 @@ async function runTests() {
       assert(compData.data[0].status === 'quarantined', 'Components initially quarantined');
       prbcComponentId = compData.data[0].id;
 
-      // GET /blood-bank/components
+      // GET /blood-bank/components (Step 10)
       const getCompRes = await fetch(`${baseUrl}/blood-bank/components?status=quarantined`);
       const getCompData = await getCompRes.json();
-      assert(getCompData.data.length >= 2, 'GET /components retrieves quarantined inventory');
+      assert(getCompData.data.length >= 2, 'Step 10: GET /components retrieves quarantined inventory');
+
+      // Step 10: Confirm physical persistence of components in PostgreSQL
+      const compDbCheck = await pool.query('SELECT * FROM blood_components WHERE parent_donation_id = $1', [donationId]);
+      assert(compDbCheck.rows.length === 2, 'Step 10: Exactly 2 blood components physically persisted in PostgreSQL');
+      assert(compDbCheck.rows.every(c => c.status === 'quarantined'), 'Step 10: All newly separated components confirmed quarantined in database');
     }
 
     // ========================================================================
@@ -538,7 +658,7 @@ async function runTests() {
       });
       assert(badRelease1.status === 400, 'Safe release without dual grouping verification strictly rejected (400)');
 
-      // Safety Test 2: Safe release authorization with reactive TTI strictly rejected (400)
+      // Safety Test 2 (Step 13): Safe release authorization with reactive TTI strictly rejected (400)
       const badRelease2 = await fetch(`${baseUrl}/blood-bank/release-authorizations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -551,9 +671,19 @@ async function runTests() {
           notes: 'Attempted release with reactive TTI'
         })
       });
-      assert(badRelease2.status === 400, 'Safe release with reactive/untested TTI strictly rejected (400)');
+      assert(badRelease2.status === 400, 'Step 13: Safe release with reactive/untested TTI strictly rejected (400)');
 
-      // 3. Valid Safe Release Authorization
+      // Step 14: Verify that a component cannot be released simply because frontend displays positive status
+      // Direct SQL update attempt without an approved release authorization must be aborted by database trigger
+      let directStatusUpdateFailed = false;
+      try {
+        await pool.query("UPDATE blood_components SET status = 'safe_for_release' WHERE id = $1", [prbcComponentId]);
+      } catch (err) {
+        directStatusUpdateFailed = true;
+      }
+      assert(directStatusUpdateFailed === true, 'Step 14: Direct component status update to safe_for_release strictly blocked by database trigger fn_assert_donation_safe_release');
+
+      // 3. Valid Safe Release Authorization (Step 14)
       const releaseRes = await fetch(`${baseUrl}/blood-bank/release-authorizations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -567,14 +697,18 @@ async function runTests() {
         })
       });
       const releaseData = await releaseRes.json();
-      assert(releaseRes.status === 201, 'Safe release authorization approved');
-      assert(releaseData.data.release_decision === 'approved_for_release', 'Decision approved_for_release');
+      assert(releaseRes.status === 201, 'Step 14: Safe release authorization approved (201)');
+      assert(releaseData.data.release_decision === 'approved_for_release', 'Step 14: Decision approved_for_release');
 
       // Verify PRBC component transitioned to safe_for_release
       const compCheckRes = await fetch(`${baseUrl}/blood-bank/components?status=safe_for_release`);
       const compCheckData = await compCheckRes.json();
       const releasedPrbc = compCheckData.data.find(c => c.id === prbcComponentId);
-      assert(releasedPrbc !== undefined, 'PRBC component status transitioned to safe_for_release');
+      assert(releasedPrbc !== undefined, 'Step 14: PRBC component status transitioned to safe_for_release');
+
+      // Verify FFP component also transitioned to safe_for_release
+      const releasedFfp = compCheckData.data.find(c => c.component_type === 'ffp');
+      assert(releasedFfp !== undefined, 'Step 14: FFP component status also transitioned to safe_for_release');
     }
 
     // ========================================================================
@@ -620,9 +754,15 @@ async function runTests() {
         })
       });
       const reqData = await reqRes.json();
-      assert(reqRes.status === 201, 'POST /requisitions returns 201');
-      assert(reqData.data.requisition_number.startsWith('REQ-'), 'Requisition has REQ number');
+      assert(reqRes.status === 201, 'Step 15: POST /requisitions with valid UHID returns 201');
+      assert(reqData.data.requisition_number.startsWith('REQ-'), 'Step 15: Requisition has generated REQ number');
       requisitionId = reqData.data.id;
+
+      // Step 16: Verify requisition physically persisted in PostgreSQL and visible on read-back
+      const reqDbCheck = await pool.query('SELECT * FROM blood_requisitions WHERE id = $1', [requisitionId]);
+      assert(reqDbCheck.rows.length === 1, 'Step 16: Requisition confirmed physically persisted in PostgreSQL');
+      assert(reqDbCheck.rows[0].status === 'pending', 'Step 16: Requisition initial status in PostgreSQL is pending');
+      assert(reqDbCheck.rows[0].units_requested === 1, 'Step 16: Requisition units_requested = 1');
 
       // Safety Test 2: Incompatible crossmatch cannot be reserved
       const incompatibleXmRes = await fetch(`${baseUrl}/blood-bank/crossmatches`, {
@@ -887,6 +1027,105 @@ async function runTests() {
       const targetReqAfterIssue = reqAfterIssueData.data.find(r => r.id === winningRequisitionId);
       assert(targetReqAfterIssue.units_issued === 1, 'Requisition units_issued incremented to 1');
       assert(targetReqAfterIssue.status === 'fulfilled', 'Requisition status transitioned to fulfilled');
+
+      // ======================================================================
+      // EMERGENCY UNCROSSED WORKFLOW (Step 19 & 20)
+      // ======================================================================
+      // 1. Create stat_emergency requisition for emergency release testing
+      const statReqRes = await fetch(`${baseUrl}/blood-bank/requisitions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_uhid: 'UHID-2026-TEST01',
+          requested_component: 'ffp',
+          units_requested: 1,
+          urgency: 'stat_emergency',
+          clinical_indication: 'Severe hemorrhagic shock with exsanguinating trauma',
+          patient_blood_group: 'O',
+          patient_rh_factor: 'positive',
+          requester_name: 'Dr. Trauma Lead'
+        })
+      });
+      const statReqData = await statReqRes.json();
+      assert(statReqRes.status === 201, 'Step 19: stat_emergency requisition created (201)');
+      const statReqId = statReqData.data.id;
+
+      // 2. Fetch available FFP component
+      const ffpCheckRes = await fetch(`${baseUrl}/blood-bank/components?status=safe_for_release`);
+      const ffpCheckData = await ffpCheckRes.json();
+      const ffpComp = ffpCheckData.data.find(c => c.component_type === 'ffp');
+      assert(ffpComp !== undefined, 'Step 19: Verified safe_for_release FFP component in inventory');
+
+      // 3. Emergency release without justification strictly rejected (400)
+      const noJustRes = await fetch(`${baseUrl}/blood-bank/issues`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: statReqId,
+          component_id: ffpComp.id,
+          is_emergency_unmatched: true,
+          emergency_clinical_justification: '',
+          emergency_authorized_by_name: 'Dr. Trauma Lead',
+          issued_by_name: 'Dr. Meenakshi',
+          verified_by_name: 'Tech Anirban Das',
+          received_by_name: 'Nurse Savitri',
+          received_by_designation: 'Trauma Staff Nurse'
+        })
+      });
+      assert(noJustRes.status === 400, 'Step 19: Emergency release without justification strictly rejected (400)');
+
+      // 4. Emergency release without authorizer strictly rejected (400)
+      const noAuthRes = await fetch(`${baseUrl}/blood-bank/issues`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: statReqId,
+          component_id: ffpComp.id,
+          is_emergency_unmatched: true,
+          emergency_clinical_justification: 'Exsanguinating hemorrhagic trauma shock',
+          emergency_authorized_by_name: '',
+          issued_by_name: 'Dr. Meenakshi',
+          verified_by_name: 'Tech Anirban Das',
+          received_by_name: 'Nurse Savitri',
+          received_by_designation: 'Trauma Staff Nurse'
+        })
+      });
+      assert(noAuthRes.status === 400, 'Step 19: Emergency release without authorizer strictly rejected (400)');
+
+      // 5. Valid Emergency Uncrossed Release on stat_emergency Requisition
+      const validEmergencyRes = await fetch(`${baseUrl}/blood-bank/issues`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requisition_id: statReqId,
+          component_id: ffpComp.id,
+          is_emergency_unmatched: true,
+          emergency_clinical_justification: 'Exsanguinating hemorrhagic trauma shock requiring urgent uncrossed plasma',
+          emergency_authorizer_code: 'DOC-TR-01',
+          emergency_authorizer_pin: '123456',
+          emergency_authorized_by_name: 'Dr. Trauma Lead (Senior Consultant)',
+          issued_by_name: 'Dr. Meenakshi Sundaram (BBO)',
+          verified_by_name: 'Tech Anirban Das',
+          received_by_name: 'Staff Nurse R. Thomas (Trauma Bay)',
+          received_by_designation: 'Trauma Bay Senior Nurse',
+          transport_box_id: 'BOX-EMERG-01',
+          transport_temperature_c: 4.0,
+          cold_chain_maintained: true
+        })
+      });
+      const validEmergencyData = await validEmergencyRes.json();
+      assert(validEmergencyRes.status === 201, 'Step 19: Valid emergency uncrossed release on stat_emergency succeeds (201)');
+      assert(validEmergencyData.data.issue_slip_number.startsWith('ISS-'), 'Step 20: Emergency issue slip generated');
+      assert(validEmergencyData.data.is_emergency_unmatched === true, 'Step 20: Issue record flagged as emergency unmatched');
+
+      // Verify FFP component status transitioned to issued
+      const ffpDbCheck = await pool.query('SELECT status FROM blood_components WHERE id = $1', [ffpComp.id]);
+      assert(ffpDbCheck.rows[0].status === 'issued', 'Step 20: FFP component marked as issued in PostgreSQL');
+
+      // Verify stat requisition status transitioned to fulfilled
+      const statReqDbCheck = await pool.query('SELECT status, units_issued FROM blood_requisitions WHERE id = $1', [statReqId]);
+      assert(statReqDbCheck.rows[0].status === 'fulfilled', 'Step 20: stat_emergency requisition marked as fulfilled');
+      assert(statReqDbCheck.rows[0].units_issued === 1, 'Step 20: stat_emergency requisition units_issued incremented to 1');
     }
 
     // ========================================================================
@@ -902,6 +1141,132 @@ async function runTests() {
       assert(actionTypes.includes('component_reserved'), 'Audit trail captured COMPONENT_RESERVED action');
       assert(actionTypes.includes('reservation_cancelled_released'), 'Audit trail captured RESERVATION_CANCELLED_RELEASED action');
       assert(actionTypes.includes('safe_release_approved'), 'Audit trail captured safe_release_approved action');
+
+      // Also check FFP emergency audit log (Step 20)
+      const allAuditRes = await fetch(`${baseUrl}/blood-bank/audit-logs`);
+      const allAuditData = await allAuditRes.json();
+      const emergencyLog = allAuditData.data.find(l => l.metadata && l.metadata.emergency_release === true);
+      assert(emergencyLog !== undefined, 'Step 20: Audit trail captured EMERGENCY UNCROSSED issue with authorizer and clinical justification');
+    }
+
+    // ========================================================================
+    // SUITE 9: STORAGE TEMPERATURE LOGS & LIVE PATIENT UHID VERIFICATION
+    // ========================================================================
+    console.log('\n--- SUITE 9: Storage Temperature Logs & Patient UHID Verification ---');
+    {
+      // 1. Record compliant temperature reading for PRBC refrigerator (Step 11)
+      const normalTempRes = await fetch(`${baseUrl}/blood-bank/storage-temperature-logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storage_unit_code: 'FRIDGE-PRBC-01',
+          storage_unit_type: 'prbc_refrigerator',
+          recorded_temperature_c: 4.0,
+          target_min_temp_c: 2.0,
+          target_max_temp_c: 6.0,
+          recorded_by_name: 'Tech Anirban Das'
+        })
+      });
+      const normalTempData = await normalTempRes.json();
+      assert(normalTempRes.status === 201, 'Step 11: POST /blood-bank/storage-temperature-logs returns 201');
+      assert(normalTempData.data.alert_raised === false, 'Step 11: Compliant temperature logs alert_raised = false');
+
+      // 2. Record excursion temperature reading (8.5°C > 6.0°C) triggering alert (Step 11)
+      const alertTempRes = await fetch(`${baseUrl}/blood-bank/storage-temperature-logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storage_unit_code: 'FRIDGE-PRBC-01',
+          storage_unit_type: 'prbc_refrigerator',
+          recorded_temperature_c: 8.5,
+          target_min_temp_c: 2.0,
+          target_max_temp_c: 6.0,
+          recorded_by_name: 'Tech Sourav Paul',
+          corrective_action: 'Compressor check and door seal realignment'
+        })
+      });
+      const alertTempData = await alertTempRes.json();
+      assert(alertTempRes.status === 201, 'Step 11: Excursion temperature log recorded (201)');
+      assert(alertTempData.data.alert_raised === true, 'Step 11: Out-of-range temperature automatically raises alert');
+
+      // 3. Query all temperature logs (Step 11)
+      const allLogsRes = await fetch(`${baseUrl}/blood-bank/storage-temperature-logs`);
+      const allLogsData = await allLogsRes.json();
+      assert(allLogsRes.status === 200, 'Step 11: GET /blood-bank/storage-temperature-logs returns 200');
+      assert(allLogsData.data.length >= 2, 'Step 11: Retrieved all persisted temperature logs');
+
+      // 4. Query alert-only temperature logs (Step 11)
+      const alertsOnlyRes = await fetch(`${baseUrl}/blood-bank/storage-temperature-logs?alert_only=true`);
+      const alertsOnlyData = await alertsOnlyRes.json();
+      assert(alertsOnlyRes.status === 200, 'Step 11: Alerts filter returns 200');
+      assert(alertsOnlyData.data.length >= 1, 'Step 11: Alert filter returned excursion logs');
+      assert(alertsOnlyData.data.every(l => l.alert_raised === true), 'Step 11: All returned logs have alert_raised = true');
+
+      // 5. Patient UHID live lookup verification
+      const validUhidRes = await fetch(`${baseUrl}/patients/UHID-2026-TEST01`);
+      const validUhidData = await validUhidRes.json();
+      assert(validUhidRes.status === 200, 'Live GET /patients/:uhid returns 200 for valid patient');
+      assert(validUhidData.data.uhid === 'UHID-2026-TEST01', 'Live UHID lookup matches patient master record');
+
+      // 6. Non-existent patient UHID returns 404
+      const invalidUhidRes = await fetch(`${baseUrl}/patients/UHID-DOES-NOT-EXIST`);
+      assert(invalidUhidRes.status === 404, 'Live GET /patients/:uhid returns 404 for non-existent patient');
+    }
+
+    // ========================================================================
+    // SUITE 10: STEP 21 POST-AUDIT COMPREHENSIVE READ-BACK & STATE VERIFICATION
+    // ========================================================================
+    console.log('\n--- SUITE 10: Step 21 Comprehensive End-to-End Persistence Read-Back ---');
+    {
+      // 1. Patient Master
+      const patReadRes = await fetch(`${baseUrl}/patients/UHID-2026-TEST01`);
+      assert(patReadRes.status === 200, 'Step 21: Patient master record exists on read-back');
+
+      // 2. Donor Registry
+      const donorReadRes = await fetch(`${baseUrl}/blood-bank/donors/${donorId}`);
+      const donorReadData = await donorReadRes.json();
+      assert(donorReadRes.status === 200, 'Step 21: Donor record exists on read-back');
+      assert(donorReadData.data.donor_status === 'active', 'Step 21: Donor status remains active');
+
+      // 3. Phlebotomy & Pilot Samples
+      const donReadRes = await fetch(`${baseUrl}/blood-bank/donations`);
+      const donReadData = await donReadRes.json();
+      const donItem = donReadData.data.find(d => d.id === donationId);
+      assert(donItem !== undefined, 'Step 21: Donation record exists on read-back');
+      assert(donItem.pilot_samples.length === 3, 'Step 21: Exactly 3 pilot samples exist on read-back');
+
+      // 4. Component Inventory
+      const compReadRes = await fetch(`${baseUrl}/blood-bank/components`);
+      const compReadData = await compReadRes.json();
+      const prbcItem = compReadData.data.find(c => c.id === prbcComponentId);
+      assert(prbcItem !== undefined, 'Step 21: PRBC component exists in inventory');
+      assert(prbcItem.status === 'issued', 'Step 21: PRBC component status remains issued');
+
+      // 5. Serology Workbench
+      const seroReadRes = await fetch(`${baseUrl}/blood-bank/serology-workbench`);
+      const seroReadData = await seroReadRes.json();
+      const seroItem = seroReadData.data.find(d => d.donation_id === donationId);
+      assert(seroItem !== undefined, 'Step 21: Serology workbench record exists on read-back');
+      assert(seroItem.dual_grouping.concur === true, 'Step 21: Dual grouping verified concurred');
+      assert(seroItem.tti_tests.length === 5, 'Step 21: All 5 TTI tests exist on read-back');
+
+      // 6. Blood Requisitions
+      const reqReadRes = await fetch(`${baseUrl}/blood-bank/requisitions`);
+      const reqReadData = await reqReadRes.json();
+      const reqItem = reqReadData.data.find(r => r.id === winningRequisitionId);
+      assert(reqItem !== undefined, 'Step 21: Routine requisition exists on read-back');
+      assert(reqItem.status === 'fulfilled', 'Step 21: Routine requisition status remains fulfilled');
+
+      // 7. Blood Issues & Handover Dispatches
+      const issueReadRes = await fetch(`${baseUrl}/blood-bank/issues`);
+      const issueReadData = await issueReadRes.json();
+      assert(issueReadRes.status === 200, 'Step 21: Issues list retrieved successfully');
+      assert(issueReadData.data.length >= 2, 'Step 21: Both routine and emergency issues exist on read-back');
+
+      // 8. Immutable Audit Trail
+      const auditReadRes = await fetch(`${baseUrl}/blood-bank/audit-logs`);
+      const auditReadData = await auditReadRes.json();
+      assert(auditReadData.data.length >= 5, 'Step 21: Full audit history preserved without truncation or data loss');
     }
 
     console.log('\n============================================================');

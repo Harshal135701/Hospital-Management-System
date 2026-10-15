@@ -880,8 +880,9 @@ class BloodBankRepository {
         received_by_name, received_by_designation, dispatch_time,
         transport_box_id, transport_temperature_c, cold_chain_maintained,
         is_emergency_unmatched, emergency_clinical_justification,
-        emergency_authorizer_name, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, $12, $13, $14, $15, $16, $17)
+        emergency_authorizer_name, notes,
+        issued_by_user_id, emergency_authorized_by_doctor_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, $12, $13, $14, $15, $16, $17, $18, $19)
       RETURNING *`,
       [
         data.issue_slip_number,
@@ -900,7 +901,9 @@ class BloodBankRepository {
         data.is_emergency_unmatched || false,
         data.emergency_clinical_justification || null,
         data.emergency_authorizer_name || data.emergency_authorized_by_name || null,
-        data.notes || null
+        data.notes || null,
+        data.issued_by_user_id || null,
+        data.emergency_authorized_by_doctor_id || null
       ]
     );
 
@@ -938,6 +941,66 @@ class BloodBankRepository {
 
     const res = await pool.query(query, params);
     return res.rows;
+  }
+
+  // =========================================================================
+  // STORAGE TEMPERATURE LOGS
+  // =========================================================================
+
+  async findAllStorageTemperatureLogs({ storageUnitCode, storageUnitType, alertOnly, limit = 50, offset = 0 } = {}) {
+    let query = `
+      SELECT 
+        id, storage_unit_code, storage_unit_type, recorded_temperature_c,
+        target_min_temp_c, target_max_temp_c, agitator_operational,
+        recorded_at, recorded_by_name, alert_raised, corrective_action, created_at
+      FROM blood_storage_temperature_logs
+      WHERE 1=1
+    `;
+    const params = [];
+    if (storageUnitCode) {
+      params.push(storageUnitCode);
+      query += ` AND storage_unit_code = $${params.length}`;
+    }
+    if (storageUnitType) {
+      params.push(storageUnitType);
+      query += ` AND storage_unit_type = $${params.length}`;
+    }
+    if (alertOnly === true || alertOnly === 'true') {
+      query += ` AND alert_raised = TRUE`;
+    }
+    params.push(limit, offset);
+    query += ` ORDER BY recorded_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
+
+    const res = await pool.query(query, params);
+    return res.rows;
+  }
+
+  async createStorageTemperatureLog(data, client = pool) {
+    const alertRaised = data.alert_raised !== undefined ? data.alert_raised : (
+      Number(data.recorded_temperature_c) < Number(data.target_min_temp_c) ||
+      Number(data.recorded_temperature_c) > Number(data.target_max_temp_c)
+    );
+
+    const res = await client.query(
+      `INSERT INTO blood_storage_temperature_logs (
+        storage_unit_code, storage_unit_type, recorded_temperature_c,
+        target_min_temp_c, target_max_temp_c, agitator_operational,
+        recorded_by_name, alert_raised, corrective_action
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`,
+      [
+        data.storage_unit_code,
+        data.storage_unit_type,
+        data.recorded_temperature_c,
+        data.target_min_temp_c,
+        data.target_max_temp_c,
+        data.agitator_operational ?? null,
+        data.recorded_by_name,
+        alertRaised,
+        data.corrective_action || null
+      ]
+    );
+    return res.rows[0];
   }
 }
 

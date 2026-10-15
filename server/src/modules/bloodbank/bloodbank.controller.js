@@ -11,7 +11,8 @@ const {
   createCrossmatchSchema,
   createReservationSchema,
   cancelReservationSchema,
-  createIssueSchema
+  createIssueSchema,
+  createStorageTemperatureLogSchema
 } = require('./bloodbank.validation');
 
 class BloodBankController {
@@ -198,7 +199,10 @@ class BloodBankController {
   async issueBloodUnit(req, res, next) {
     try {
       const validated = createIssueSchema.parse(req.body);
-      const data = await bloodBankService.issueBloodUnit(validated);
+      const data = await bloodBankService.issueBloodUnit({
+        ...validated,
+        issued_by_user_id: req.user?.id || null
+      });
       res.status(201).json({ success: true, data });
     } catch (err) {
       next(err);
@@ -210,6 +214,26 @@ class BloodBankController {
     try {
       const data = await bloodBankService.getAuditLogs(req.query);
       res.status(200).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Storage Temperature Logs
+  async getStorageTemperatureLogs(req, res, next) {
+    try {
+      const data = await bloodBankService.getStorageTemperatureLogs(req.query);
+      res.status(200).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async recordStorageTemperatureLog(req, res, next) {
+    try {
+      const validated = createStorageTemperatureLogSchema.parse(req.body);
+      const data = await bloodBankService.recordStorageTemperatureLog(validated);
+      res.status(201).json({ success: true, data });
     } catch (err) {
       next(err);
     }

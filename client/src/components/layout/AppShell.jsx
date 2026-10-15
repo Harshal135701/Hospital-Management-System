@@ -17,15 +17,20 @@ import {
   X,
   ShieldCheck,
   Activity,
-  LogOut
+  LogOut,
+  LogIn,
+  Lock,
+  User
 } from 'lucide-react';
-import { Badge } from '../common/UIPrimitives';
+import { Badge, Button } from '../common/UIPrimitives';
+import { useAuth } from '../../context/AuthContext';
 
 export const AppShell = ({
   currentRoute,
   onNavigate,
   children
 }) => {
+  const { user, isAuthenticated, logout, openLoginModal } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -219,35 +224,89 @@ export const AppShell = ({
             justifyContent: 'space-between'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--color-primary-teal)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '600',
-                fontSize: '0.85rem'
-              }}
-            >
-              DR
-            </div>
-            <div>
-              <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                Dr. A. Sharma
+          {isAuthenticated && user ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'var(--color-primary-teal)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '600',
+                    fontSize: '0.85rem',
+                    flexShrink: 0
+                  }}
+                >
+                  {user.full_name ? user.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'ST'}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {user.full_name}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', textTransform: 'capitalize' }}>
+                    {user.role ? user.role.replace(/_/g, ' ') : 'Staff'}
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)' }}>
-                Chief Medical Admin
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  onClick={() => openLoginModal()}
+                  style={{ color: 'var(--color-text-muted)', padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}
+                  title="Switch Staff Account"
+                >
+                  <User size={16} />
+                </button>
+                <button
+                  onClick={logout}
+                  style={{ color: 'var(--color-error)', padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}
+                  title="Sign out"
+                >
+                  <LogOut size={16} />
+                </button>
               </div>
+            </>
+          ) : (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: '#E2E8F0',
+                    color: 'var(--color-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Lock size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                    Not Signed In
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                    Public Terminal
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={LogIn}
+                onClick={() => openLoginModal()}
+                style={{ width: '100%' }}
+              >
+                Staff Login
+              </Button>
             </div>
-          </div>
-          <button style={{ color: 'var(--color-text-muted)', padding: '6px' }} title="Sign out">
-            <LogOut size={16} />
-          </button>
+          )}
         </div>
       </aside>
 
@@ -360,6 +419,40 @@ export const AppShell = ({
               <span>Emergency & Clinical OP</span>
               <ChevronDown size={14} color="var(--color-text-muted)" />
             </div>
+
+            {/* Staff Role Badge or Sign In Button */}
+            {isAuthenticated && user ? (
+              <button
+                type="button"
+                onClick={() => openLoginModal()}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: 'var(--color-bg-pale-aqua)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(8, 127, 140, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '600',
+                  color: 'var(--color-primary-teal)',
+                  cursor: 'pointer'
+                }}
+                title="Click to switch staff role"
+              >
+                <ShieldCheck size={14} />
+                <span>{user.role ? user.role.replace(/_/g, ' ').toUpperCase() : 'STAFF'}</span>
+              </button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                icon={LogIn}
+                onClick={() => openLoginModal()}
+              >
+                Sign In
+              </Button>
+            )}
           </div>
         </header>
 

@@ -156,8 +156,22 @@ const createIssueSchema = z.object({
   cold_chain_maintained: z.boolean().optional().default(true),
   is_emergency_unmatched: z.boolean().optional().default(false),
   emergency_clinical_justification: z.string().optional().nullable(),
+  emergency_authorizer_code: z.string().optional().nullable(),
+  emergency_authorizer_pin: z.string().optional().nullable(),
   emergency_authorized_by_name: z.string().optional().nullable(),
   notes: z.string().optional().nullable()
+});
+
+const createStorageTemperatureLogSchema = z.object({
+  storage_unit_code: z.string().min(2, 'storage_unit_code is required'),
+  storage_unit_type: z.enum(['prbc_refrigerator', 'ffp_freezer', 'platelet_agitator', 'quarantine_refrigerator', 'ambient_room']),
+  recorded_temperature_c: z.coerce.number(),
+  target_min_temp_c: z.coerce.number(),
+  target_max_temp_c: z.coerce.number(),
+  agitator_operational: z.boolean().optional().nullable(),
+  recorded_by_name: z.string().min(2, 'recorded_by_name is required'),
+  alert_raised: z.boolean().optional(),
+  corrective_action: z.string().optional().nullable()
 });
 
 module.exports = {
@@ -172,5 +186,6 @@ module.exports = {
   createCrossmatchSchema,
   createReservationSchema,
   cancelReservationSchema,
-  createIssueSchema
+  createIssueSchema,
+  createStorageTemperatureLogSchema
 };

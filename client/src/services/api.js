@@ -5,19 +5,76 @@
 
 const API_BASE = '/api';
 
-// Reusable fetch wrapper
+const TOKEN_STORAGE_KEY = 'medicsprime_auth_token';
+let currentAuthToken = null;
+
+if (typeof window !== 'undefined' && window.sessionStorage) {
+  try {
+    currentAuthToken = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch (e) {
+    console.warn('[Auth] sessionStorage inaccessible');
+  }
+}
+
+export const TokenManager = {
+  getToken() {
+    if (!currentAuthToken && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        currentAuthToken = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      } catch (e) {}
+    }
+    return currentAuthToken;
+  },
+  setToken(token) {
+    currentAuthToken = token;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        if (token) {
+          window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+        } else {
+          window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+        }
+      } catch (e) {
+        console.warn('[Auth] Failed to set token in sessionStorage');
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth:state-change', { detail: { token } }));
+    }
+  },
+  clearToken() {
+    this.setToken(null);
+  }
+};
+
+// Reusable fetch wrapper with automatic Authorization header
 async function apiFetch(endpoint, options = {}) {
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+
+    const token = TokenManager.getToken();
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
+      ...options,
+      headers
     });
     const data = await res.json();
     if (!res.ok) {
+      if (res.status === 401) {
+        // Clear token on 401 Unauthorized
+        TokenManager.clearToken();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint, code: data.code, message: data.message } }));
+        }
+      }
       const err = new Error(data.message || `Request failed with status ${res.status}`);
+      err.code = data.code;
       err.details = data.details || data.errors;
       err.status = res.status;
       throw err;
@@ -89,6 +146,11 @@ export const PatientService = {
         }
       ]
     };
+  },
+
+  async getPatientByUhid(uhid) {
+    const remote = await apiFetch(`/patients/${encodeURIComponent(uhid)}`);
+    return remote?.data || remote;
   }
 };
 
@@ -474,6 +536,88 @@ export const BloodBankService = {
     const remote = await apiFetch(`/blood-bank/audit-logs${query ? '?' + query : ''}`);
     if (remote && remote.data) return { data: remote.data, isMock: false };
     return { data: [], isMock: false };
+  },
+
+  async getStorageTemperatureLogs(query = '') {
+    const remote = await apiFetch(`/blood-bank/storage-temperature-logs${query ? '?' + query : ''}`);
+    return { data: remote?.data || [], isMock: false };
+  },
+
+  async recordStorageTemperatureLog(logData) {
+    return await apiFetch('/blood-bank/storage-temperature-logs', {
+      method: 'POST',
+      body: JSON.stringify(logData)
+    });
+  }
+};
+
+/* ==========================================================================
+   AUTHENTICATION & SESSION SERVICES
+   ========================================================================== */
+
+export const AuthService = {
+  async login(email, password) {
+    const res = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+    if (res?.data?.token) {
+      TokenManager.setToken(res.data.token);
+      if (typeof window !== 'undefined' && window.sessionStorage && res.data.user) {
+        try {
+          window.sessionStorage.setItem('medicsprime_auth_user', JSON.stringify(res.data.user));
+        } catch (e) {}
+      }
+    }
+    return res.data;
+  },
+
+  async logout() {
+    try {
+      if (TokenManager.getToken()) {
+        await apiFetch('/auth/logout', { method: 'POST' });
+      }
+    } catch (e) {
+      console.warn('[Auth] Logout API call failed:', e.message);
+    } finally {
+      TokenManager.clearToken();
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.removeItem('medicsprime_auth_user');
+        } catch (e) {}
+      }
+    }
+  },
+
+  getUser() {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const u = window.sessionStorage.getItem('medicsprime_auth_user');
+        return u ? JSON.parse(u) : null;
+      } catch (e) {}
+    }
+    return null;
+  },
+
+  async getCurrentUser() {
+    const res = await apiFetch('/auth/me');
+    if (res?.data && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        window.sessionStorage.setItem('medicsprime_auth_user', JSON.stringify(res.data));
+      } catch (e) {}
+    }
+    return res?.data;
+  },
+
+  async changePassword(current_password, new_password) {
+    return await apiFetch('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ current_password, new_password })
+    });
+  },
+
+  isAuthenticated() {
+    return !!TokenManager.getToken();
   }
 };
 

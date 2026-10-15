@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { LoginModal } from './components/auth/LoginModal';
 import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { PatientsView, AppointmentsView } from './components/patients/PatientsView';
@@ -78,9 +80,12 @@ export function App() {
   };
 
   return (
-    <AppShell currentRoute={currentRoute} onNavigate={setCurrentRoute}>
-      {renderCurrentView()}
-    </AppShell>
+    <AuthProvider>
+      <AppShell currentRoute={currentRoute} onNavigate={setCurrentRoute}>
+        {renderCurrentView()}
+      </AppShell>
+      <LoginModal />
+    </AuthProvider>
   );
 }
 

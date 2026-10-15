@@ -1,5 +1,7 @@
 const bloodBankRepository = require('./bloodbank.repository');
 const patientRepository = require('../patients/patient.repository');
+const authRepository = require('../auth/auth.repository');
+const { verifyPassword } = require('../auth/auth.utils');
 const ApiError = require('../../utils/ApiError');
 
 class BloodBankService {
@@ -393,9 +395,55 @@ class BloodBankService {
       if (!data.emergency_clinical_justification || data.emergency_clinical_justification.trim().length < 5) {
         throw ApiError.badRequest('Emergency release requires documented clinical justification');
       }
-      if (!data.emergency_authorized_by_name || data.emergency_authorized_by_name.trim().length < 2) {
-        throw ApiError.badRequest('Emergency release requires an authorizing senior clinician name');
+
+      const clinicianCode = data.emergency_authorizer_code;
+      const clinicianPin = data.emergency_authorizer_pin;
+
+      if (!clinicianCode) {
+        throw ApiError.badRequest('Emergency uncrossed blood release strictly requires an authorizing clinician employee code');
       }
+      if (!clinicianPin) {
+        throw ApiError.badRequest('Emergency uncrossed blood release strictly requires the authorizing clinician Emergency Release PIN');
+      }
+
+      const doctorInfo = await authRepository.findDoctorWithStaff(clinicianCode);
+      if (!doctorInfo || !doctorInfo.doctor_active) {
+        throw ApiError.forbidden(`Clinician credential verification failed for '${clinicianCode}'. Clinician must be an active hospital doctor.`);
+      }
+
+      if (doctorInfo.pin_locked_until && new Date(doctorInfo.pin_locked_until) > new Date()) {
+        const minutesRemaining = Math.ceil((new Date(doctorInfo.pin_locked_until).getTime() - Date.now()) / 60000);
+        throw ApiError.forbidden(`Clinician emergency authorization is temporarily locked due to excessive failed PIN attempts. Try again in ${minutesRemaining} minute(s).`);
+      }
+
+      if (!doctorInfo.emergency_pin_hash) {
+        throw ApiError.forbidden(`Clinician '${clinicianCode}' does not have an active emergency release PIN configured.`);
+      }
+
+      const isPinValid = verifyPassword(String(clinicianPin), doctorInfo.emergency_pin_hash);
+      if (!isPinValid) {
+        const attempts = (doctorInfo.failed_pin_attempts || 0) + 1;
+        const lockUntil = attempts >= 3
+          ? new Date(Date.now() + 15 * 60 * 1000).toISOString()
+          : null;
+        if (doctorInfo.staff_id) {
+          await authRepository.updateFailedPin(doctorInfo.staff_id, attempts, lockUntil);
+        }
+        if (attempts >= 3) {
+          throw ApiError.forbidden('Clinician emergency authorization is temporarily locked due to excessive failed PIN attempts. Please try again in 15 minutes.');
+        }
+        throw ApiError.forbidden('Invalid clinician emergency authorization PIN');
+      }
+
+      if (doctorInfo.failed_pin_attempts > 0 || doctorInfo.pin_locked_until) {
+        if (doctorInfo.staff_id) {
+          await authRepository.resetFailedPin(doctorInfo.staff_id);
+        }
+      }
+
+      data.emergency_authorized_by_doctor_id = doctorInfo.doctor_id;
+      data.emergency_authorized_by_name = doctorInfo.doctor_name;
+      data.emergency_authorizer_name = doctorInfo.doctor_name;
     }
 
     const issueSlipNumber = this._generateCode('ISS');
@@ -421,6 +469,26 @@ class BloodBankService {
       limit,
       offset
     });
+  }
+
+  // =========================================================================
+  // STORAGE TEMPERATURE LOGS
+  // =========================================================================
+
+  async getStorageTemperatureLogs(query) {
+    const limit = parseInt(query?.limit, 10) || 50;
+    const offset = parseInt(query?.offset, 10) || 0;
+    return await bloodBankRepository.findAllStorageTemperatureLogs({
+      storageUnitCode: query?.storage_unit_code,
+      storageUnitType: query?.storage_unit_type,
+      alertOnly: query?.alert_only,
+      limit,
+      offset
+    });
+  }
+
+  async recordStorageTemperatureLog(data) {
+    return await bloodBankRepository.createStorageTemperatureLog(data);
   }
 }
 
