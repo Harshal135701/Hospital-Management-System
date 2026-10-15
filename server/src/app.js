@@ -19,6 +19,11 @@ const refundRoutes = require("./modules/billing/refund.routes");
 const settlementRoutes = require("./modules/billing/settlement.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const bloodBankRoutes = require("./modules/bloodbank/bloodbank.routes");
+const consultationRoutes = require("./modules/consultation/consultation.routes");
+const vitalsRoutes = require("./modules/consultation/vitals.routes");
+const clinicalHistoryRoutes = require("./modules/clinical-history/clinical-history.routes");
+const providerOrdersRoutes = require("./modules/provider-orders/provider-orders.routes");
+const clinicalNotesRoutes = require("./modules/clinical-notes/clinical-notes.routes");
 
 const app = express();
 
@@ -90,9 +95,25 @@ app.use("/api/billing/refunds", refundRoutes);
 // Module 4.6: Day-End Cashier Settlement
 app.use("/api/billing/settlement", settlementRoutes);
 
+// 5.1 Blood request routes
 app.use("/api/auth", authRoutes);
 app.use("/api/blood-bank", bloodBankRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
+
+//  6.1 Doctor Consultation Desk
+app.use("/api/consultations", consultationRoutes);
+
+//  6.2 Vitals Recording & Physical Examination
+app.use("/api/vitals", vitalsRoutes);
+
+//  6.3 — Clinical History & Patient Assessment
+app.use("/api/clinical-history", clinicalHistoryRoutes);
+
+// 6.4 CPOE
+app.use("/api/provider-orders", providerOrdersRoutes);
+
+// 6.5 clinical submodule
+app.use("/api/clinical-notes", clinicalNotesRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
