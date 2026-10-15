@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const appointmentRoutes = require("./modules/appointments/appointment.routes");
+const bloodRequestRoutes = require("./modules/appointments/bloodRequest.routes");
 const rosterRoutes = require("./modules/rosters/roster.routes");
 const queueRoutes = require("./modules/queue/queue.routes");
 const notFound = require("./middleware/not-found.middleware");
@@ -16,6 +17,8 @@ const dischargeBillingRoutes = require("./modules/billing/discharge-billing.rout
 const depositRoutes = require("./modules/billing/deposit.routes");
 const refundRoutes = require("./modules/billing/refund.routes");
 const settlementRoutes = require("./modules/billing/settlement.routes");
+const authRoutes = require("./modules/auth/auth.routes");
+const bloodBankRoutes = require("./modules/bloodbank/bloodbank.routes");
 
 const app = express();
 
@@ -86,6 +89,10 @@ app.use("/api/billing/refunds", refundRoutes);
 
 // Module 4.6: Day-End Cashier Settlement
 app.use("/api/billing/settlement", settlementRoutes);
+
+app.use("/api/auth", authRoutes);
+app.use("/api/blood-bank", bloodBankRoutes);
+app.use("/api/blood-requests", bloodRequestRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
