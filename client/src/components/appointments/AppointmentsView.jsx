@@ -17,7 +17,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { Card, Button, Badge, Modal, Input, Select } from '../common/UIPrimitives';
-import { AppointmentService, AppointmentBloodRequestService } from '../../services/api';
+import { AppointmentService, AppointmentBloodRequestService, TokenManager } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export function AppointmentsView() {
@@ -85,9 +85,16 @@ export function AppointmentsView() {
   // Initial Data Fetch
   useEffect(() => {
     loadData();
-  }, [activeTab, selectedDate, statusFilter]);
+  }, [activeTab, selectedDate, statusFilter, isAuthenticated]);
 
   async function loadData() {
+    if (!TokenManager.getToken()) {
+      setIsLoading(false);
+      setAppointments([]);
+      setBloodRequests([]);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(null);
     try {

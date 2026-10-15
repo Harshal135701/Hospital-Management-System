@@ -47,6 +47,53 @@ export const TokenManager = {
   }
 };
 
+const MOCK_PATIENTS = [
+  {
+    id: 'p-001',
+    uhid: 'UHID-2026-0814',
+    full_name: 'Devika Sengupta',
+    date_of_birth: '1988-04-12',
+    gender: 'female',
+    blood_group: 'B',
+    rh_factor: 'positive',
+    mobile: '+91 98301 22410',
+    created_at: '2026-02-14T09:30:00Z'
+  },
+  {
+    id: 'p-002',
+    uhid: 'UHID-2026-0922',
+    full_name: 'Rajesh Narayan Verma',
+    date_of_birth: '1974-11-23',
+    gender: 'male',
+    blood_group: 'O',
+    rh_factor: 'positive',
+    mobile: '+91 94330 88204',
+    created_at: '2026-02-15T11:15:00Z'
+  },
+  {
+    id: 'p-003',
+    uhid: 'UHID-2026-1045',
+    full_name: 'Amina Khatun',
+    date_of_birth: '1995-07-08',
+    gender: 'female',
+    blood_group: 'AB',
+    rh_factor: 'positive',
+    mobile: '+91 91234 56789',
+    created_at: '2026-02-18T14:00:00Z'
+  },
+  {
+    id: 'p-004',
+    uhid: 'UHID-2026-1180',
+    full_name: 'Vikramaditya Bose',
+    date_of_birth: '1962-09-30',
+    gender: 'male',
+    blood_group: 'A',
+    rh_factor: 'negative',
+    mobile: '+91 98765 43210',
+    created_at: '2026-03-01T10:45:00Z'
+  }
+];
+
 // Reusable fetch wrapper with automatic Authorization header
 async function apiFetch(endpoint, options = {}) {
   try {
@@ -67,10 +114,19 @@ async function apiFetch(endpoint, options = {}) {
     const data = await res.json();
     if (!res.ok) {
       if (res.status === 401) {
-        // Clear token on 401 Unauthorized
+        const hadToken = Boolean(token);
         TokenManager.clearToken();
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint, code: data.code, message: data.message } }));
+        // Only broadcast auth:unauthorized to trigger the login prompt if the client
+        // actually sent a token that was rejected (session expired / revoked).
+        // Never trigger login prompt on background unauthenticated requests.
+        if (typeof window !== 'undefined' && hadToken) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', {
+            detail: {
+              endpoint,
+              code: data.code,
+              message: 'Your staff session has expired or was revoked. Please sign in again.'
+            }
+          }));
         }
       }
       const err = new Error(data.message || `Request failed with status ${res.status}`);
@@ -93,69 +149,40 @@ async function apiFetch(endpoint, options = {}) {
 
 export const PatientService = {
   async getPatients() {
-    const remote = await apiFetch('/patients');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
-    
-    // Explicitly labeled mock fallback matching database schema
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'p-001',
-          uhid: 'UHID-2026-0814',
-          full_name: 'Devika Sengupta',
-          date_of_birth: '1988-04-12',
-          gender: 'female',
-          blood_group: 'B',
-          rh_factor: 'positive',
-          mobile: '+91 98301 22410',
-          created_at: '2026-02-14T09:30:00Z'
-        },
-        {
-          id: 'p-002',
-          uhid: 'UHID-2026-0922',
-          full_name: 'Rajesh Narayan Verma',
-          date_of_birth: '1974-11-23',
-          gender: 'male',
-          blood_group: 'O',
-          rh_factor: 'positive',
-          mobile: '+91 94330 88204',
-          created_at: '2026-02-15T11:15:00Z'
-        },
-        {
-          id: 'p-003',
-          uhid: 'UHID-2026-1045',
-          full_name: 'Amina Khatun',
-          date_of_birth: '1995-07-08',
-          gender: 'female',
-          blood_group: 'AB',
-          rh_factor: 'positive',
-          mobile: '+91 91234 56789',
-          created_at: '2026-02-18T14:00:00Z'
-        },
-        {
-          id: 'p-004',
-          uhid: 'UHID-2026-1180',
-          full_name: 'Vikramaditya Bose',
-          date_of_birth: '1962-09-30',
-          gender: 'male',
-          blood_group: 'A',
-          rh_factor: 'negative',
-          mobile: '+91 98765 43210',
-          created_at: '2026-03-01T10:45:00Z'
-        }
-      ]
-    };
+    if (!TokenManager.getToken()) {
+      return { isMock: true, data: MOCK_PATIENTS };
+    }
+    try {
+      const remote = await apiFetch('/patients');
+      if (remote && remote.data) return { data: remote.data, isMock: false };
+    } catch (err) {
+      console.warn('[PatientService] Live patient fetch failed, falling back to census mock:', err.message);
+    }
+    return { isMock: true, data: MOCK_PATIENTS };
   },
 
   async getPatientByUhid(uhid) {
-    const remote = await apiFetch(`/patients/${encodeURIComponent(uhid)}`);
-    return remote?.data || remote;
+    if (!TokenManager.getToken()) {
+      const found = MOCK_PATIENTS.find(p => p.uhid.toLowerCase() === String(uhid).toLowerCase());
+      if (found) return found;
+      return null;
+    }
+    try {
+      const remote = await apiFetch(`/patients/${encodeURIComponent(uhid)}`);
+      return remote?.data || remote;
+    } catch (err) {
+      const found = MOCK_PATIENTS.find(p => p.uhid.toLowerCase() === String(uhid).toLowerCase());
+      if (found) return found;
+      throw err;
+    }
   }
 };
 
 export const AppointmentService = {
   async getAppointments(filters = {}) {
+    if (!TokenManager.getToken()) {
+      return [];
+    }
     const params = new URLSearchParams();
     if (filters.date) params.append('date', filters.date);
     if (filters.doctorId) params.append('doctorId', filters.doctorId);
@@ -163,8 +190,13 @@ export const AppointmentService = {
     if (filters.patientId) params.append('patientId', filters.patientId);
     if (filters.status) params.append('status', filters.status);
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiFetch(`/appointments${qs}`);
-    return res?.data || res || [];
+    try {
+      const res = await apiFetch(`/appointments${qs}`);
+      return res?.data || res || [];
+    } catch (err) {
+      console.warn('[AppointmentService] Fetch failed:', err.message);
+      return [];
+    }
   },
 
   async getAppointmentById(id) {
@@ -211,13 +243,21 @@ export const AppointmentService = {
 
 export const AppointmentBloodRequestService = {
   async getBloodRequests(params = {}) {
+    if (!TokenManager.getToken()) {
+      return [];
+    }
     const query = new URLSearchParams();
     if (params.patient_id) query.append('patient_id', params.patient_id);
     if (params.appointment_id) query.append('appointment_id', params.appointment_id);
     if (params.status) query.append('status', params.status);
     const qs = query.toString() ? `?${query.toString()}` : '';
-    const res = await apiFetch(`/blood-requests${qs}`);
-    return res?.data || res || [];
+    try {
+      const res = await apiFetch(`/blood-requests${qs}`);
+      return res?.data || res || [];
+    } catch (err) {
+      console.warn('[AppointmentBloodRequestService] Fetch failed:', err.message);
+      return [];
+    }
   },
 
   async getBloodRequestById(id) {
@@ -452,8 +492,16 @@ export const BloodBankService = {
 
   // 5.3 Component Inventory
   async getComponents(query = '') {
-    const remote = await apiFetch(`/blood-bank/components${query ? '?' + query : ''}`);
-    return { data: remote?.data || [], isMock: false };
+    if (!TokenManager.getToken()) {
+      return { data: [], isMock: true };
+    }
+    try {
+      const remote = await apiFetch(`/blood-bank/components${query ? '?' + query : ''}`);
+      return { data: remote?.data || [], isMock: false };
+    } catch (err) {
+      console.warn('[BloodBankService] getComponents fetch failed:', err.message);
+      return { data: [], isMock: true };
+    }
   },
 
   // 5.4 Serology & Safe Release

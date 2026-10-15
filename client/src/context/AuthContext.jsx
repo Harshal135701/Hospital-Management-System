@@ -40,7 +40,11 @@ export function AuthProvider({ children }) {
     const handleUnauthorized = (e) => {
       if (isMounted) {
         setUser(null);
-        setLoginModalMessage(e?.detail?.message || 'Authentication required or session expired. Please sign in.');
+        const rawMsg = e?.detail?.message;
+        const friendlyMsg = (rawMsg && !rawMsg.toLowerCase().includes('missing bearer token'))
+          ? rawMsg
+          : 'Your session has expired or was revoked. Please sign in again.';
+        setLoginModalMessage(friendlyMsg);
         setIsLoginModalOpen(true);
       }
     };

@@ -32,10 +32,12 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Card, Button, Badge, SafeImage } from '../common/UIPrimitives';
-import { AppointmentService, PatientService, BloodBankService } from '../../services/api';
+import { AppointmentService, PatientService, BloodBankService, TokenManager } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { HEALTHCARE_IMAGES } from '../../assets/images';
 
 export const DashboardView = ({ onNavigate }) => {
+  const { isAuthenticated } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [bloodUnits, setBloodUnits] = useState([]);
@@ -54,21 +56,37 @@ export const DashboardView = ({ onNavigate }) => {
 
   useEffect(() => {
     async function loadDashboardData() {
-      const [aptRes, patRes, compRes] = await Promise.all([
-        AppointmentService.getAppointments(),
-        PatientService.getPatients(),
-        BloodBankService.getComponents()
-      ]);
+      if (!TokenManager.getToken()) {
+        const patRes = await PatientService.getPatients();
+        setPatients(patRes?.data || []);
+        setAppointments([]);
+        setBloodUnits([]);
+        setIsDataMock(true);
+        return;
+      }
 
-      if (aptRes) setAppointments(aptRes.data || []);
-      if (patRes) setPatients(patRes.data || []);
-      if (compRes) setBloodUnits(compRes.data || []);
-      if (aptRes?.isMock || patRes?.isMock || compRes?.isMock) {
+      try {
+        const [aptRes, patRes, compRes] = await Promise.all([
+          AppointmentService.getAppointments(),
+          PatientService.getPatients(),
+          BloodBankService.getComponents()
+        ]);
+
+        if (aptRes) setAppointments(Array.isArray(aptRes) ? aptRes : aptRes.data || []);
+        if (patRes) setPatients(patRes.data || []);
+        if (compRes) setBloodUnits(compRes.data || []);
+        if (aptRes?.isMock || patRes?.isMock || compRes?.isMock) {
+          setIsDataMock(true);
+        } else {
+          setIsDataMock(false);
+        }
+      } catch (err) {
+        console.warn('[Dashboard] Data fetch failed:', err.message);
         setIsDataMock(true);
       }
     }
     loadDashboardData();
-  }, []);
+  }, [isAuthenticated]);
 
   const releasableBloodCount = bloodUnits.filter(u => u.status === 'safe_for_release').length;
   const reservedBloodCount = bloodUnits.filter(u => u.status === 'reserved').length;

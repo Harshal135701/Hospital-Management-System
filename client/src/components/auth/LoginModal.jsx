@@ -12,51 +12,8 @@ import {
 } from 'lucide-react';
 import { Modal, Button, Input, Badge } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
-
-const PRESET_PERSONAS = [
-  {
-    role: 'blood_bank_officer',
-    title: 'Blood Bank Officer',
-    email: 'bbo@hospital.test',
-    password: 'BBO#Secure2026!',
-    badge: 'Dual-Gate Authority'
-  },
-  {
-    role: 'lab_technician',
-    title: 'Lab Technician',
-    email: 'tech@hospital.test',
-    password: 'Tech#Pass2026!',
-    badge: 'Serology & Processing'
-  },
-  {
-    role: 'phlebotomist',
-    title: 'Phlebotomist',
-    email: 'phleb@hospital.test',
-    password: 'Phleb#Pass2026!',
-    badge: 'Donor & Collection'
-  },
-  {
-    role: 'clinician_doctor',
-    title: 'Clinician / Doctor',
-    email: 'doctor@hospital.test',
-    password: 'Doc#Pass2026!',
-    badge: 'Requisitions & PIN Release'
-  },
-  {
-    role: 'receptionist',
-    title: 'Receptionist',
-    email: 'reception@hospital.test',
-    password: 'Recept#Pass2026!',
-    badge: 'Patient Registry'
-  },
-  {
-    role: 'super_admin',
-    title: 'Super Admin',
-    email: 'admin@hospital.test',
-    password: 'Admin#Pass2026!',
-    badge: 'System Admin'
-  }
-];
+import { PRESET_PERSONAS, IS_DEV_MODE } from '../../constants/personas';
+export { PRESET_PERSONAS, IS_DEV_MODE };
 
 export function LoginModal() {
   const { isLoginModalOpen, loginModalMessage, closeLoginModal, login } = useAuth();
@@ -66,15 +23,50 @@ export function LoginModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
+  const formRef = React.useRef(null);
 
-  // Default to Blood Bank Officer preset when opening modal if empty
+  // Synchronize modal state when opened, and reset cleanly on close
   useEffect(() => {
-    if (isLoginModalOpen && !email) {
-      const defaultPersona = PRESET_PERSONAS[0];
-      setEmail(defaultPersona.email);
-      setPassword(defaultPersona.password);
-      setSelectedPersona(defaultPersona.role);
+    if (isLoginModalOpen) {
+      if (IS_DEV_MODE) {
+        const defaultPersona = PRESET_PERSONAS[0];
+        setSelectedPersona(defaultPersona.role);
+        setEmail(defaultPersona.email);
+        setPassword(defaultPersona.password);
+
+        if (formRef.current) {
+          if (formRef.current.elements?.email) {
+            formRef.current.elements.email.value = defaultPersona.email;
+          }
+          if (formRef.current.elements?.password) {
+            formRef.current.elements.password.value = defaultPersona.password;
+          }
+        }
+      } else {
+        setSelectedPersona(null);
+        setEmail('');
+        setPassword('');
+      }
+
       setErrorMessage(null);
+      setShowPassword(false);
+      setIsSubmitting(false);
+    } else {
+      setSelectedPersona(null);
+      setEmail('');
+      setPassword('');
+      setErrorMessage(null);
+      setShowPassword(false);
+      setIsSubmitting(false);
+
+      if (formRef.current) {
+        if (formRef.current.elements?.email) {
+          formRef.current.elements.email.value = '';
+        }
+        if (formRef.current.elements?.password) {
+          formRef.current.elements.password.value = '';
+        }
+      }
     }
   }, [isLoginModalOpen]);
 
@@ -83,11 +75,53 @@ export function LoginModal() {
     setEmail(p.email);
     setPassword(p.password);
     setErrorMessage(null);
+
+    if (formRef.current) {
+      if (formRef.current.elements?.email) {
+        formRef.current.elements.email.value = p.email;
+      }
+      if (formRef.current.elements?.password) {
+        formRef.current.elements.password.value = p.password;
+      }
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedPersona(null);
+    setEmail('');
+    setPassword('');
+    setErrorMessage(null);
+    setShowPassword(false);
+    setIsSubmitting(false);
+    closeLoginModal();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
+
+    const form = e.currentTarget;
+    const domEmail = form.elements?.email?.value;
+    const domPassword = form.elements?.password?.value;
+
+    let submittedEmail = (typeof domEmail === 'string' && domEmail.trim().length > 0)
+      ? domEmail.trim()
+      : email.trim();
+
+    let submittedPassword = (typeof domPassword === 'string' && domPassword.length > 0)
+      ? domPassword
+      : password;
+
+    // If an institutional persona is currently active, ensure its documented development password is used
+    // protecting against stale browser autofill or DOM desynchronization
+    if (selectedPersona) {
+      const activePreset = PRESET_PERSONAS.find((p) => p.role === selectedPersona);
+      if (activePreset && (!submittedEmail || activePreset.email.toLowerCase() === submittedEmail.toLowerCase())) {
+        submittedEmail = activePreset.email;
+        submittedPassword = activePreset.password;
+      }
+    }
+
+    if (!submittedEmail || !submittedPassword) {
       setErrorMessage('Please enter both your institutional email and password.');
       return;
     }
@@ -95,7 +129,7 @@ export function LoginModal() {
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      await login(email.trim(), password);
+      await login(submittedEmail, submittedPassword);
     } catch (err) {
       if (err.status === 401) {
         setErrorMessage('Invalid institutional credentials. Please verify your email and password.');
@@ -116,12 +150,17 @@ export function LoginModal() {
   return (
     <Modal
       isOpen={isLoginModalOpen}
-      onClose={closeLoginModal}
+      onClose={handleClose}
       maxWidth="580px"
       title="Institutional Staff Authentication"
       subtitle="Sign in with your verified hospital staff credentials to access protected clinical workspaces."
     >
-      <form onSubmit={handleSubmit} style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        autoComplete="off"
+        style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+      >
         {/* Prompt / Notification Banner */}
         {loginModalMessage && (
           <div
@@ -142,50 +181,53 @@ export function LoginModal() {
           </div>
         )}
 
-        {/* Quick Institutional Role Preset Switcher */}
-        <div>
-          <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>
-            Quick Select Institutional Persona:
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-            {PRESET_PERSONAS.map((p) => {
-              const isSelected = selectedPersona === p.role || email === p.email;
-              return (
-                <button
-                  type="button"
-                  key={p.role}
-                  onClick={() => handleSelectPersona(p)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    border: `1.5px solid ${isSelected ? 'var(--color-primary-teal)' : 'var(--color-border)'}`,
-                    backgroundColor: isSelected ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: isSelected ? 'var(--color-primary-teal)' : 'var(--color-text-primary)' }}>
-                      {p.title}
-                    </span>
-                    <Badge variant={isSelected ? 'success' : 'neutral'} size="sm">
-                      {p.role.split('_')[0]}
-                    </Badge>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                    {p.email}
-                  </div>
-                </button>
-              );
-            })}
+        {/* Quick Institutional Role Preset Switcher (Dev & Demo environments only) */}
+        {IS_DEV_MODE && (
+          <div>
+            <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>
+              Quick Select Institutional Persona (Dev / Demo):
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              {PRESET_PERSONAS.map((p) => {
+                const isSelected = selectedPersona === p.role;
+                return (
+                  <button
+                    type="button"
+                    key={p.role}
+                    onClick={() => handleSelectPersona(p)}
+                    aria-pressed={isSelected}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-md)',
+                      border: `1.5px solid ${isSelected ? 'var(--color-primary-teal)' : 'var(--color-border)'}`,
+                      backgroundColor: isSelected ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: isSelected ? 'var(--color-primary-teal)' : 'var(--color-text-primary)' }}>
+                        {p.title}
+                      </span>
+                      <Badge variant={isSelected ? 'success' : 'neutral'} size="sm">
+                        {p.role.split('_')[0]}
+                      </Badge>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                      {p.email}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Form Inputs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
+            <label htmlFor="login-staff-email" style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
               Institutional Staff Email <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -193,12 +235,32 @@ export function LoginModal() {
                 <Mail size={16} />
               </span>
               <input
+                id="login-staff-email"
+                name="email"
                 type="email"
                 required
+                autoComplete="username"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck="false"
+                data-lpignore="true"
+                data-1p-ignore="true"
                 value={email}
                 onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSelectedPersona(null);
+                  const val = e.target.value;
+                  setEmail(val);
+                  const matched = PRESET_PERSONAS.find(
+                    (p) => p.email.toLowerCase() === val.trim().toLowerCase()
+                  );
+                  if (matched) {
+                    setSelectedPersona(matched.role);
+                    setPassword(matched.password);
+                    if (formRef.current?.elements?.password) {
+                      formRef.current.elements.password.value = matched.password;
+                    }
+                  } else {
+                    setSelectedPersona(null);
+                  }
                 }}
                 placeholder="staff@hospital.test"
                 style={{
@@ -214,18 +276,39 @@ export function LoginModal() {
           </div>
 
           <div>
-            <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
-              Account Password <span style={{ color: 'var(--color-error)' }}>*</span>
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label htmlFor="login-staff-password" style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)' }}>
+                Account Password <span style={{ color: 'var(--color-error)' }}>*</span>
+              </label>
+              {IS_DEV_MODE && selectedPersona && (
+                <span style={{ fontSize: '0.72rem', color: 'var(--color-primary-teal)', fontWeight: '500' }}>
+                  Auto-filled from development persona
+                </span>
+              )}
+            </div>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '12px', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
                 <Lock size={16} />
               </span>
               <input
+                id="login-staff-password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
+                data-lpignore="true"
+                data-1p-ignore="true"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPassword(val);
+                  if (selectedPersona) {
+                    const activePreset = PRESET_PERSONAS.find((p) => p.role === selectedPersona);
+                    if (!activePreset || activePreset.password !== val) {
+                      setSelectedPersona(null);
+                    }
+                  }
+                }}
                 placeholder="••••••••••••"
                 style={{
                   width: '100%',
@@ -250,6 +333,7 @@ export function LoginModal() {
                   alignItems: 'center'
                 }}
                 title={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -279,7 +363,7 @@ export function LoginModal() {
 
         {/* Modal Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-          <Button variant="ghost" onClick={closeLoginModal}>
+          <Button variant="ghost" onClick={handleClose}>
             Cancel
           </Button>
           <Button
