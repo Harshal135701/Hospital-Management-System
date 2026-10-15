@@ -24,6 +24,8 @@ const vitalsRoutes = require("./modules/consultation/vitals.routes");
 const clinicalHistoryRoutes = require("./modules/clinical-history/clinical-history.routes");
 const providerOrdersRoutes = require("./modules/provider-orders/provider-orders.routes");
 const clinicalNotesRoutes = require("./modules/clinical-notes/clinical-notes.routes");
+const preauthorizationRoutes = require("./modules/insurance-tpa/preauthorization.routes");
+const enhancementRoutes = require("./modules/insurance-tpa/enhancement.routes");
 
 const app = express();
 
@@ -114,6 +116,12 @@ app.use("/api/provider-orders", providerOrdersRoutes);
 
 // 6.5 clinical submodule
 app.use("/api/clinical-notes", clinicalNotesRoutes);
+
+// 7.1 TPA & Insurance Pre-Authorization
+app.use("/api/insurance/preauthorizations", preauthorizationRoutes);
+
+// 7.2 Enhancement Request Management
+app.use("/api/insurance/enhancements", enhancementRoutes);
 
 // 404 & Global Error Handling
 app.use(notFound);
