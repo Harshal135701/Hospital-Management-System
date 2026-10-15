@@ -155,63 +155,90 @@ export const PatientService = {
 };
 
 export const AppointmentService = {
-  async getAppointments() {
-    const remote = await apiFetch('/appointments');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
+  async getAppointments(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.date) params.append('date', filters.date);
+    if (filters.doctorId) params.append('doctorId', filters.doctorId);
+    if (filters.departmentId) params.append('departmentId', filters.departmentId);
+    if (filters.patientId) params.append('patientId', filters.patientId);
+    if (filters.status) params.append('status', filters.status);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/appointments${qs}`);
+    return res?.data || res || [];
+  },
 
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'apt-101',
-          appointment_number: 'APT-2026-0491',
-          patient_name: 'Devika Sengupta',
-          patient_uhid: 'UHID-2026-0814',
-          doctor_name: 'Dr. Arindam Mitra',
-          department_name: 'Cardiology',
-          appointment_date: '2026-10-12',
-          start_time: '10:00 AM',
-          status: 'confirmed',
-          visit_type: 'follow_up'
-        },
-        {
-          id: 'apt-102',
-          appointment_number: 'APT-2026-0492',
-          patient_name: 'Rajesh Narayan Verma',
-          patient_uhid: 'UHID-2026-0922',
-          doctor_name: 'Dr. Sunita Rao',
-          department_name: 'General Medicine',
-          appointment_date: '2026-10-12',
-          start_time: '10:30 AM',
-          status: 'in_consultation',
-          visit_type: 'first_visit'
-        },
-        {
-          id: 'apt-103',
-          appointment_number: 'APT-2026-0493',
-          patient_name: 'Vikramaditya Bose',
-          patient_uhid: 'UHID-2026-1180',
-          doctor_name: 'Dr. Pradeep K. Sharma',
-          department_name: 'Orthopaedics',
-          appointment_date: '2026-10-12',
-          start_time: '11:15 AM',
-          status: 'confirmed',
-          visit_type: 'follow_up'
-        },
-        {
-          id: 'apt-104',
-          appointment_number: 'APT-2026-0494',
-          patient_name: 'Amina Khatun',
-          patient_uhid: 'UHID-2026-1045',
-          doctor_name: 'Dr. Meenakshi Sundaram',
-          department_name: 'Haematology & Transfusion',
-          appointment_date: '2026-10-12',
-          start_time: '01:30 PM',
-          status: 'confirmed',
-          visit_type: 'first_visit'
-        }
-      ]
-    };
+  async getAppointmentById(id) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}`);
+    return res?.data || res;
+  },
+
+  async createAppointment(data) {
+    const res = await apiFetch('/appointments', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data || res;
+  },
+
+  async rescheduleAppointment(id, data) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data || res;
+  },
+
+  async cancelAppointment(id, reason) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}/cancel`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason })
+    });
+    return res?.data || res;
+  },
+
+  async getAvailableSlots(doctorId, date, duration = 15) {
+    const res = await apiFetch(
+      `/appointments/available-slots?doctorId=${encodeURIComponent(doctorId)}&date=${encodeURIComponent(date)}&duration=${duration}`
+    );
+    return res?.data || res;
+  },
+
+  async getPatientHistory(patientId) {
+    const res = await apiFetch(`/appointments/patient/${encodeURIComponent(patientId)}`);
+    return res?.data || res || [];
+  }
+};
+
+export const AppointmentBloodRequestService = {
+  async getBloodRequests(params = {}) {
+    const query = new URLSearchParams();
+    if (params.patient_id) query.append('patient_id', params.patient_id);
+    if (params.appointment_id) query.append('appointment_id', params.appointment_id);
+    if (params.status) query.append('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await apiFetch(`/blood-requests${qs}`);
+    return res?.data || res || [];
+  },
+
+  async getBloodRequestById(id) {
+    const res = await apiFetch(`/blood-requests/${encodeURIComponent(id)}`);
+    return res?.data || res;
+  },
+
+  async createBloodRequest(data) {
+    const res = await apiFetch('/blood-requests', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data || res;
+  },
+
+  async updateBloodRequestStatus(id, status, notes) {
+    const res = await apiFetch(`/blood-requests/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes })
+    });
+    return res?.data || res;
   }
 };
 
