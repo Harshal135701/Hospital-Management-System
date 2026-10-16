@@ -5,6 +5,7 @@ import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { PatientsView } from './components/patients/PatientsView';
 import { AppointmentsView } from './components/appointments/AppointmentsView';
+import { ClinicalsView } from './components/clinicals/ClinicalsView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { WardsView } from './components/wards/WardsView';
@@ -22,13 +23,18 @@ export function App() {
   const [currentRoute, setCurrentRoute] = useState('dashboard');
 
   const renderCurrentView = () => {
-    switch (currentRoute) {
+    const routeBase = typeof currentRoute === 'string' ? currentRoute.split(':')[0] : currentRoute;
+    const routeSubtab = typeof currentRoute === 'string' && currentRoute.includes(':') ? currentRoute.split(':')[1] : null;
+
+    switch (routeBase) {
       case 'dashboard':
         return <DashboardView onNavigate={setCurrentRoute} />;
       case 'patients':
         return <PatientsView />;
       case 'appointments':
         return <AppointmentsView />;
+      case 'clinical':
+        return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
       case 'bloodbank':
         return <BloodBankView />;
       case 'doctors':
