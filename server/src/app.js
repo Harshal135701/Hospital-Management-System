@@ -7,6 +7,8 @@ const patientRoutes = require("./modules/patients/patient.routes");
 const bloodBankRoutes = require("./modules/bloodbank/bloodbank.routes");
 const appointmentRoutes = require("./modules/appointments/appointment.routes");
 const bloodRequestRoutes = require("./modules/appointments/bloodRequest.routes");
+const doctorRoutes = require("./modules/doctors/doctor.routes");
+const departmentRoutes = require("./modules/departments/department.routes");
 const { globalApiRateLimiter } = require("./middleware/rate-limiter.middleware");
 const errorHandler = require("./middleware/error.middleware");
 const notFoundHandler = require("./middleware/not-found.middleware");
@@ -33,6 +35,8 @@ app.use("/api/patients", patientRoutes);
 app.use("/api/blood-bank", bloodBankRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
+app.use("/api/doctors", doctorRoutes);
+app.use("/api/departments", departmentRoutes);
 
 // Catch-all & Error Handlers
 app.use(notFoundHandler);

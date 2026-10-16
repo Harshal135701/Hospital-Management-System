@@ -308,12 +308,100 @@ const getPatientHistory = async (patientId) => {
   return repo.getPatientHistory(patientId);
 };
 
+const APPOINTMENT_TRANSITIONS = {
+  booked: ["arrived", "cancelled", "no_show"],
+  arrived: ["waiting", "in_consultation", "cancelled", "no_show"],
+  waiting: ["in_consultation", "cancelled", "no_show"],
+  in_consultation: ["completed", "waiting"],
+  completed: [],
+  cancelled: [],
+  no_show: [],
+};
+
+const ROLE_ALLOWED_TARGET_STATUSES = {
+  receptionist: ["arrived", "waiting", "cancelled", "no_show"],
+  staff_nurse: ["arrived", "waiting", "cancelled", "no_show"],
+  clinician_doctor: ["arrived", "waiting", "in_consultation", "completed", "cancelled", "no_show"],
+  super_admin: ["arrived", "waiting", "in_consultation", "completed", "cancelled", "no_show"],
+};
+
+const updateAppointmentStatus = async (id, newStatus, options = {}, currentUser = {}) => {
+  // 1. Verify appointment exists
+  const existing = await repo.findAppointmentById(id);
+  if (!existing) {
+    throw ApiError.notFound("Appointment not found");
+  }
+
+  // 2. Role permission check (must happen before checking idempotency)
+  const allowedStatuses = ROLE_ALLOWED_TARGET_STATUSES[currentUser.role];
+  if (!allowedStatuses || !allowedStatuses.includes(newStatus)) {
+    throw ApiError.forbidden(
+      `Role '${currentUser.role || "unknown"}' is not authorized to set appointment status to '${newStatus}'`
+    );
+  }
+
+  // 3. Clinician doctor ownership check (must happen before checking idempotency)
+  if (currentUser.role === "clinician_doctor") {
+    if (!currentUser.doctor_id || currentUser.doctor_id !== existing.doctor_id) {
+      throw ApiError.forbidden("Clinician doctors may only update status for their own assigned appointments");
+    }
+  }
+
+  // 4. Idempotency: if already in target status, return existing record
+  if (existing.status === newStatus) {
+    return existing;
+  }
+
+  // 5. State machine transition check
+  const allowedTransitions = APPOINTMENT_TRANSITIONS[existing.status] || [];
+  if (!allowedTransitions.includes(newStatus)) {
+    throw ApiError.badRequest(
+      `Cannot transition appointment from '${existing.status}' to '${newStatus}'. Allowed transitions from '${existing.status}': [${allowedTransitions.join(", ")}]`
+    );
+  }
+
+  // 6. Handle default cancellation reason if cancelled
+  const cancellationReason =
+    options.cancellation_reason || (newStatus === "cancelled" ? "Cancelled by user" : null);
+
+  // 7. Atomic conditional update enforcing concurrency control
+  const updated = await repo.updateStatusAtomic(
+    id,
+    newStatus,
+    existing.status,
+    {
+      cancellation_reason: cancellationReason,
+      notes: options.notes,
+    }
+  );
+
+  // 8. Concurrency detection: if 0 rows updated, verify what changed concurrently
+  if (!updated) {
+    const fresh = await repo.findAppointmentById(id);
+    if (!fresh) {
+      throw ApiError.notFound("Appointment not found");
+    }
+    if (fresh.status === newStatus) {
+      return fresh;
+    }
+    throw ApiError.conflict(
+      `Appointment status was concurrently modified from '${existing.status}' to '${fresh.status}'. Please refresh and try again.`
+    );
+  }
+
+  // Return fresh populated appointment record with joined details
+  return repo.findAppointmentById(id);
+};
+
 module.exports = {
   createAppointment,
   rescheduleAppointment,
   cancelAppointment,
+  updateAppointmentStatus,
   getAvailableSlots,
   getAppointmentById,
   listAppointments,
   getPatientHistory,
+  APPOINTMENT_TRANSITIONS,
+  ROLE_ALLOWED_TARGET_STATUSES,
 };

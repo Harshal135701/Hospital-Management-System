@@ -57,3 +57,25 @@ module.exports = {
   getSlotsQuerySchema,
   listAppointmentsQuerySchema,
 };
+
+const updateAppointmentStatusSchema = z.object({
+  status: z.enum([
+    "arrived",
+    "waiting",
+    "in_consultation",
+    "completed",
+    "cancelled",
+    "no_show",
+  ]),
+  cancellation_reason: z.string().max(255).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+module.exports = {
+  createAppointmentSchema,
+  rescheduleSchema,
+  cancelSchema,
+  getSlotsQuerySchema,
+  listAppointmentsQuerySchema,
+  updateAppointmentStatusSchema,
+};

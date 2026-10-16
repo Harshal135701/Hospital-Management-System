@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Stethoscope,
   Activity,
@@ -6,7 +6,10 @@ import {
   ClipboardList,
   Search,
   Users,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw,
+  UserCheck,
+  AlertCircle
 } from 'lucide-react';
 import { Card, Button, Badge } from '../common/UIPrimitives';
 import { INITIAL_QUEUE_PATIENTS } from './clinicalDemoData';
@@ -16,10 +19,85 @@ import { VitalsExam } from './VitalsExam';
 import { ComplaintsHistory } from './ComplaintsHistory';
 import { OrdersCPOE } from './OrdersCPOE';
 import { ProgressNotes } from './ProgressNotes';
+import { AppointmentService, TokenManager } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+
+const mapAppointmentToEncounter = (apt) => {
+  let age = 'N/A';
+  if (apt.patient_dob) {
+    const birthYear = new Date(apt.patient_dob).getFullYear();
+    const currentYear = new Date().getFullYear();
+    age = Math.max(0, currentYear - birthYear);
+  }
+
+  return {
+    id: apt.id,
+    appointment_id: apt.id,
+    is_live: true,
+    uhid: apt.patient_uhid,
+    appointment_number: apt.appointment_number || `APT-${apt.id.slice(0, 8)}`,
+    patient_name: apt.patient_name,
+    age: age,
+    gender: apt.patient_gender || 'Not specified',
+    blood_group: 'Not recorded',
+    allergies: [],
+    appointment_time: String(apt.start_time).slice(0, 5),
+    appointment_date: apt.appointment_date,
+    department: apt.department_name || 'General OPD',
+    doctor_name: apt.doctor_name || 'Assigned Clinician',
+    doctor_id: apt.doctor_id,
+    token_number: apt.token_number,
+    status: apt.status,
+    chief_complaint: apt.notes || 'Outpatient consultation appointment',
+    vitals: {
+      systolic: '',
+      diastolic: '',
+      heartRate: '',
+      respiratoryRate: '',
+      temperature: '',
+      tempUnit: 'C',
+      spo2: '',
+      height: '',
+      weight: '',
+      cvs: 'Awaiting clinical examination',
+      rs: 'Awaiting clinical examination',
+      abdomen: 'Awaiting clinical examination',
+      cns: 'Awaiting clinical examination',
+    },
+    history: {
+      presentingComplaint: apt.notes || 'Outpatient consultation request',
+      onsetDuration: '',
+      severity: '',
+      aggravatingFactors: '',
+      relievingFactors: '',
+      medicalHistory: '',
+      surgicalHistory: '',
+      familyHistory: '',
+      currentMedications: '',
+      allergies: '',
+    },
+    consultationDesk: {
+      summary: `Outpatient consultation for ${apt.patient_name} (${apt.patient_uhid}).`,
+      examination: '',
+      impression: '',
+    },
+    orders: [],
+    notes: [],
+  };
+};
 
 export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
+  const { isAuthenticated } = useAuth();
+
   // Queue state
-  const [patients, setPatients] = useState(INITIAL_QUEUE_PATIENTS);
+  const [patients, setPatients] = useState(() =>
+    INITIAL_QUEUE_PATIENTS.map((p) => ({ ...p, is_live: false }))
+  );
+  const [liveAppointments, setLiveAppointments] = useState([]);
+  const [isLoadingQueue, setIsLoadingQueue] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [queueError, setQueueError] = useState(null);
+
   const [activePatientId, setActivePatientId] = useState('enc-2026-001'); // Eleanor Vance selected by default
   const [internalSubtab, setInternalSubtab] = useState(null);
   const currentSubtab = internalSubtab !== null ? internalSubtab : (initialSubtab || 'consultation');
@@ -27,11 +105,12 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
 
   // OPD Queue Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'waiting' | 'in_consultation' | 'completed'
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'booked' | 'arrived' | 'waiting' | 'in_consultation' | 'completed'
   const [departmentFilter, setDepartmentFilter] = useState('all');
 
   // Notification toast
   const [workspaceToast, setWorkspaceToast] = useState('');
+
 
   // Active patient object
   const activePatient = useMemo(() => {
@@ -62,26 +141,73 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
   const queueCounts = useMemo(() => {
     return {
       all: patients.length,
+      booked: patients.filter(p => p.status === 'booked').length,
+      arrived: patients.filter(p => p.status === 'arrived').length,
       waiting: patients.filter(p => p.status === 'waiting').length,
       in_consultation: patients.filter(p => p.status === 'in_consultation').length,
       completed: patients.filter(p => p.status === 'completed').length
     };
   }, [patients]);
 
-  const departments = ['all', 'Cardiology', 'Internal Medicine', 'General Surgery', 'Orthopedics'];
+  const departments = useMemo(() => {
+    const list = new Set(['Cardiology', 'Internal Medicine', 'General Surgery', 'Orthopedics']);
+    patients.forEach((p) => {
+      if (p.department) list.add(p.department);
+    });
+    return ['all', ...Array.from(list)];
+  }, [patients]);
 
-  // Handle open consultation
-  const handleOpenConsultation = (patientId, targetSubtab = 'consultation') => {
-    setActivePatientId(patientId);
-    setCurrentSubtab(targetSubtab);
-    // If patient was waiting, automatically transition to in_consultation
-    setPatients(prev => prev.map(p => {
-      if (p.id === patientId && p.status === 'waiting') {
-        return { ...p, status: 'in_consultation' };
-      }
-      return p;
-    }));
-  };
+  // Fetch live queue from backend
+  const fetchLiveQueue = useCallback(async () => {
+    if (!TokenManager.getToken()) {
+      setLiveAppointments([]);
+      return;
+    }
+    setIsLoadingQueue(true);
+    setQueueError(null);
+    try {
+      const res = await AppointmentService.getAppointments();
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      setLiveAppointments(items);
+    } catch (err) {
+      console.warn('[ClinicalsView] Failed to fetch live appointments:', err.message);
+      setQueueError('Could not sync live OPD queue from server: ' + err.message);
+    } finally {
+      setIsLoadingQueue(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveQueue();
+  }, [fetchLiveQueue, isAuthenticated]);
+
+  // Merge live appointments into patients queue
+  useEffect(() => {
+    if (!liveAppointments || liveAppointments.length === 0) return;
+
+    setPatients((prevPatients) => {
+      const prevMap = new Map(prevPatients.map((p) => [p.id, p]));
+      const newLiveEncounters = liveAppointments.map((apt) => {
+        const existing = prevMap.get(apt.id);
+        if (existing) {
+          return {
+            ...existing,
+            status: apt.status,
+            appointment_number: apt.appointment_number || existing.appointment_number,
+            doctor_name: apt.doctor_name || existing.doctor_name,
+            department: apt.department_name || existing.department,
+            appointment_time: String(apt.start_time).slice(0, 5),
+            token_number: apt.token_number || existing.token_number,
+          };
+        }
+        return mapAppointmentToEncounter(apt);
+      });
+
+      const liveIds = new Set(liveAppointments.map((a) => a.id));
+      const demoOnly = prevPatients.filter((p) => !p.is_live && !liveIds.has(p.id));
+      return [...newLiveEncounters, ...demoOnly];
+    });
+  }, [liveAppointments]);
 
   // State update handlers for active patient
   const handleUpdateActivePatient = (updater) => {
@@ -93,16 +219,82 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
     }));
   };
 
+  // Status transition handler for queue cards & banner
+  const handleTransitionStatus = async (encounter, targetStatus, extraOptions = {}) => {
+    if (!encounter.is_live) {
+      setPatients(prev =>
+        prev.map(p => (p.id === encounter.id ? { ...p, status: targetStatus } : p))
+      );
+      setWorkspaceToast(`[Simulation] Encounter status set to ${targetStatus.replace('_', ' ')}.`);
+      setTimeout(() => setWorkspaceToast(''), 4000);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      await AppointmentService.updateAppointmentStatus(encounter.id, targetStatus, extraOptions);
+      setWorkspaceToast(`Appointment ${encounter.appointment_number} marked as ${targetStatus.replace('_', ' ')}.`);
+      setTimeout(() => setWorkspaceToast(''), 4500);
+      await fetchLiveQueue();
+      setPatients(prev =>
+        prev.map(p => (p.id === encounter.id ? { ...p, status: targetStatus } : p))
+      );
+    } catch (err) {
+      if (err.status === 409) {
+        setWorkspaceToast(`Conflict: ${err.message}. Queue reloaded.`);
+        await fetchLiveQueue();
+      } else {
+        setWorkspaceToast(`Failed to update status: ${err.message}`);
+      }
+      setTimeout(() => setWorkspaceToast(''), 6000);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle open consultation
+  const handleOpenConsultation = async (patientId, targetSubtab = 'consultation') => {
+    setActivePatientId(patientId);
+    setCurrentSubtab(targetSubtab);
+    const pat = patients.find(p => p.id === patientId);
+    if (pat && (pat.status === 'waiting' || pat.status === 'arrived')) {
+      if (pat.is_live) {
+        try {
+          await AppointmentService.updateAppointmentStatus(patientId, 'in_consultation');
+          fetchLiveQueue();
+        } catch (err) {
+          console.warn('Could not auto-transition live appointment to in_consultation:', err.message);
+        }
+      }
+      setPatients(prev => prev.map(p => {
+        if (p.id === patientId) {
+          return { ...p, status: 'in_consultation' };
+        }
+        return p;
+      }));
+    }
+  };
+
   const handleSaveDraftConsultation = (deskData) => {
     handleUpdateActivePatient(deskData);
   };
 
-  const handleCompleteConsultation = (deskData) => {
+  const handleCompleteConsultation = async (deskData) => {
     handleUpdateActivePatient(p => ({
       ...p,
       ...deskData,
       status: 'completed'
     }));
+
+    if (activePatient?.is_live) {
+      try {
+        await AppointmentService.updateAppointmentStatus(activePatient.id, 'completed');
+        await fetchLiveQueue();
+      } catch (err) {
+        console.warn('Failed to update live appointment status to completed:', err.message);
+      }
+    }
+
     setWorkspaceToast(`Consultation for ${activePatient?.patient_name} (${activePatient?.uhid}) completed.`);
     setTimeout(() => setWorkspaceToast(''), 4500);
   };
@@ -199,6 +391,16 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
         {/* Global Quick Action / View Queue */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Button
+            variant="outline"
+            size="sm"
+            icon={RefreshCw}
+            loading={isLoadingQueue}
+            onClick={fetchLiveQueue}
+            title="Refresh Live OPD Queue from PostgreSQL"
+          >
+            Sync Queue
+          </Button>
+          <Button
             variant={activePatient ? 'outline' : 'primary'}
             size="sm"
             icon={Users}
@@ -236,7 +438,7 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
           <PatientBanner
             patient={activePatient}
             onBackToQueue={() => setActivePatientId(null)}
-            onStatusChange={(newStatus) => handleUpdateActivePatient({ status: newStatus })}
+            onStatusChange={(newStatus) => activePatient && handleTransitionStatus(activePatient, newStatus)}
           />
 
           {/* Submodule Tab Navigation Bar */}
@@ -418,10 +620,36 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
             </div>
           </div>
 
+          {/* Live Queue Sync Warning if any */}
+          {queueError && (
+            <div
+              style={{
+                backgroundColor: 'var(--color-warning-bg, #FEF3C7)',
+                color: 'var(--color-warning-text, #92400E)',
+                border: '1px solid var(--color-warning-border, #FCD34D)',
+                padding: '10px 16px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={16} />
+                <span>{queueError}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={fetchLiveQueue}>Retry</Button>
+            </div>
+          )}
+
           {/* OPD Queue Status Filter Tabs */}
-          <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px', overflowX: 'auto' }}>
             {[
               { id: 'all', label: 'All Patients', count: queueCounts.all },
+              { id: 'booked', label: 'Booked', count: queueCounts.booked },
+              { id: 'arrived', label: 'Arrived', count: queueCounts.arrived },
               { id: 'waiting', label: 'Waiting', count: queueCounts.waiting },
               { id: 'in_consultation', label: 'In Consultation', count: queueCounts.in_consultation },
               { id: 'completed', label: 'Completed', count: queueCounts.completed }
@@ -444,7 +672,8 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   <span>{tab.label}</span>
@@ -483,15 +712,23 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {filteredQueue.map((pat) => {
                   const statusVariant = {
+                    booked: 'teal',
+                    arrived: 'warning',
                     waiting: 'warning',
-                    in_consultation: 'teal',
-                    completed: 'success'
+                    in_consultation: 'purple',
+                    completed: 'success',
+                    cancelled: 'danger',
+                    no_show: 'neutral'
                   }[pat.status] || 'gray';
 
                   const statusText = {
+                    booked: 'Booked',
+                    arrived: 'Arrived',
                     waiting: 'Waiting',
                     in_consultation: 'In Consultation',
-                    completed: 'Completed'
+                    completed: 'Completed',
+                    cancelled: 'Cancelled',
+                    no_show: 'No Show'
                   }[pat.status] || pat.status;
 
                   return (
@@ -549,6 +786,29 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
                             <Badge variant={statusVariant} size="sm">
                               {statusText}
                             </Badge>
+                            {pat.is_live ? (
+                              <Badge variant="teal" size="sm">
+                                Live PostgreSQL
+                              </Badge>
+                            ) : (
+                              <Badge variant="neutral" size="sm">
+                                Demo Simulation
+                              </Badge>
+                            )}
+                            {pat.token_number && (
+                              <span
+                                style={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  color: 'var(--color-primary-teal)',
+                                  backgroundColor: 'var(--color-bg-pale-aqua)',
+                                  padding: '1px 6px',
+                                  borderRadius: 'var(--radius-sm)'
+                                }}
+                              >
+                                Token #{pat.token_number}
+                              </span>
+                            )}
                           </div>
 
                           <div
@@ -579,15 +839,94 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Button
-                          variant={pat.status === 'completed' ? 'outline' : 'primary'}
-                          size="sm"
-                          icon={Stethoscope}
-                          onClick={() => handleOpenConsultation(pat.id)}
-                        >
-                          {pat.status === 'completed' ? 'View Encounter' : 'Open Consultation'}
-                        </Button>
+                      {/* Action Buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {pat.status === 'booked' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={UserCheck}
+                            loading={isUpdatingStatus}
+                            onClick={() => handleTransitionStatus(pat, 'arrived')}
+                            style={{ borderColor: 'var(--color-primary-teal)', color: 'var(--color-primary-teal)' }}
+                          >
+                            Mark Arrived
+                          </Button>
+                        )}
+
+                        {pat.status === 'arrived' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              loading={isUpdatingStatus}
+                              onClick={() => handleTransitionStatus(pat, 'waiting')}
+                            >
+                              Send to Waiting
+                            </Button>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              icon={Stethoscope}
+                              loading={isUpdatingStatus}
+                              onClick={async () => {
+                                await handleTransitionStatus(pat, 'in_consultation');
+                                handleOpenConsultation(pat.id);
+                              }}
+                            >
+                              Start Consultation
+                            </Button>
+                          </>
+                        )}
+
+                        {pat.status === 'waiting' && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={Stethoscope}
+                            loading={isUpdatingStatus}
+                            onClick={async () => {
+                              await handleTransitionStatus(pat, 'in_consultation');
+                              handleOpenConsultation(pat.id);
+                            }}
+                          >
+                            Call / Start
+                          </Button>
+                        )}
+
+                        {pat.status === 'in_consultation' && (
+                          <>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              icon={Stethoscope}
+                              onClick={() => handleOpenConsultation(pat.id)}
+                            >
+                              Consultation Desk
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              icon={CheckCircle2}
+                              loading={isUpdatingStatus}
+                              onClick={() => handleTransitionStatus(pat, 'completed')}
+                              style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
+                            >
+                              Complete
+                            </Button>
+                          </>
+                        )}
+
+                        {pat.status === 'completed' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={Stethoscope}
+                            onClick={() => handleOpenConsultation(pat.id)}
+                          >
+                            View Encounter
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
