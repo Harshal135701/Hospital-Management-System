@@ -1,18 +1,20 @@
+
 import React, { useState } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { LoginModal } from './components/auth/LoginModal';
 import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
-import { PatientsView, AppointmentsView } from './components/patients/PatientsView';
+import { PatientsView } from './components/patients/PatientsView';
+import { AppointmentsView } from './components/appointments/AppointmentsView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { WardsView } from './components/wards/WardsView';
 import { PlaceholderView } from './components/common/PlaceholderView';
 import {
-  UserCheck,
   Building2,
-  Bed,
   FlaskConical,
   FileText,
-  Settings
+  Settings,
 } from 'lucide-react';
 
 export function App() {
@@ -22,14 +24,24 @@ export function App() {
     switch (currentRoute) {
       case 'dashboard':
         return <DashboardView onNavigate={setCurrentRoute} />;
+
       case 'patients':
         return <PatientsView />;
+
       case 'appointments':
         return <AppointmentsView />;
+
       case 'bloodbank':
         return <BloodBankView />;
+
       case 'doctors':
-        return <DoctorsView onBack={() => setCurrentRoute('dashboard')} onNavigate={setCurrentRoute} />;
+        return (
+          <DoctorsView
+            onBack={() => setCurrentRoute('dashboard')}
+            onNavigate={setCurrentRoute}
+          />
+        );
+
       case 'departments':
         return (
           <PlaceholderView
@@ -40,8 +52,15 @@ export function App() {
             onBack={() => setCurrentRoute('dashboard')}
           />
         );
+
       case 'rooms':
-        return <WardsView onBack={() => setCurrentRoute('dashboard')} onNavigate={setCurrentRoute} />;
+        return (
+          <WardsView
+            onBack={() => setCurrentRoute('dashboard')}
+            onNavigate={setCurrentRoute}
+          />
+        );
+
       case 'lab':
         return (
           <PlaceholderView
@@ -52,6 +71,7 @@ export function App() {
             onBack={() => setCurrentRoute('dashboard')}
           />
         );
+
       case 'reports':
         return (
           <PlaceholderView
@@ -62,6 +82,7 @@ export function App() {
             onBack={() => setCurrentRoute('dashboard')}
           />
         );
+
       case 'settings':
         return (
           <PlaceholderView
@@ -72,15 +93,23 @@ export function App() {
             onBack={() => setCurrentRoute('dashboard')}
           />
         );
+
       default:
         return <DashboardView onNavigate={setCurrentRoute} />;
     }
   };
 
   return (
-    <AppShell currentRoute={currentRoute} onNavigate={setCurrentRoute}>
-      {renderCurrentView()}
-    </AppShell>
+    <AuthProvider>
+      <AppShell
+        currentRoute={currentRoute}
+        onNavigate={setCurrentRoute}
+      >
+        {renderCurrentView()}
+      </AppShell>
+
+      <LoginModal />
+    </AuthProvider>
   );
 }
 

@@ -1,13 +1,15 @@
 
 const service = require("./bloodRequest.service");
+const validation = require("./bloodRequest.validation");
 
 async function createBloodRequest(req, res, next) {
   try {
-    const request = await service.createBloodRequest(req.body);
+    const validated = validation.createBloodRequestSchema.parse(req.body);
+    const request = await service.createBloodRequest(validated, req.user);
 
     res.status(201).json({
       success: true,
-      message: "Blood request created successfully",
+      message: "Blood request created and linked to blood bank requisition successfully",
       data: request,
     });
   } catch (error) {
@@ -17,10 +19,8 @@ async function createBloodRequest(req, res, next) {
 
 async function getBloodRequests(req, res, next) {
   try {
-    const requests = await service.getBloodRequests({
-      patient_id: req.query.patient_id,
-      status: req.query.status,
-    });
+    const filters = validation.getBloodRequestsQuerySchema.parse(req.query);
+    const requests = await service.getBloodRequests(filters);
 
     res.status(200).json({
       success: true,
@@ -47,12 +47,13 @@ async function getBloodRequestById(req, res, next) {
 
 async function updateBloodRequestStatus(req, res, next) {
   try {
-    const { status, notes } = req.body;
+    const validated = validation.updateBloodRequestStatusSchema.parse(req.body);
 
     const request = await service.updateBloodRequestStatus(
       req.params.id,
-      status,
-      notes
+      validated.status,
+      validated.notes,
+      req.user
     );
 
     res.status(200).json({

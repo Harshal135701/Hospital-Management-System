@@ -1,12 +1,30 @@
-const ApiError = require("../utils/ApiError");
 
-const errorHandler = (err, req, res, next) => {
-  // If headers already sent, delegate to default Express handler
+const ApiError = require('../utils/ApiError');
+const { ZodError } = require('zod');
+
+function errorHandler(err, req, res, next) {
+  // Delegate if the response has already started.
   if (res.headersSent) {
     return next(err);
   }
 
-  // Handle known ApiError instances
+  // 1. Zod validation errors
+  if (err instanceof ZodError || err.name === 'ZodError' || err.issues) {
+    const issues = err.issues || err.errors;
+
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: Array.isArray(issues)
+        ? issues.map((e) => ({
+            path: Array.isArray(e.path) ? e.path.join('.') : '',
+            message: e.message,
+          }))
+        : err.message,
+    });
+  }
+
+  // 2. Custom application errors
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -15,52 +33,65 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Handle Zod validation errors
-  if (err.name === "ZodError" || err.issues) {
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: err.issues || err.errors,
-    });
-  }
-
-  // Handle PostgreSQL errors
+  // 3. PostgreSQL errors
   if (err.code) {
-    // 23505: Unique constraint violation
-    if (err.code === "23505") {
+    const isProd = process.env.NODE_ENV === 'production';
+
+    if (err.code === '23505') {
       return res.status(409).json({
         success: false,
-        message: "Unique constraint violation: Record already exists",
-        detail: err.detail,
+        message: 'A record with this unique identifier already exists.',
+        ...(!isProd ? { detail: err.detail } : {}),
       });
     }
-    // 23503: Foreign key violation
-    if (err.code === "23503") {
+
+    if (err.code === '23503') {
       return res.status(400).json({
         success: false,
-        message: "Referenced entity does not exist",
-        detail: err.detail,
+        message: 'The referenced record does not exist.',
+        ...(!isProd ? { detail: err.detail } : {}),
       });
     }
-    // 22P02: Invalid text representation (e.g. invalid UUID format)
-    if (err.code === "22P02") {
+
+    if (err.code === '23514') {
       return res.status(400).json({
         success: false,
-        message: "Invalid UUID or parameter format provided",
+        message: isProd
+          ? 'Database constraint failed.'
+          : `Database constraint violation: ${err.message}`,
+        ...(!isProd ? { constraint: err.constraint } : {}),
+      });
+    }
+
+    if (err.code === '22P02') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid UUID or parameter format provided.',
+      });
+    }
+
+    if (err.code === 'P0001') {
+      return res.status(422).json({
+        success: false,
+        message: isProd
+          ? 'The requested operation could not be completed.'
+          : err.message,
+        ...(!isProd && err.hint ? { hint: err.hint } : {}),
       });
     }
   }
 
-  // Fallback for regular Errors
-  const isClientError = /not found|cannot|invalid|already|inactive|past|belong/i.test(err.message);
-  const status = isClientError ? 400 : 500;
+  // 4. Unexpected errors
+  console.error('[Unhandled Error]', err);
 
-  console.error("[ServerError]", err);
+  const isProd = process.env.NODE_ENV === 'production';
 
-  return res.status(status).json({
+  return res.status(500).json({
     success: false,
-    message: err.message || "An unexpected error occurred",
+    message: isProd
+      ? 'Internal server error'
+      : err.message || 'Internal server error',
   });
-};
+}
 
 module.exports = errorHandler;

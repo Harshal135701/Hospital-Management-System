@@ -5,23 +5,142 @@
 
 const API_BASE = '/api';
 
-// Reusable fetch wrapper
-async function apiFetch(endpoint, options = {}) {
+const TOKEN_STORAGE_KEY = 'medicsprime_auth_token';
+let currentAuthToken = null;
+
+if (typeof window !== 'undefined' && window.sessionStorage) {
   try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
-    });
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    console.warn(`[API] Fallback for ${endpoint}:`, err.message);
-    return null;
+    currentAuthToken = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch (e) {
+    console.warn('[Auth] sessionStorage inaccessible');
   }
 }
+
+export const TokenManager = {
+  getToken() {
+    if (!currentAuthToken && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        currentAuthToken = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      } catch (e) {}
+    }
+    return currentAuthToken;
+  },
+  setToken(token) {
+    currentAuthToken = token;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        if (token) {
+          window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+        } else {
+          window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+        }
+      } catch (e) {
+        console.warn('[Auth] Failed to set token in sessionStorage');
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth:state-change', { detail: { token } }));
+    }
+  },
+  clearToken() {
+    this.setToken(null);
+  }
+};
+const MOCK_PATIENTS = [
+  {
+    id: 'p-001',
+    uhid: 'UHID-2026-0814',
+    full_name: 'Devika Sengupta',
+    date_of_birth: '1988-04-12',
+    gender: 'female',
+    blood_group: 'B',
+    rh_factor: 'positive',
+    mobile: '+91 98301 22410',
+    created_at: '2026-02-14T09:30:00Z'
+  },
+  {
+    id: 'p-002',
+    uhid: 'UHID-2026-0922',
+    full_name: 'Rajesh Narayan Verma',
+    date_of_birth: '1974-11-23',
+    gender: 'male',
+    blood_group: 'O',
+    rh_factor: 'positive',
+    mobile: '+91 94330 88204',
+    created_at: '2026-02-15T11:15:00Z'
+  },
+  {
+    id: 'p-003',
+    uhid: 'UHID-2026-1045',
+    full_name: 'Amina Khatun',
+    date_of_birth: '1995-07-08',
+    gender: 'female',
+    blood_group: 'AB',
+    rh_factor: 'positive',
+    mobile: '+91 91234 56789',
+    created_at: '2026-02-18T14:00:00Z'
+  },
+  {
+    id: 'p-004',
+    uhid: 'UHID-2026-1180',
+    full_name: 'Vikramaditya Bose',
+    date_of_birth: '1962-09-30',
+    gender: 'male',
+    blood_group: 'A',
+    rh_factor: 'negative',
+    mobile: '+91 98765 43210',
+    created_at: '2026-03-01T10:45:00Z'
+  }
+];
+
+// Reusable fetch wrapper with automatic Authorization header
+async function apiFetch(endpoint, options = {}) {
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+
+    const token = TokenManager.getToken();
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status === 401) {
+        const hadToken = Boolean(token);
+        TokenManager.clearToken();
+        // Only broadcast auth:unauthorized to trigger the login prompt if the client
+        // actually sent a token that was rejected (session expired / revoked).
+        // Never trigger login prompt on background unauthenticated requests.
+        if (typeof window !== 'undefined' && hadToken) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', {
+            detail: {
+              endpoint,
+              code: data.code,
+              message: 'Your staff session has expired or was revoked. Please sign in again.'
+            }
+          }));
+        }
+      }
+      const err = new Error(data.message || `Request failed with status ${res.status}`);
+      err.code = data.code;
+      err.details = data.details || data.errors;
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    console.warn(`[API] Error for ${endpoint}:`, err.message);
+    throw err;
+  }
+}
+
 
 /* ==========================================================================
    PATIENTS & APPOINTMENTS SERVICES (Preserves existing schema)
@@ -29,120 +148,136 @@ async function apiFetch(endpoint, options = {}) {
 
 export const PatientService = {
   async getPatients() {
-    const remote = await apiFetch('/patients');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
-    
-    // Explicitly labeled mock fallback matching database schema
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'p-001',
-          uhid: 'UHID-2026-0814',
-          full_name: 'Devika Sengupta',
-          date_of_birth: '1988-04-12',
-          gender: 'female',
-          blood_group: 'B',
-          rh_factor: 'positive',
-          mobile: '+91 98301 22410',
-          created_at: '2026-02-14T09:30:00Z'
-        },
-        {
-          id: 'p-002',
-          uhid: 'UHID-2026-0922',
-          full_name: 'Rajesh Narayan Verma',
-          date_of_birth: '1974-11-23',
-          gender: 'male',
-          blood_group: 'O',
-          rh_factor: 'positive',
-          mobile: '+91 94330 88204',
-          created_at: '2026-02-15T11:15:00Z'
-        },
-        {
-          id: 'p-003',
-          uhid: 'UHID-2026-1045',
-          full_name: 'Amina Khatun',
-          date_of_birth: '1995-07-08',
-          gender: 'female',
-          blood_group: 'AB',
-          rh_factor: 'positive',
-          mobile: '+91 91234 56789',
-          created_at: '2026-02-18T14:00:00Z'
-        },
-        {
-          id: 'p-004',
-          uhid: 'UHID-2026-1180',
-          full_name: 'Vikramaditya Bose',
-          date_of_birth: '1962-09-30',
-          gender: 'male',
-          blood_group: 'A',
-          rh_factor: 'negative',
-          mobile: '+91 98765 43210',
-          created_at: '2026-03-01T10:45:00Z'
-        }
-      ]
-    };
+    if (!TokenManager.getToken()) {
+      return { isMock: true, data: MOCK_PATIENTS };
+    }
+    try {
+      const remote = await apiFetch('/patients');
+      if (remote && remote.data) return { data: remote.data, isMock: false };
+    } catch (err) {
+      console.warn('[PatientService] Live patient fetch failed, falling back to census mock:', err.message);
+    }
+    return { isMock: true, data: MOCK_PATIENTS };
+  },
+
+  async getPatientByUhid(uhid) {
+    if (!TokenManager.getToken()) {
+      const found = MOCK_PATIENTS.find(p => p.uhid.toLowerCase() === String(uhid).toLowerCase());
+      if (found) return found;
+      return null;
+    }
+    try {
+      const remote = await apiFetch(`/patients/${encodeURIComponent(uhid)}`);
+      return remote?.data || remote;
+    } catch (err) {
+      const found = MOCK_PATIENTS.find(p => p.uhid.toLowerCase() === String(uhid).toLowerCase());
+      if (found) return found;
+      throw err;
+    }
   }
 };
 
 export const AppointmentService = {
-  async getAppointments() {
-    const remote = await apiFetch('/appointments');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
+  async getAppointments(filters = {}) {
+    if (!TokenManager.getToken()) {
+      return [];
+    }
+    const params = new URLSearchParams();
+    if (filters.date) params.append('date', filters.date);
+    if (filters.doctorId) params.append('doctorId', filters.doctorId);
+    if (filters.departmentId) params.append('departmentId', filters.departmentId);
+    if (filters.patientId) params.append('patientId', filters.patientId);
+    if (filters.status) params.append('status', filters.status);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    try {
+      const res = await apiFetch(`/appointments${qs}`);
+      return res?.data || res || [];
+    } catch (err) {
+      console.warn('[AppointmentService] Fetch failed:', err.message);
+      return [];
+    }
+  },
 
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'apt-101',
-          appointment_number: 'APT-2026-0491',
-          patient_name: 'Devika Sengupta',
-          patient_uhid: 'UHID-2026-0814',
-          doctor_name: 'Dr. Arindam Mitra',
-          department_name: 'Cardiology',
-          appointment_date: '2026-10-12',
-          start_time: '10:00 AM',
-          status: 'confirmed',
-          visit_type: 'follow_up'
-        },
-        {
-          id: 'apt-102',
-          appointment_number: 'APT-2026-0492',
-          patient_name: 'Rajesh Narayan Verma',
-          patient_uhid: 'UHID-2026-0922',
-          doctor_name: 'Dr. Sunita Rao',
-          department_name: 'General Medicine',
-          appointment_date: '2026-10-12',
-          start_time: '10:30 AM',
-          status: 'in_consultation',
-          visit_type: 'first_visit'
-        },
-        {
-          id: 'apt-103',
-          appointment_number: 'APT-2026-0493',
-          patient_name: 'Vikramaditya Bose',
-          patient_uhid: 'UHID-2026-1180',
-          doctor_name: 'Dr. Pradeep K. Sharma',
-          department_name: 'Orthopaedics',
-          appointment_date: '2026-10-12',
-          start_time: '11:15 AM',
-          status: 'confirmed',
-          visit_type: 'follow_up'
-        },
-        {
-          id: 'apt-104',
-          appointment_number: 'APT-2026-0494',
-          patient_name: 'Amina Khatun',
-          patient_uhid: 'UHID-2026-1045',
-          doctor_name: 'Dr. Meenakshi Sundaram',
-          department_name: 'Haematology & Transfusion',
-          appointment_date: '2026-10-12',
-          start_time: '01:30 PM',
-          status: 'confirmed',
-          visit_type: 'first_visit'
-        }
-      ]
-    };
+  async getAppointmentById(id) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}`);
+    return res?.data || res;
+  },
+
+  async createAppointment(data) {
+    const res = await apiFetch('/appointments', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data || res;
+  },
+
+  async rescheduleAppointment(id, data) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data || res;
+  },
+
+  async cancelAppointment(id, reason) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}/cancel`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason })
+    });
+    return res?.data || res;
+  },
+
+  async getAvailableSlots(doctorId, date, duration = 15) {
+    const res = await apiFetch(
+      `/appointments/available-slots?doctorId=${encodeURIComponent(doctorId)}&date=${encodeURIComponent(date)}&duration=${duration}`
+    );
+    return res?.data || res;
+  },
+
+  async getPatientHistory(patientId) {
+    const res = await apiFetch(`/appointments/patient/${encodeURIComponent(patientId)}`);
+    return res?.data || res || [];
+  }
+};
+
+export const AppointmentBloodRequestService = {
+  async getBloodRequests(params = {}) {
+    if (!TokenManager.getToken()) {
+      return [];
+    }
+    const query = new URLSearchParams();
+    if (params.patient_id) query.append('patient_id', params.patient_id);
+    if (params.appointment_id) query.append('appointment_id', params.appointment_id);
+    if (params.status) query.append('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    try {
+      const res = await apiFetch(`/blood-requests${qs}`);
+      return res?.data || res || [];
+    } catch (err) {
+      console.warn('[AppointmentBloodRequestService] Fetch failed:', err.message);
+      return [];
+    }
+  },
+
+  async getBloodRequestById(id) {
+    const res = await apiFetch(`/blood-requests/${encodeURIComponent(id)}`);
+    return res?.data || res;
+  },
+
+  async createBloodRequest(data) {
+    const res = await apiFetch('/blood-requests', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data || res;
+  },
+
+  async updateBloodRequestStatus(id, status, notes) {
+    const res = await apiFetch(`/blood-requests/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes })
+    });
+    return res?.data || res;
   }
 };
 
@@ -338,361 +473,224 @@ export const InpatientWardService = {
 
 export const BloodBankService = {
   // 5.1 Donors & Screenings
-  async getDonors() {
-    const remote = await apiFetch('/blood-bank/donors');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
+  async getDonors(query = '') {
+    const remote = await apiFetch(`/blood-bank/donors${query ? '?' + query : ''}`);
+    return { data: remote?.data || [], isMock: false };
+  },
 
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'don-01',
-          donor_code: 'DNR-2026-0041',
-          full_name: 'Rahul Debnath',
-          gender: 'male',
-          date_of_birth: '1992-06-15',
-          blood_group: 'O',
-          rh_factor: 'positive',
-          mobile: '+91 98311 55667',
-          donor_status: 'active',
-          total_donations: 4,
-          last_donation_date: '2026-06-10',
-          last_screening: {
-            eligibility_status: 'approved',
-            hemoglobin_g_dl: 14.2,
-            weight_kg: 68.5,
-            blood_pressure: '120/80',
-            pulse_bpm: 72,
-            consent_obtained: true
-          }
-        },
-        {
-          id: 'don-02',
-          donor_code: 'DNR-2026-0042',
-          full_name: 'Priyanka Banerjee',
-          gender: 'female',
-          date_of_birth: '1996-03-21',
-          blood_group: 'A',
-          rh_factor: 'positive',
-          mobile: '+91 98402 77112',
-          donor_status: 'temporarily_deferred',
-          total_donations: 2,
-          last_donation_date: '2026-08-01',
-          last_screening: {
-            eligibility_status: 'temporarily_deferred',
-            hemoglobin_g_dl: 11.4, // Below 12.5 threshold!
-            weight_kg: 52.0,
-            blood_pressure: '110/70',
-            pulse_bpm: 78,
-            deferral_reason: 'Low hemoglobin (11.4 g/dL; requirement is >= 12.5 g/dL)',
-            deferred_until: '2026-11-15'
-          }
-        },
-        {
-          id: 'don-03',
-          donor_code: 'DNR-2026-0043',
-          full_name: 'Kavita Murthy',
-          gender: 'female',
-          date_of_birth: '1990-12-04',
-          blood_group: 'B',
-          rh_factor: 'negative',
-          mobile: '+91 97422 33445',
-          donor_status: 'active',
-          total_donations: 5,
-          last_donation_date: '2026-05-18',
-          last_screening: {
-            eligibility_status: 'approved',
-            hemoglobin_g_dl: 13.0,
-            weight_kg: 61.0,
-            blood_pressure: '122/82',
-            pulse_bpm: 74,
-            consent_obtained: true
-          }
-        }
-      ]
-    };
+  async getDonorById(id) {
+    const remote = await apiFetch(`/blood-bank/donors/${id}`);
+    return { data: remote?.data || null, isMock: false };
   },
 
   // 5.2 Collections
-  async getCollections() {
-    const remote = await apiFetch('/blood-bank/donations');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
-
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'col-01',
-          donation_number: 'BLD-2026-0189',
-          donor_name: 'Rahul Debnath',
-          donor_code: 'DNR-2026-0041',
-          primary_bag_barcode: 'BB-98745612301',
-          bag_type: 'triple',
-          volume_ml: 450,
-          collection_status: 'completed',
-          phlebotomist_name: 'Nurse Savitri Devi',
-          collection_started_at: '2026-10-12T08:30:00Z',
-          components_separated: ['PRBC-8812', 'FFP-8813', 'PLT-8814']
-        },
-        {
-          id: 'col-02',
-          donation_number: 'BLD-2026-0190',
-          donor_name: 'Kavita Murthy',
-          donor_code: 'DNR-2026-0043',
-          primary_bag_barcode: 'BB-98745612302',
-          bag_type: 'double',
-          volume_ml: 350,
-          collection_status: 'completed',
-          phlebotomist_name: 'Nurse Savitri Devi',
-          collection_started_at: '2026-10-12T09:15:00Z',
-          components_separated: ['PRBC-8815', 'FFP-8816']
-        }
-      ]
-    };
+  async getCollections(query = '') {
+    const remote = await apiFetch(`/blood-bank/donations${query ? '?' + query : ''}`);
+    return { data: remote?.data || [], isMock: false };
   },
 
   // 5.3 Component Inventory
-  async getComponents() {
-    const remote = await apiFetch('/blood-bank/components');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
-
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'cmp-01',
-          component_barcode: 'PRBC-2026-0914',
-          component_type: 'prbc',
-          abo_group: 'O',
-          rh_factor: 'positive',
-          volume_ml: 280,
-          status: 'safe_for_release',
-          storage_location: 'Refrig-01 (Shelf A)',
-          storage_min_temp_c: 2.0,
-          storage_max_temp_c: 6.0,
-          current_temp_c: 3.8,
-          expires_at: '2026-11-16T12:00:00Z'
-        },
-        {
-          id: 'cmp-02',
-          component_barcode: 'FFP-2026-0915',
-          component_type: 'ffp',
-          abo_group: 'O',
-          rh_factor: 'positive',
-          volume_ml: 220,
-          status: 'safe_for_release',
-          storage_location: 'DeepFreezer-02 (Bin 3)',
-          storage_min_temp_c: -40.0,
-          storage_max_temp_c: -30.0,
-          current_temp_c: -34.5,
-          expires_at: '2027-10-12T12:00:00Z'
-        },
-        {
-          id: 'cmp-03',
-          component_barcode: 'PLT-2026-0916',
-          component_type: 'platelets',
-          abo_group: 'O',
-          rh_factor: 'positive',
-          volume_ml: 65,
-          status: 'reserved',
-          storage_location: 'Agitator-01',
-          storage_min_temp_c: 20.0,
-          storage_max_temp_c: 24.0,
-          current_temp_c: 22.1,
-          requires_agitator: true,
-          expires_at: '2026-10-17T12:00:00Z'
-        },
-        {
-          id: 'cmp-04',
-          component_barcode: 'PRBC-2026-0920',
-          component_type: 'prbc',
-          abo_group: 'B',
-          rh_factor: 'negative',
-          volume_ml: 290,
-          status: 'quarantined',
-          storage_location: 'Quarantine-Cold-01',
-          storage_min_temp_c: 2.0,
-          storage_max_temp_c: 6.0,
-          current_temp_c: 4.1,
-          expires_at: '2026-11-18T12:00:00Z'
-        }
-      ]
-    };
+  async getComponents(query = '') {
+    if (!TokenManager.getToken()) {
+      return { data: [], isMock: true };
+    }
+    try {
+      const remote = await apiFetch(`/blood-bank/components${query ? '?' + query : ''}`);
+      return { data: remote?.data || [], isMock: false };
+    } catch (err) {
+      console.warn('[BloodBankService] getComponents fetch failed:', err.message);
+      return { data: [], isMock: true };
+    }
   },
 
   // 5.4 Serology & Safe Release
   async getSerologyWorkbench() {
     const remote = await apiFetch('/blood-bank/serology-workbench');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
-
-    return {
-      isMock: true,
-      data: [
-        {
-          donation_id: 'col-01',
-          donation_number: 'BLD-2026-0189',
-          donor_name: 'Rahul Debnath',
-          blood_group_claimed: 'O+',
-          dual_grouping: {
-            technician1: 'Tech Anirban Das',
-            technician2: 'Tech Sourav Paul',
-            concur: true,
-            verified: true,
-            determined_group: 'O Positive'
-          },
-          tti_tests: [
-            { name: 'HIV 1 & 2', result: 'non_reactive', method: 'ELISA / 4th Gen' },
-            { name: 'Hepatitis B (HBsAg)', result: 'non_reactive', method: 'ELISA' },
-            { name: 'Hepatitis C (HCV)', result: 'non_reactive', method: 'ELISA' },
-            { name: 'Syphilis (VDRL/RPR)', result: 'non_reactive', method: 'Flocculation' },
-            { name: 'Malaria', result: 'non_reactive', method: 'Antigen Card' }
-          ],
-          release_authorization: {
-            status: 'approved_for_release',
-            authorized_by: 'Dr. Meenakshi Sundaram (Blood Bank Officer)',
-            authorized_at: '2026-10-12T11:00:00Z',
-            dual_grouping_verified: true,
-            all_tti_non_reactive: true
-          }
-        },
-        {
-          donation_id: 'col-02',
-          donation_number: 'BLD-2026-0190',
-          donor_name: 'Kavita Murthy',
-          blood_group_claimed: 'B-',
-          dual_grouping: {
-            technician1: 'Tech Anirban Das',
-            technician2: 'Tech Sourav Paul',
-            concur: true,
-            verified: true,
-            determined_group: 'B Negative'
-          },
-          tti_tests: [
-            { name: 'HIV 1 & 2', result: 'non_reactive', method: 'ELISA' },
-            { name: 'Hepatitis B (HBsAg)', result: 'non_reactive', method: 'ELISA' },
-            { name: 'Hepatitis C (HCV)', result: 'non_reactive', method: 'ELISA' },
-            { name: 'Syphilis (VDRL/RPR)', result: 'testing_pending', method: 'Pending' },
-            { name: 'Malaria', result: 'non_reactive', method: 'Antigen Card' }
-          ],
-          release_authorization: {
-            status: 'quarantined',
-            notes: 'Awaiting Syphilis test completion; all 5 mandatory TTI markers required'
-          }
-        }
-      ]
-    };
+    return { data: remote?.data || [], isMock: false };
   },
 
   // 5.5 Requisitions & Crossmatching
-  async getRequisitions() {
-    const remote = await apiFetch('/blood-bank/requisitions');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
-
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'req-01',
-          requisition_number: 'REQ-2026-0310',
-          patient_name: 'Devika Sengupta',
-          patient_uhid: 'UHID-2026-0814',
-          patient_blood_group: 'B+',
-          requested_component: 'prbc',
-          units_requested: 2,
-          units_reserved: 1,
-          units_issued: 0,
-          urgency: 'urgent',
-          clinical_indication: 'Severe anemia secondary to surgical intervention',
-          status: 'partially_fulfilled',
-          crossmatch: {
-            crossmatch_id: 'XM-2026-0901',
-            component_barcode: 'PRBC-2026-0899',
-            major_result: 'compatible',
-            compatibility: 'compatible',
-            technique: 'Gel Card (AHG)',
-            tested_at: '2026-10-12T09:45:00Z',
-            is_expired: false,
-            unit_blood_group: 'B Positive'
-          }
-        },
-        {
-          id: 'req-02',
-          requisition_number: 'REQ-2026-0311',
-          patient_name: 'Vikramaditya Bose',
-          patient_uhid: 'UHID-2026-1180',
-          patient_blood_group: 'A-',
-          requested_component: 'prbc',
-          units_requested: 1,
-          units_reserved: 0,
-          units_issued: 0,
-          urgency: 'routine',
-          clinical_indication: 'Total Knee Replacement pre-op reserve',
-          status: 'sample_received',
-          crossmatch: null
-        }
-      ]
-    };
+  async getRequisitions(query = '') {
+    const remote = await apiFetch(`/blood-bank/requisitions${query ? '?' + query : ''}`);
+    return { data: remote?.data || [], isMock: false };
   },
 
   // 5.6 Issue & Handover
-  async getIssues() {
-    const remote = await apiFetch('/blood-bank/issues');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
+  async getIssues(query = '') {
+    const remote = await apiFetch(`/blood-bank/issues${query ? '?' + query : ''}`);
+    return { data: remote?.data || [], isMock: false };
+  },
 
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'iss-01',
-          issue_number: 'ISS-2026-0088',
-          requisition_number: 'REQ-2026-0305',
-          patient_name: 'Meera Mukherjee',
-          patient_uhid: 'UHID-2026-0772',
-          ward_name: 'Cardiothoracic OT 2',
-          component_barcode: 'PRBC-2026-0710',
-          component_type: 'prbc',
-          blood_group: 'O Positive',
-          crossmatch_status: 'compatible',
-          issued_at: '2026-10-12T10:15:00Z',
-          dispatched_by: 'Tech Anirban Das',
-          received_by: 'Staff Nurse R. Thomas (OT)',
-          cold_chain_carrier_id: 'BOX-CTOT-04',
-          dispatch_temp_c: 4.2,
-          handover_status: 'dispatched',
-          verification_checklist: {
-            patient_id_verified: true,
-            blood_group_matched: true,
-            expiry_date_verified: true,
-            visual_inspection_clear: true,
-            transport_box_chilled: true
-          }
-        },
-        {
-          id: 'iss-02',
-          issue_number: 'ISS-2026-0089',
-          requisition_number: 'REQ-2026-0306',
-          patient_name: 'Aniruddha Sen',
-          patient_uhid: 'UHID-2026-0640',
-          ward_name: 'Emergency Resuscitation 1',
-          component_barcode: 'FFP-2026-0520',
-          component_type: 'ffp',
-          blood_group: 'A Positive',
-          crossmatch_status: 'compatible',
-          issued_at: '2026-10-12T08:50:00Z',
-          dispatched_by: 'Tech Sourav Paul',
-          received_by: 'Dr. K. Nair (Trauma Fellow)',
-          cold_chain_carrier_id: 'BOX-EMERG-02',
-          dispatch_temp_c: 3.8,
-          handover_status: 'transfusion_started',
-          verification_checklist: {
-            patient_id_verified: true,
-            blood_group_matched: true,
-            expiry_date_verified: true,
-            visual_inspection_clear: true,
-            transport_box_chilled: true
-          }
-        }
-      ]
-    };
+  // 5.7 Blood Bank Mutations
+  async createDonor(donorData) {
+    return await apiFetch('/blood-bank/donors', {
+      method: 'POST',
+      body: JSON.stringify(donorData)
+    });
+  },
+
+  async recordScreening(screeningData) {
+    return await apiFetch('/blood-bank/screenings', {
+      method: 'POST',
+      body: JSON.stringify(screeningData)
+    });
+  },
+
+  async createCollection(collectionData) {
+    return await apiFetch('/blood-bank/donations', {
+      method: 'POST',
+      body: JSON.stringify(collectionData)
+    });
+  },
+
+  async createComponents(componentData) {
+    return await apiFetch('/blood-bank/components', {
+      method: 'POST',
+      body: JSON.stringify(componentData)
+    });
+  },
+
+  async recordGrouping(groupingData) {
+    return await apiFetch('/blood-bank/grouping-verifications', {
+      method: 'POST',
+      body: JSON.stringify(groupingData)
+    });
+  },
+
+  async recordSerologyTest(testData) {
+    return await apiFetch('/blood-bank/serology-tests', {
+      method: 'POST',
+      body: JSON.stringify(testData)
+    });
+  },
+
+  async authorizeSafeRelease(authData) {
+    return await apiFetch('/blood-bank/release-authorizations', {
+      method: 'POST',
+      body: JSON.stringify(authData)
+    });
+  },
+
+  async createRequisition(reqData) {
+    return await apiFetch('/blood-bank/requisitions', {
+      method: 'POST',
+      body: JSON.stringify(reqData)
+    });
+  },
+
+  async recordCrossmatch(xmData) {
+    return await apiFetch('/blood-bank/crossmatches', {
+      method: 'POST',
+      body: JSON.stringify(xmData)
+    });
+  },
+
+  async reserveComponent(reservationData) {
+    return await apiFetch('/blood-bank/reservations', {
+      method: 'POST',
+      body: JSON.stringify(reservationData)
+    });
+  },
+
+  async cancelReservation(cancellationData) {
+    return await apiFetch('/blood-bank/reservations/cancel', {
+      method: 'POST',
+      body: JSON.stringify(cancellationData)
+    });
+  },
+
+  async issueBlood(issueData) {
+    return await apiFetch('/blood-bank/issues', {
+      method: 'POST',
+      body: JSON.stringify(issueData)
+    });
+  },
+
+  async getAuditLogs(query = '') {
+    const remote = await apiFetch(`/blood-bank/audit-logs${query ? '?' + query : ''}`);
+    if (remote && remote.data) return { data: remote.data, isMock: false };
+    return { data: [], isMock: false };
+  },
+
+  async getStorageTemperatureLogs(query = '') {
+    const remote = await apiFetch(`/blood-bank/storage-temperature-logs${query ? '?' + query : ''}`);
+    return { data: remote?.data || [], isMock: false };
+  },
+
+  async recordStorageTemperatureLog(logData) {
+    return await apiFetch('/blood-bank/storage-temperature-logs', {
+      method: 'POST',
+      body: JSON.stringify(logData)
+    });
+  }
+};
+
+/* ==========================================================================
+   AUTHENTICATION & SESSION SERVICES
+   ========================================================================== */
+
+export const AuthService = {
+  async login(email, password) {
+    const res = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+    if (res?.data?.token) {
+      TokenManager.setToken(res.data.token);
+      if (typeof window !== 'undefined' && window.sessionStorage && res.data.user) {
+        try {
+          window.sessionStorage.setItem('medicsprime_auth_user', JSON.stringify(res.data.user));
+        } catch (e) {}
+      }
+    }
+    return res.data;
+  },
+
+  async logout() {
+    try {
+      if (TokenManager.getToken()) {
+        await apiFetch('/auth/logout', { method: 'POST' });
+      }
+    } catch (e) {
+      console.warn('[Auth] Logout API call failed:', e.message);
+    } finally {
+      TokenManager.clearToken();
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.removeItem('medicsprime_auth_user');
+        } catch (e) {}
+      }
+    }
+  },
+
+  getUser() {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const u = window.sessionStorage.getItem('medicsprime_auth_user');
+        return u ? JSON.parse(u) : null;
+      } catch (e) {}
+    }
+    return null;
+  },
+
+  async getCurrentUser() {
+    const res = await apiFetch('/auth/me');
+    if (res?.data && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        window.sessionStorage.setItem('medicsprime_auth_user', JSON.stringify(res.data));
+      } catch (e) {}
+    }
+    return res?.data;
+  },
+
+  async changePassword(current_password, new_password) {
+    return await apiFetch('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ current_password, new_password })
+    });
+  },
+
+  isAuthenticated() {
+    return !!TokenManager.getToken();
   }
 };

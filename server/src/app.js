@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -6,34 +7,44 @@ const appointmentRoutes = require("./modules/appointments/appointment.routes");
 const bloodRequestRoutes = require("./modules/appointments/bloodRequest.routes");
 const rosterRoutes = require("./modules/rosters/roster.routes");
 const queueRoutes = require("./modules/queue/queue.routes");
-const notFound = require("./middleware/not-found.middleware");
-const errorHandler = require("./middleware/error.middleware");
-const pool = require("./config/db");
 const notificationRoutes = require("./modules/notifications/notification.routes");
 const startNotificationScheduler = require("./modules/notifications/notification.scheduler");
+
 const billingRoutes = require("./modules/billing/billing.routes");
 const ipdBillingRoutes = require("./modules/billing/ipd-billing.routes");
 const dischargeBillingRoutes = require("./modules/billing/discharge-billing.routes");
 const depositRoutes = require("./modules/billing/deposit.routes");
 const refundRoutes = require("./modules/billing/refund.routes");
 const settlementRoutes = require("./modules/billing/settlement.routes");
+
 const authRoutes = require("./modules/auth/auth.routes");
+const patientRoutes = require("./modules/patients/patient.routes");
 const bloodBankRoutes = require("./modules/bloodbank/bloodbank.routes");
+
 const consultationRoutes = require("./modules/consultation/consultation.routes");
 const vitalsRoutes = require("./modules/consultation/vitals.routes");
 const clinicalHistoryRoutes = require("./modules/clinical-history/clinical-history.routes");
 const providerOrdersRoutes = require("./modules/provider-orders/provider-orders.routes");
 const clinicalNotesRoutes = require("./modules/clinical-notes/clinical-notes.routes");
+
 const preauthorizationRoutes = require("./modules/insurance-tpa/preauthorization.routes");
 const enhancementRoutes = require("./modules/insurance-tpa/enhancement.routes");
 const claimDossierRoutes = require("./modules/insurance-tpa/claim-dossier.routes");
 const responsibilityRoutes = require("./modules/insurance-tpa/responsibility.routes");
 const reconciliationRoutes = require("./modules/insurance-tpa/reconciliation.routes");
 
+const { globalApiRateLimiter } = require("./middleware/rate-limiter.middleware");
+const notFoundHandler = require("./middleware/not-found.middleware");
+const errorHandler = require("./middleware/error.middleware");
+const pool = require("./config/db");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Apply API rate limiting before registering API endpoints.
+app.use("/api", globalApiRateLimiter);
 
 // Health Check
 app.get("/api/health", (req, res) => {
@@ -44,14 +55,22 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Quick Metadata Directory (Convenient for testing IDs and UI dropdowns)
+// Quick Metadata Directory
 app.get("/api/meta", async (req, res, next) => {
   try {
     const [departments, doctors, patients, rooms] = await Promise.all([
-      pool.query("SELECT id, name, code, description FROM departments WHERE is_active = true ORDER BY name"),
-      pool.query("SELECT d.id, d.full_name, d.employee_code, d.department_id, dep.name AS department_name, d.room_id FROM doctors d JOIN departments dep ON dep.id = d.department_id WHERE d.is_active = true ORDER BY d.full_name"),
-      pool.query("SELECT id, uhid, full_name, mobile, gender FROM patients ORDER BY full_name"),
-      pool.query("SELECT id, room_number, name, floor FROM rooms WHERE is_active = true ORDER BY room_number"),
+      pool.query(
+        "SELECT id, name, code, description FROM departments WHERE is_active = true ORDER BY name"
+      ),
+      pool.query(
+        "SELECT d.id, d.full_name, d.employee_code, d.department_id, dep.name AS department_name, d.room_id FROM doctors d JOIN departments dep ON dep.id = d.department_id WHERE d.is_active = true ORDER BY d.full_name"
+      ),
+      pool.query(
+        "SELECT id, uhid, full_name, mobile, gender FROM patients ORDER BY full_name"
+      ),
+      pool.query(
+        "SELECT id, room_number, name, floor FROM rooms WHERE is_active = true ORDER BY room_number"
+      ),
     ]);
 
     res.status(200).json({
@@ -63,83 +82,50 @@ app.get("/api/meta", async (req, res, next) => {
         rooms: rooms.rows,
       },
     });
-  } catch (e) {
-    next(e);
+  } catch (err) {
+    next(err);
   }
 });
 
-// Module 3: Appointments Submodules
-// 3.1 Book / Reschedule Appointment
-app.use("/api/appointments", appointmentRoutes);
-
-// 3.2 Doctor Roster & Shift Planning
-app.use("/api/rosters", rosterRoutes);
-
-// 3.3 Token Queue / Waiting Room Display
-app.use("/api/queue", queueRoutes);
-
-// 3.4 Message apis
-
-app.use("/api/notifications", notificationRoutes);
-
-// Module 4.1: Billing & Payments
-app.use("/api/billing", billingRoutes);
-
-// Module 4.2: IPD Interim Billing
-app.use("/api/billing/ipd", ipdBillingRoutes);
-
-// Module 4.3: Discharge Final Billing
-app.use("/api/billing/ipd", dischargeBillingRoutes);
-
-// Module 4.4: Deposite Billing
-app.use("/api/billing/deposits", depositRoutes);
-
-// Module 4.5: My Refunds
-app.use("/api/billing/refunds", refundRoutes);
-
-// Module 4.6: Day-End Cashier Settlement
-app.use("/api/billing/settlement", settlementRoutes);
-
-// 5.1 Blood request routes
+// Authentication, patients and blood bank
 app.use("/api/auth", authRoutes);
+app.use("/api/patients", patientRoutes);
 app.use("/api/blood-bank", bloodBankRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
 
-//  6.1 Doctor Consultation Desk
+// Appointments
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/rosters", rosterRoutes);
+app.use("/api/queue", queueRoutes);
+app.use("/api/notifications", notificationRoutes);
+
+// Billing and payments
+app.use("/api/billing", billingRoutes);
+app.use("/api/billing/ipd", ipdBillingRoutes);
+app.use("/api/billing/ipd", dischargeBillingRoutes);
+app.use("/api/billing/deposits", depositRoutes);
+app.use("/api/billing/refunds", refundRoutes);
+app.use("/api/billing/settlement", settlementRoutes);
+
+// Clinical services
 app.use("/api/consultations", consultationRoutes);
-
-//  6.2 Vitals Recording & Physical Examination
 app.use("/api/vitals", vitalsRoutes);
-
-//  6.3 — Clinical History & Patient Assessment
 app.use("/api/clinical-history", clinicalHistoryRoutes);
-
-// 6.4 CPOE
 app.use("/api/provider-orders", providerOrdersRoutes);
-
-// 6.5 clinical submodule
 app.use("/api/clinical-notes", clinicalNotesRoutes);
 
-// 7.1 TPA & Insurance Pre-Authorization
+// Insurance and TPA
 app.use("/api/insurance/preauthorizations", preauthorizationRoutes);
-
-// 7.2 Enhancement Request Management
 app.use("/api/insurance/enhancements", enhancementRoutes);
-
-// 7.3  Claim Dossier Compilation & Submission
 app.use("/api/insurance/claims", claimDossierRoutes);
-
-// 7.4 Co-Payment & Deductible Collection
 app.use("/api/insurance/responsibilities", responsibilityRoutes);
-
-// 7.5 TPA Reconciliation & Payment Posting
 app.use("/api/insurance/reconciliations", reconciliationRoutes);
 
-// 404 & Global Error Handling
-app.use(notFound);
+// Not-found and error handling must remain last.
+app.use(notFoundHandler);
 app.use(errorHandler);
 
+// Start notification scheduler
 startNotificationScheduler();
-
 
 module.exports = app;

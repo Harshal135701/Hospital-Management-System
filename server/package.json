@@ -1,3 +1,4 @@
+
 {
   "name": "hospital-management-system",
   "version": "1.0.0",
@@ -5,9 +6,15 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node tests/test_appointment_system.js",
+    "test": "npm run test:appointments && npm run test:blood-bank",
+    "test:appointments": "node tests/test_appointment_system.js",
+    "test:blood-bank": "node tests/blood-bank.test.mjs",
+    "test:auth-bloodbank": "node --test tests/auth-bloodbank-flow.test.mjs",
+    "test:appointment-blood-request": "node --test tests/appointment-blood-request.test.mjs",
+    "test:security-rbac": "node --test tests/security-rbac.test.mjs",
     "migrate:create": "node-pg-migrate create",
-    "migrate:up": "dotenv -e .env -- node-pg-migrate up"
+    "migrate:up": "dotenv run -f .env -- node-pg-migrate up",
+    "seed": "node seeds/seed-dev-staff.js"
   },
   "keywords": [],
   "author": "",
