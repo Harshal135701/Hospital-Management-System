@@ -1,13 +1,14 @@
 /**
- * Migration: 1791810000000_appointment-enhancements.js
+ * Migration: 1792056000000_appointment-enhancements.js
  *
  * Adds appointment enhancements, doctor schedule room linkage,
+ * blood requisition linkage to appointment blood requests,
  * performance indexes, and seeds standard reference rooms.
  */
 
-export const shorthands = undefined;
+exports.shorthands = undefined;
 
-export const up = (pgm) => {
+exports.up = (pgm) => {
   pgm.sql(`
     -- Add optional appointment_number, notes, cancellation_reason, and is_priority to appointments
     ALTER TABLE appointments
@@ -16,11 +17,20 @@ export const up = (pgm) => {
       ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
       ADD COLUMN IF NOT EXISTS is_priority BOOLEAN NOT NULL DEFAULT FALSE;
 
+    -- Backfill appointment_number for any existing rows
+    UPDATE appointments
+      SET appointment_number = 'APT-' || TO_CHAR(appointment_date, 'YYYY') || '-' || LPAD(token_number::text, 4, '0')
+      WHERE appointment_number IS NULL;
+
     -- Add optional room_id to doctor_schedules
     ALTER TABLE doctor_schedules
       ADD COLUMN IF NOT EXISTS room_id UUID REFERENCES rooms(id) ON DELETE SET NULL;
 
-    -- Ensure helpful index for waiting room & token queue displays
+    -- Add blood_requisition_id to appointment_blood_requests
+    ALTER TABLE appointment_blood_requests
+      ADD COLUMN IF NOT EXISTS blood_requisition_id UUID REFERENCES blood_requisitions(id) ON DELETE SET NULL;
+
+    -- Ensure helpful indexes
     CREATE INDEX IF NOT EXISTS idx_appointments_date_status_token
       ON appointments (appointment_date, status, token_number);
 
@@ -29,6 +39,9 @@ export const up = (pgm) => {
 
     CREATE INDEX IF NOT EXISTS idx_leaves_doctor_range_status
       ON doctor_leaves (doctor_id, start_date, end_date, status);
+
+    CREATE INDEX IF NOT EXISTS idx_apt_blood_req_requisition
+      ON appointment_blood_requests (blood_requisition_id);
 
     -- Seed reference consultation rooms if none exist
     INSERT INTO rooms (id, room_number, name, floor, is_active)
@@ -41,15 +54,14 @@ export const up = (pgm) => {
   `);
 };
 
-export const down = (pgm) => {
+exports.down = (pgm) => {
   pgm.sql(`
+    DROP INDEX IF EXISTS idx_apt_blood_req_requisition;
     DROP INDEX IF EXISTS idx_leaves_doctor_range_status;
     DROP INDEX IF EXISTS idx_rosters_doctor_date_published;
     DROP INDEX IF EXISTS idx_appointments_date_status_token;
+    ALTER TABLE appointment_blood_requests DROP COLUMN IF EXISTS blood_requisition_id;
     ALTER TABLE doctor_schedules DROP COLUMN IF EXISTS room_id;
-    ALTER TABLE appointments DROP COLUMN IF EXISTS is_priority;
-    ALTER TABLE appointments DROP COLUMN IF EXISTS cancellation_reason;
-    ALTER TABLE appointments DROP COLUMN IF EXISTS notes;
     ALTER TABLE appointments DROP COLUMN IF EXISTS appointment_number;
   `);
 };

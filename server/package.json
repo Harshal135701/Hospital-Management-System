@@ -13,7 +13,7 @@
     "test:appointment-blood-request": "node --test tests/appointment-blood-request.test.mjs",
     "test:security-rbac": "node --test tests/security-rbac.test.mjs",
     "migrate:create": "node-pg-migrate create",
-    "migrate:up": "dotenv run -f .env -- node-pg-migrate up",
+    "migrate:up": "dotenv -e .env -- node-pg-migrate up",
     "seed": "node seeds/seed-dev-staff.js"
   },
   "keywords": [],

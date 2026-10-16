@@ -4,18 +4,23 @@ const pool = require("../src/config/db");
 
 let server;
 let baseUrl;
+let authToken = null;
 
 const request = (method, path, body = null) => {
   return new Promise((resolve, reject) => {
     const url = new URL(path, baseUrl);
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
     const options = {
       method,
       hostname: url.hostname,
       port: url.port,
       path: url.pathname + url.search,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     };
 
     const req = http.request(options, (res) => {
@@ -66,6 +71,15 @@ async function runTests() {
     const patient = patients[0];
     const patient2 = patients[1] || patients[0];
     const room = rooms[0];
+
+    const loginRes = await request("POST", "/api/auth/login", {
+      email: "admin@hospital.test",
+      password: "Admin#Pass2026!"
+    });
+    if (loginRes.status === 200 && loginRes.body?.data?.token) {
+      authToken = loginRes.body.data.token;
+      console.log("✔ Auth login successful as super_admin");
+    }
 
     // Compute future test dates
     const testDate = "2026-11-10"; // Tuesday

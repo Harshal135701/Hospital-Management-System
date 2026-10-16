@@ -237,6 +237,16 @@ export const AppointmentService = {
   async getPatientHistory(patientId) {
     const res = await apiFetch(`/appointments/patient/${encodeURIComponent(patientId)}`);
     return res?.data || res || [];
+  },
+
+  async getMeta() {
+    try {
+      const res = await apiFetch('/meta');
+      return res?.data || { departments: [], doctors: [], patients: [], rooms: [] };
+    } catch (err) {
+      console.warn('[AppointmentService] Meta fetch failed:', err.message);
+      return { departments: [], doctors: [], patients: [], rooms: [] };
+    }
   }
 };
 
