@@ -9,6 +9,11 @@ const appointmentRoutes = require("./modules/appointments/appointment.routes");
 const bloodRequestRoutes = require("./modules/appointments/bloodRequest.routes");
 const doctorRoutes = require("./modules/doctors/doctor.routes");
 const departmentRoutes = require("./modules/departments/department.routes");
+const consultationRoutes = require("./modules/consultations/consultation.routes");
+const vitalsRoutes = require("./modules/vitals/vitals.routes");
+const clinicalHistoryRoutes = require("./modules/clinical-history/clinical-history.routes");
+const providerOrdersRoutes = require("./modules/provider-orders/provider-orders.routes");
+const clinicalNotesRoutes = require("./modules/clinical-notes/clinical-notes.routes");
 const { globalApiRateLimiter } = require("./middleware/rate-limiter.middleware");
 const errorHandler = require("./middleware/error.middleware");
 const notFoundHandler = require("./middleware/not-found.middleware");
@@ -37,6 +42,11 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/consultations", consultationRoutes);
+app.use("/api/vitals", vitalsRoutes);
+app.use("/api/clinical-history", clinicalHistoryRoutes);
+app.use("/api/provider-orders", providerOrdersRoutes);
+app.use("/api/clinical-notes", clinicalNotesRoutes);
 
 // Catch-all & Error Handlers
 app.use(notFoundHandler);
