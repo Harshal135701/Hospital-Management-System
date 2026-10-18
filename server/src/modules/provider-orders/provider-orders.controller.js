@@ -1,12 +1,18 @@
+
 const service = require("./provider-orders.service");
+const {
+  createOrderSchema,
+  updateOrderStatusSchema,
+} = require("./provider-orders.validation");
 
 async function createOrder(req, res, next) {
   try {
-    const order = await service.createOrder(req.body);
+    const validated = createOrderSchema.parse(req.body);
+    const order = await service.createOrder(validated, req.user);
 
     res.status(201).json({
       success: true,
-      message: "Provider order created successfully",
+      message: "Provider order placed successfully",
       data: order,
     });
   } catch (error) {
@@ -17,7 +23,8 @@ async function createOrder(req, res, next) {
 async function getOrdersByEncounterId(req, res, next) {
   try {
     const orders = await service.getOrdersByEncounterId(
-      req.params.encounterId
+      req.params.encounterId,
+      req.user
     );
 
     res.status(200).json({
@@ -32,7 +39,10 @@ async function getOrdersByEncounterId(req, res, next) {
 
 async function getOrderById(req, res, next) {
   try {
-    const order = await service.getOrderById(req.params.id);
+    const order = await service.getOrderById(
+      req.params.id,
+      req.user
+    );
 
     res.status(200).json({
       success: true,
@@ -45,9 +55,11 @@ async function getOrderById(req, res, next) {
 
 async function updateOrderStatus(req, res, next) {
   try {
+    const validated = updateOrderStatusSchema.parse(req.body);
     const order = await service.updateOrderStatus(
       req.params.id,
-      req.body.status
+      validated,
+      req.user
     );
 
     res.status(200).json({

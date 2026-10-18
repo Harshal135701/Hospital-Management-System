@@ -21,8 +21,11 @@ const authRoutes = require("./modules/auth/auth.routes");
 const patientRoutes = require("./modules/patients/patient.routes");
 const bloodBankRoutes = require("./modules/bloodbank/bloodbank.routes");
 
-const consultationRoutes = require("./modules/consultation/consultation.routes");
-const vitalsRoutes = require("./modules/consultation/vitals.routes");
+const doctorRoutes = require("./modules/doctors/doctor.routes");
+const departmentRoutes = require("./modules/departments/department.routes");
+
+const consultationRoutes = require("./modules/consultations/consultation.routes");
+const vitalsRoutes = require("./modules/vitals/vitals.routes");
 const clinicalHistoryRoutes = require("./modules/clinical-history/clinical-history.routes");
 const providerOrdersRoutes = require("./modules/provider-orders/provider-orders.routes");
 const clinicalNotesRoutes = require("./modules/clinical-notes/clinical-notes.routes");
@@ -32,6 +35,15 @@ const enhancementRoutes = require("./modules/insurance-tpa/enhancement.routes");
 const claimDossierRoutes = require("./modules/insurance-tpa/claim-dossier.routes");
 const responsibilityRoutes = require("./modules/insurance-tpa/responsibility.routes");
 const reconciliationRoutes = require("./modules/insurance-tpa/reconciliation.routes");
+
+const daycareRoutes = require("./modules/daycare/daycare.routes");
+const dietaryRoutes = require("./modules/dietary/dietary.routes");
+const ivfRoutes = require("./modules/ivf/ivf.routes");
+const emergencyRoutes = require("./modules/emergency/emergency.routes");
+const emrRoutes = require("./modules/emr/emr.routes");
+const financeRoutes = require("./modules/finance/finance.routes");
+const assetRoutes = require("./modules/assets/assets.routes");
+const enterpriseRoutes = require("./modules/enterprise/enterprise.routes");
 
 const { globalApiRateLimiter } = require("./middleware/rate-limiter.middleware");
 const notFoundHandler = require("./middleware/not-found.middleware");
@@ -46,7 +58,7 @@ app.use(express.json());
 // Apply API rate limiting before registering API endpoints.
 app.use("/api", globalApiRateLimiter);
 
-// Health Check
+// Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -55,7 +67,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Quick Metadata Directory
+// Quick metadata directory
 app.get("/api/meta", async (req, res, next) => {
   try {
     const [departments, doctors, patients, rooms] = await Promise.all([
@@ -87,13 +99,15 @@ app.get("/api/meta", async (req, res, next) => {
   }
 });
 
-// Authentication, patients and blood bank
+// Authentication, patients, blood bank and clinical directory
 app.use("/api/auth", authRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/blood-bank", bloodBankRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
+app.use("/api/doctors", doctorRoutes);
+app.use("/api/departments", departmentRoutes);
 
-// Appointments
+// Appointments, roster, queue and notifications
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/rosters", rosterRoutes);
 app.use("/api/queue", queueRoutes);
@@ -107,7 +121,7 @@ app.use("/api/billing/deposits", depositRoutes);
 app.use("/api/billing/refunds", refundRoutes);
 app.use("/api/billing/settlement", settlementRoutes);
 
-// Clinical services
+// Clinical services — register each router only once
 app.use("/api/consultations", consultationRoutes);
 app.use("/api/vitals", vitalsRoutes);
 app.use("/api/clinical-history", clinicalHistoryRoutes);
@@ -120,6 +134,30 @@ app.use("/api/insurance/enhancements", enhancementRoutes);
 app.use("/api/insurance/claims", claimDossierRoutes);
 app.use("/api/insurance/responsibilities", responsibilityRoutes);
 app.use("/api/insurance/reconciliations", reconciliationRoutes);
+
+// Module 8: Day Care / Ambulatory Surgery
+app.use("/api/daycare", daycareRoutes);
+
+// Module 9: Dietary & Kitchen Management
+app.use("/api/dietary", dietaryRoutes);
+
+// Module 10: IVF / ART (Assisted Reproductive Technology)
+app.use("/api/ivf", ivfRoutes);
+
+// Module 11: Emergency Department & Trauma
+app.use("/api/emergency", emergencyRoutes);
+
+// Module 12: EMR & Clinical Records
+app.use("/api/emr", emrRoutes);
+
+// Module 13: Hospital Financials & Accounts
+app.use("/api/finance", financeRoutes);
+
+// Module 14: Biomedical & Hospital Asset Management
+app.use("/api/assets", assetRoutes);
+
+// Module 15: Hospital Enterprise Master Data
+app.use("/api/enterprise", enterpriseRoutes);
 
 // Not-found and error handling must remain last.
 app.use(notFoundHandler);

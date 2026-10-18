@@ -39,6 +39,8 @@ const findAppointmentById = async (id, client = pool) => {
             p.full_name AS patient_name,
             p.uhid AS patient_uhid,
             p.mobile AS patient_mobile,
+            p.gender AS patient_gender,
+            p.date_of_birth AS patient_dob,
             d.full_name AS doctor_name,
             d.employee_code AS doctor_code,
             dep.name AS department_name,
@@ -268,6 +270,67 @@ const cancelAppointment = async (id, reason = null, client = pool) => {
   return r.rows[0];
 };
 
+const updateStatusAtomic = async (
+  id,
+  newStatus,
+  expectedCurrentStatus,
+  options = {},
+  client = pool
+) => {
+  const query = `
+    UPDATE appointments
+    SET status = $1::varchar,
+        arrived_at = CASE
+          WHEN $1::varchar = 'arrived' AND arrived_at IS NULL
+          THEN NOW()
+          ELSE arrived_at
+        END,
+        called_at = CASE
+          WHEN $1::varchar = 'in_consultation' AND called_at IS NULL
+          THEN NOW()
+          ELSE called_at
+        END,
+        consultation_started_at = CASE
+          WHEN $1::varchar = 'in_consultation'
+               AND consultation_started_at IS NULL
+          THEN NOW()
+          ELSE consultation_started_at
+        END,
+        consultation_ended_at = CASE
+          WHEN $1::varchar = 'completed'
+               AND consultation_ended_at IS NULL
+          THEN NOW()
+          ELSE consultation_ended_at
+        END,
+        cancellation_reason = CASE
+          WHEN $1::varchar = 'cancelled'
+               AND $4::text IS NOT NULL
+          THEN $4::text
+          ELSE cancellation_reason
+        END,
+        notes = CASE
+          WHEN $5::text IS NOT NULL THEN $5::text
+          ELSE notes
+        END,
+        updated_at = NOW()
+    WHERE id = $2::uuid
+      AND status = $3::varchar
+    RETURNING *;
+  `;
+
+  const values = [
+    newStatus,
+    id,
+    expectedCurrentStatus,
+    options.cancellation_reason || null,
+    options.notes || null,
+  ];
+
+  const r = await client.query(query, values);
+
+  return r.rows[0] || null;
+};
+
 const listAppointments = async (filters, client = pool) => {
   const conditions = [];
   const values = [];
@@ -334,6 +397,8 @@ const listAppointments = async (filters, client = pool) => {
             p.full_name AS patient_name,
             p.uhid AS patient_uhid,
             p.mobile AS patient_mobile,
+            p.gender AS patient_gender,
+            p.date_of_birth AS patient_dob,
             d.full_name AS doctor_name,
             d.employee_code AS doctor_code,
             dep.name AS department_name,
@@ -400,6 +465,7 @@ module.exports = {
   createAppointmentWithClient,
   rescheduleAppointmentWithClient,
   cancelAppointment,
+  updateStatusAtomic,
   listAppointments,
   getPatientHistory,
 };

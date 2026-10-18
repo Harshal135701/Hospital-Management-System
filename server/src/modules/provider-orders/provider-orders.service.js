@@ -1,5 +1,6 @@
-const pool = require("../../config/db");
+
 const repository = require("./provider-orders.repository");
+const ApiError = require("../../utils/ApiError");
 
 const ORDER_TYPES = ["medication", "laboratory", "imaging", "procedure"];
 const PRIORITIES = ["routine", "urgent", "stat"];
@@ -11,155 +12,191 @@ const ORDER_STATUSES = [
   "cancelled",
 ];
 
-async function validateEncounter(encounter_id, requireActive = true) {
-  if (!encounter_id) {
-    throw Object.assign(new Error("Encounter ID is required"), {
-      statusCode: 400,
-    });
+async function validateEncounter(encounterId, requireActive = true) {
+  if (!encounterId) {
+    throw ApiError.badRequest("Encounter ID is required");
   }
 
-  const result = await pool.query(
-    `SELECT id, status
+  const result = await repository.pool.query(
+    `SELECT id, patient_id, doctor_id, status
      FROM consultation_encounters
      WHERE id = $1`,
-    [encounter_id]
+    [encounterId]
   );
 
   const encounter = result.rows[0];
 
   if (!encounter) {
-    throw Object.assign(new Error("Consultation encounter not found"), {
-      statusCode: 404,
-    });
+    throw ApiError.notFound("Consultation encounter not found");
   }
 
   if (requireActive && encounter.status !== "in_progress") {
-    throw Object.assign(
-      new Error("Orders can only be modified during an active consultation"),
-      { statusCode: 400 }
+    throw ApiError.badRequest(
+      "Orders can only be modified during an active consultation"
     );
   }
 
   return encounter;
 }
 
-async function createOrder(data) {
-  const {
-    encounter_id,
-    order_type,
-    order_name,
-    priority,
-    ordered_by,
-    order_details,
-  } = data;
+function requireRole(currentUser, roles, message) {
+  if (!currentUser || !roles.includes(currentUser.role)) {
+    throw ApiError.forbidden(message);
+  }
+}
 
-  await validateEncounter(encounter_id);
-
-  if (!ORDER_TYPES.includes(order_type)) {
-    throw Object.assign(
-      new Error(`Order type must be one of: ${ORDER_TYPES.join(", ")}`),
-      { statusCode: 400 }
+function verifyDoctorOwnership(encounter, currentUser) {
+  if (
+    currentUser.role === "clinician_doctor" &&
+    (
+      !currentUser.doctor_id ||
+      String(encounter.doctor_id) !== String(currentUser.doctor_id)
+    )
+  ) {
+    throw ApiError.forbidden(
+      "You are not authorized to access another doctor's encounter"
     );
   }
+}
 
-  if (typeof order_name !== "string" || !order_name.trim()) {
-    throw Object.assign(new Error("Order name is required"), {
-      statusCode: 400,
-    });
-  }
-
-  if (order_name.trim().length > 200) {
-    throw Object.assign(new Error("Order name cannot exceed 200 characters"), {
-      statusCode: 400,
-    });
-  }
-
-  if (!ordered_by) {
-    throw Object.assign(new Error("Ordering doctor ID is required"), {
-      statusCode: 400,
-    });
-  }
-
-  if (priority !== undefined && !PRIORITIES.includes(priority)) {
-    throw Object.assign(
-      new Error(`Priority must be one of: ${PRIORITIES.join(", ")}`),
-      { statusCode: 400 }
+function validateOrderData(data) {
+  if (!ORDER_TYPES.includes(data.order_type)) {
+    throw ApiError.badRequest(
+      `Order type must be one of: ${ORDER_TYPES.join(", ")}`
     );
   }
 
   if (
-    order_details !== undefined &&
-    order_details !== null &&
-    (typeof order_details !== "object" || Array.isArray(order_details))
+    typeof data.order_name !== "string" ||
+    !data.order_name.trim()
   ) {
-    throw Object.assign(new Error("Order details must be a JSON object"), {
-      statusCode: 400,
-    });
+    throw ApiError.badRequest("Order name is required");
   }
 
-  const doctorResult = await pool.query(
-    `SELECT id FROM doctors WHERE id = $1`,
-    [ordered_by]
+  if (data.order_name.trim().length > 200) {
+    throw ApiError.badRequest("Order name cannot exceed 200 characters");
+  }
+
+  if (
+    data.priority !== undefined &&
+    !PRIORITIES.includes(data.priority)
+  ) {
+    throw ApiError.badRequest(
+      `Priority must be one of: ${PRIORITIES.join(", ")}`
+    );
+  }
+
+  if (
+    data.order_details !== undefined &&
+    data.order_details !== null &&
+    (
+      typeof data.order_details !== "object" ||
+      Array.isArray(data.order_details)
+    )
+  ) {
+    throw ApiError.badRequest("Order details must be a JSON object");
+  }
+}
+
+async function createOrder(data, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "super_admin"],
+    "Only clinician doctors and administrators may issue provider orders"
   );
 
-  if (!doctorResult.rows[0]) {
-    throw Object.assign(new Error("Ordering doctor not found"), {
-      statusCode: 404,
-    });
-  }
+  validateOrderData(data);
+
+  const encounterId = data.encounter_id || data.encounterId;
+  const encounter = await validateEncounter(encounterId);
+
+  verifyDoctorOwnership(encounter, currentUser);
+
+  const orderedBy =
+    currentUser.role === "clinician_doctor"
+      ? currentUser.doctor_id
+      : encounter.doctor_id;
 
   return repository.createOrder({
-    ...data,
-    order_name: order_name.trim(),
+    encounterId,
+    orderType: data.order_type,
+    orderName: data.order_name.trim(),
+    instructions: data.instructions,
+    priority: data.priority || "routine",
+    status: data.status || "placed",
+    orderDetails: data.order_details,
+    orderedBy,
   });
 }
 
-async function getOrdersByEncounterId(encounter_id) {
-  await validateEncounter(encounter_id, false);
-  return repository.getOrdersByEncounterId(encounter_id);
+async function getOrdersByEncounterId(encounterId, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view provider orders"
+  );
+
+  const encounter = await validateEncounter(encounterId, false);
+  verifyDoctorOwnership(encounter, currentUser);
+
+  return repository.getOrdersByEncounterId(encounterId);
 }
 
-async function getOrderById(id) {
+async function getOrderById(id, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view provider orders"
+  );
+
   if (!id) {
-    throw Object.assign(new Error("Order ID is required"), {
-      statusCode: 400,
-    });
+    throw ApiError.badRequest("Order ID is required");
   }
 
   const order = await repository.getOrderById(id);
 
   if (!order) {
-    throw Object.assign(new Error("Provider order not found"), {
-      statusCode: 404,
-    });
+    throw ApiError.notFound("Provider order not found");
   }
+
+  const encounter = await validateEncounter(order.encounter_id, false);
+  verifyDoctorOwnership(encounter, currentUser);
 
   return order;
 }
 
-async function updateOrderStatus(id, status) {
-  const order = await getOrderById(id);
+async function updateOrderStatus(id, data, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to update provider order status"
+  );
 
-  await validateEncounter(order.encounter_id);
+  const order = await repository.getOrderById(id);
+
+  if (!order) {
+    throw ApiError.notFound("Provider order not found");
+  }
+
+  const encounter = await validateEncounter(order.encounter_id);
+  verifyDoctorOwnership(encounter, currentUser);
+
+  const status = data.status;
 
   if (!ORDER_STATUSES.includes(status)) {
-    throw Object.assign(
-      new Error(`Status must be one of: ${ORDER_STATUSES.join(", ")}`),
-      { statusCode: 400 }
+    throw ApiError.badRequest(
+      `Status must be one of: ${ORDER_STATUSES.join(", ")}`
     );
   }
 
   if (["completed", "cancelled"].includes(order.status)) {
-    throw Object.assign(
-      new Error("Completed or cancelled orders cannot be modified"),
-      { statusCode: 400 }
+    throw ApiError.badRequest(
+      "Completed or cancelled orders cannot be modified"
     );
   }
 
   if (order.status === status) {
-    throw Object.assign(new Error(`Order is already ${status}`), {
-      statusCode: 400,
-    });
+    throw ApiError.badRequest(`Order is already ${status}`);
   }
 
   const allowedTransitions = {
@@ -169,13 +206,15 @@ async function updateOrderStatus(id, status) {
   };
 
   if (!allowedTransitions[order.status]?.includes(status)) {
-    throw Object.assign(
-      new Error(`Cannot change order status from ${order.status} to ${status}`),
-      { statusCode: 400 }
+    throw ApiError.badRequest(
+      `Cannot change order status from ${order.status} to ${status}`
     );
   }
 
-  return repository.updateOrderStatus(id, status);
+  return repository.updateOrderStatus(id, {
+    status,
+    instructions: data.instructions,
+  });
 }
 
 module.exports = {

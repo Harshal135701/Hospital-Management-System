@@ -1,8 +1,13 @@
 const service = require("./clinical-notes.service");
+const {
+  createNoteSchema,
+  updateNoteSchema,
+} = require("./clinical-notes.validation");
 
 async function createClinicalNote(req, res, next) {
   try {
-    const note = await service.createClinicalNote(req.body);
+    const validated = createNoteSchema.parse(req.body);
+    const note = await service.createClinicalNote(validated, req.user);
 
     res.status(201).json({
       success: true,
@@ -17,7 +22,8 @@ async function createClinicalNote(req, res, next) {
 async function getNotesByEncounterId(req, res, next) {
   try {
     const notes = await service.getNotesByEncounterId(
-      req.params.encounterId
+      req.params.encounterId,
+      req.user
     );
 
     res.status(200).json({
@@ -32,7 +38,10 @@ async function getNotesByEncounterId(req, res, next) {
 
 async function getClinicalNoteById(req, res, next) {
   try {
-    const note = await service.getClinicalNoteById(req.params.id);
+    const note = await service.getClinicalNoteById(
+      req.params.id,
+      req.user
+    );
 
     res.status(200).json({
       success: true,
@@ -45,9 +54,11 @@ async function getClinicalNoteById(req, res, next) {
 
 async function updateClinicalNote(req, res, next) {
   try {
+    const validated = updateNoteSchema.parse(req.body);
     const note = await service.updateClinicalNote(
       req.params.id,
-      req.body
+      validated,
+      req.user
     );
 
     res.status(200).json({

@@ -1,34 +1,38 @@
-const pool = require("../../config/db");
+
 const repository = require("./clinical-notes.repository");
+const ApiError = require("../../utils/ApiError");
 
 const NOTE_TYPES = ["initial", "progress", "follow_up"];
 
-async function validateEncounter(encounter_id, requireActive = true) {
-  if (!encounter_id) {
-    throw Object.assign(new Error("Encounter ID is required"), {
-      statusCode: 400,
-    });
+const textFields = [
+  "subjective",
+  "objective",
+  "assessment",
+  "plan",
+  "follow_up_instructions",
+];
+
+async function validateEncounter(encounterId, requireActive = true) {
+  if (!encounterId) {
+    throw ApiError.badRequest("Encounter ID is required");
   }
 
-  const result = await pool.query(
-    `SELECT id, status
+  const result = await repository.pool.query(
+    `SELECT id, patient_id, doctor_id, status
      FROM consultation_encounters
      WHERE id = $1`,
-    [encounter_id]
+    [encounterId]
   );
 
   const encounter = result.rows[0];
 
   if (!encounter) {
-    throw Object.assign(new Error("Consultation encounter not found"), {
-      statusCode: 404,
-    });
+    throw ApiError.notFound("Consultation encounter not found");
   }
 
   if (requireActive && encounter.status !== "in_progress") {
-    throw Object.assign(
-      new Error("Clinical notes can only be modified during an active consultation"),
-      { statusCode: 400 }
+    throw ApiError.badRequest(
+      "Clinical notes can only be modified during an active consultation"
     );
   }
 
@@ -40,124 +44,163 @@ function validateNote(data, isUpdate = false) {
     data.note_type !== undefined &&
     !NOTE_TYPES.includes(data.note_type)
   ) {
-    throw Object.assign(
-      new Error(`Note type must be one of: ${NOTE_TYPES.join(", ")}`),
-      { statusCode: 400 }
+    throw ApiError.badRequest(
+      `Note type must be one of: ${NOTE_TYPES.join(", ")}`
     );
   }
 
-  for (const field of ["subjective", "objective", "assessment", "plan", "follow_up_instructions"]) {
+  for (const field of textFields) {
+    const value = data[field];
+
     if (
-      data[field] !== undefined &&
-      data[field] !== null &&
-      typeof data[field] !== "string"
+      value !== undefined &&
+      value !== null &&
+      typeof value !== "string"
     ) {
-      throw Object.assign(new Error(`${field} must be text`), {
-        statusCode: 400,
-      });
+      throw ApiError.badRequest(`${field} must be text`);
+    }
+  }
+
+  for (const field of ["assessment", "plan"]) {
+    if (
+      (!isUpdate || data[field] !== undefined) &&
+      (typeof data[field] !== "string" || !data[field].trim())
+    ) {
+      throw ApiError.badRequest(`${field} is required`);
     }
   }
 
   if (
-    (!isUpdate || data.assessment !== undefined) &&
-    (typeof data.assessment !== "string" || !data.assessment.trim())
-  ) {
-    throw Object.assign(new Error("Assessment is required"), {
-      statusCode: 400,
-    });
-  }
-
-  if (
-    (!isUpdate || data.plan !== undefined) &&
-    (typeof data.plan !== "string" || !data.plan.trim())
-  ) {
-    throw Object.assign(new Error("Plan is required"), {
-      statusCode: 400,
-    });
-  }
-
-  if (
     isUpdate &&
-    ![
-      "note_type",
-      "subjective",
-      "objective",
-      "assessment",
-      "plan",
-      "follow_up_instructions",
-    ].some((field) => data[field] !== undefined)
+    !["note_type", ...textFields].some(
+      (field) => data[field] !== undefined
+    )
   ) {
-    throw Object.assign(new Error("Provide at least one field to update"), {
-      statusCode: 400,
-    });
+    throw ApiError.badRequest("Provide at least one field to update");
   }
 }
 
-async function validateDoctor(author_doctor_id) {
-  if (!author_doctor_id) {
-    throw Object.assign(new Error("Author doctor ID is required"), {
-      statusCode: 400,
-    });
+function requireRole(currentUser, allowedRoles, message) {
+  if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+    throw ApiError.forbidden(message);
   }
+}
 
-  const result = await pool.query(
-    `SELECT id FROM doctors WHERE id = $1`,
-    [author_doctor_id]
+function verifyDoctorOwnership(encounter, currentUser) {
+  if (
+    currentUser.role === "clinician_doctor" &&
+    (
+      !currentUser.doctor_id ||
+      String(encounter.doctor_id) !== String(currentUser.doctor_id)
+    )
+  ) {
+    throw ApiError.forbidden(
+      "You are not authorized to access another doctor's consultation"
+    );
+  }
+}
+
+async function createClinicalNote(data, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "super_admin"],
+    "Only clinician doctors and administrators may author clinical progress notes"
   );
 
-  if (!result.rows[0]) {
-    throw Object.assign(new Error("Author doctor not found"), {
-      statusCode: 404,
-    });
-  }
-}
-
-async function createClinicalNote(data) {
-  await validateEncounter(data.encounter_id);
   validateNote(data);
-  await validateDoctor(data.author_doctor_id);
 
-  return repository.createClinicalNote(data);
+  const encounterId = data.encounter_id || data.encounterId;
+  const encounter = await validateEncounter(encounterId);
+
+  verifyDoctorOwnership(encounter, currentUser);
+
+  const authorDoctorId =
+    currentUser.role === "clinician_doctor"
+      ? currentUser.doctor_id
+      : encounter.doctor_id;
+
+  return repository.createClinicalNote({
+    encounterId,
+    noteType: data.note_type || "progress",
+    subjective: data.subjective,
+    objective: data.objective,
+    assessment: data.assessment,
+    plan: data.plan,
+    followUpInstructions: data.follow_up_instructions,
+    authorDoctorId,
+  });
 }
 
-async function getNotesByEncounterId(encounter_id) {
-  await validateEncounter(encounter_id, false);
+async function getNotesByEncounterId(encounterId, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view clinical progress notes"
+  );
 
-  return repository.getNotesByEncounterId(encounter_id);
+  const encounter = await validateEncounter(encounterId, false);
+  verifyDoctorOwnership(encounter, currentUser);
+
+  return repository.getNotesByEncounterId(encounterId);
 }
 
-async function getClinicalNoteById(id) {
+async function getClinicalNoteById(id, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view clinical progress notes"
+  );
+
   if (!id) {
-    throw Object.assign(new Error("Clinical note ID is required"), {
-      statusCode: 400,
-    });
+    throw ApiError.badRequest("Clinical note ID is required");
   }
 
   const note = await repository.getClinicalNoteById(id);
 
   if (!note) {
-    throw Object.assign(new Error("Clinical note not found"), {
-      statusCode: 404,
-    });
+    throw ApiError.notFound("Clinical progress note not found");
   }
+
+  const encounter = await validateEncounter(note.encounter_id, false);
+  verifyDoctorOwnership(encounter, currentUser);
 
   return note;
 }
 
-async function updateClinicalNote(id, data) {
-  const existingNote = await getClinicalNoteById(id);
+async function updateClinicalNote(id, data, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "super_admin"],
+    "Only clinician doctors and administrators may update clinical progress notes"
+  );
 
-  await validateEncounter(existingNote.encounter_id);
   validateNote(data, true);
 
+  const note = await repository.getClinicalNoteById(id);
+
+  if (!note) {
+    throw ApiError.notFound("Clinical progress note not found");
+  }
+
+  const encounter = await validateEncounter(note.encounter_id);
+  verifyDoctorOwnership(encounter, currentUser);
+
+  if (
+    currentUser.role === "clinician_doctor" &&
+    String(note.author_doctor_id) !== String(currentUser.doctor_id)
+  ) {
+    throw ApiError.forbidden(
+      "You are not authorized to modify another doctor's progress note"
+    );
+  }
+
   const updatedData = {
-    note_type: data.note_type ?? existingNote.note_type,
-    subjective: data.subjective ?? existingNote.subjective,
-    objective: data.objective ?? existingNote.objective,
-    assessment: data.assessment ?? existingNote.assessment,
-    plan: data.plan ?? existingNote.plan,
-    follow_up_instructions:
-      data.follow_up_instructions ?? existingNote.follow_up_instructions,
+    noteType: data.note_type,
+    subjective: data.subjective,
+    objective: data.objective,
+    assessment: data.assessment,
+    plan: data.plan,
+    followUpInstructions: data.follow_up_instructions,
   };
 
   return repository.updateClinicalNote(id, updatedData);

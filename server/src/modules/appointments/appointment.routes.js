@@ -91,4 +91,10 @@ router.patch(
   controller.cancelAppointment
 );
 
+router.patch(
+  "/:id/status",
+  requireRoles("receptionist", "clinician_doctor", "staff_nurse", "super_admin"),
+  controller.updateAppointmentStatus
+);
+
 module.exports = router;

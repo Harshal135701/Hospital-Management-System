@@ -174,6 +174,23 @@ export const PatientService = {
       if (found) return found;
       throw err;
     }
+  },
+
+  async searchPatients(query) {
+    if (!query || !query.trim()) {
+      return [];
+    }
+    if (!TokenManager.getToken()) {
+      const q = query.trim().toLowerCase();
+      return MOCK_PATIENTS.filter(p =>
+        (p.full_name && p.full_name.toLowerCase().includes(q)) ||
+        (p.uhid && p.uhid.toLowerCase().includes(q)) ||
+        (p.mobile && p.mobile.includes(q))
+      );
+    }
+    // Strict contract: GET /api/patients?search=...
+    const res = await apiFetch(`/patients?search=${encodeURIComponent(query.trim())}`);
+    return res?.data || res || [];
   }
 };
 
@@ -223,6 +240,18 @@ export const AppointmentService = {
     const res = await apiFetch(`/appointments/${encodeURIComponent(id)}/cancel`, {
       method: 'PATCH',
       body: JSON.stringify({ reason })
+    });
+    return res?.data || res;
+  },
+
+  async updateAppointmentStatus(id, status, details = {}) {
+    const res = await apiFetch(`/appointments/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status,
+        cancellation_reason: details.cancellation_reason || details.reason || null,
+        notes: details.notes || null,
+      })
     });
     return res?.data || res;
   },
@@ -291,104 +320,104 @@ export const AppointmentBloodRequestService = {
   }
 };
 
+export const DepartmentService = {
+  async getDepartments() {
+    if (!TokenManager.getToken()) {
+      return [];
+    }
+    const res = await apiFetch('/departments');
+    return res?.data || res || [];
+  }
+};
+
 /* ==========================================================================
    CLINICAL STAFF & INPATIENT WARDS SERVICES
    ========================================================================== */
 
 export const ClinicalStaffService = {
-  async getStaff() {
-    const remote = await apiFetch('/doctors');
-    if (remote && remote.data) return { data: remote.data, isMock: false };
+  async getStaff(departmentId = null) {
+    if (!TokenManager.getToken()) {
+      return {
+        isMock: true,
+        data: [
+          {
+            id: 'doc-01',
+            name: 'Dr. Ananya Sharma',
+            role: 'Senior Consultant & Lead',
+            specialty: 'Transfusion & Internal Medicine',
+            department: 'Haematology & Blood Bank',
+            qualification: 'MD (Transfusion Medicine), FICP',
+            room: 'Room 204, OPD Block B',
+            shift: '08:00 – 16:00',
+            status: 'available',
+            active_patients_today: 14,
+            phone: '+91 98300 44101',
+            imageKey: 'femaleDoctor'
+          },
+          {
+            id: 'doc-02',
+            name: 'Dr. Arindam Mitra',
+            role: 'Chief Cardiologist',
+            specialty: 'Interventional Cardiology',
+            department: 'Cardiology & Cath Lab',
+            qualification: 'DM (Cardiology), FACC',
+            room: 'Room 102, Cath Block A',
+            shift: '09:00 – 17:00',
+            status: 'in_consultation',
+            active_patients_today: 22,
+            phone: '+91 98311 55202',
+            imageKey: 'doctorWithStethoscope'
+          },
+          {
+            id: 'doc-03',
+            name: 'Dr. Pradeep K. Sharma',
+            role: 'Senior Orthopaedic Surgeon',
+            specialty: 'Trauma & Joint Replacement',
+            department: 'Orthopaedics & Trauma',
+            qualification: 'MS (Ortho), MCh',
+            room: 'OT Complex 3',
+            shift: '08:00 – 18:00',
+            status: 'in_surgery',
+            active_patients_today: 9,
+            phone: '+91 98322 66303',
+            imageKey: 'surgeonStaff'
+          },
+          {
+            id: 'doc-04',
+            name: 'Dr. Sunita Rao',
+            role: 'Lead General Physician',
+            specialty: 'Internal Medicine & Critical Care',
+            department: 'General Medicine',
+            qualification: 'MD (General Medicine)',
+            room: 'Room 105, OPD Block A',
+            shift: '10:00 – 18:00',
+            status: 'available',
+            active_patients_today: 18,
+            phone: '+91 98333 77404',
+            imageKey: 'femaleDoctor'
+          },
+          {
+            id: 'doc-05',
+            name: 'Dr. Meenakshi Sundaram',
+            role: 'Consultant Haematologist',
+            specialty: 'Transfusion Medicine & Immunohematology',
+            department: 'Haematology & Blood Bank',
+            qualification: 'MD, DNB (Haematology)',
+            room: 'Blood Bank Block, Rm 12',
+            shift: '09:00 – 17:00',
+            status: 'on_duty',
+            active_patients_today: 7,
+            phone: '+91 98344 88505',
+            imageKey: 'doctorWithStethoscope'
+          }
+        ]
+      };
+    }
 
-    return {
-      isMock: true,
-      data: [
-        {
-          id: 'doc-01',
-          name: 'Dr. Ananya Sharma',
-          role: 'Senior Consultant & Lead',
-          specialty: 'Transfusion & Internal Medicine',
-          department: 'Haematology & Blood Bank',
-          qualification: 'MD (Transfusion Medicine), FICP',
-          room: 'Room 204, OPD Block B',
-          shift: '08:00 – 16:00',
-          status: 'available',
-          active_patients_today: 14,
-          phone: '+91 98300 44101',
-          imageKey: 'femaleDoctor'
-        },
-        {
-          id: 'doc-02',
-          name: 'Dr. Arindam Mitra',
-          role: 'Chief Cardiologist',
-          specialty: 'Interventional Cardiology',
-          department: 'Cardiology & Cath Lab',
-          qualification: 'DM (Cardiology), FACC',
-          room: 'Room 102, Cath Block A',
-          shift: '09:00 – 17:00',
-          status: 'in_consultation',
-          active_patients_today: 22,
-          phone: '+91 98311 55202',
-          imageKey: 'doctorWithStethoscope'
-        },
-        {
-          id: 'doc-03',
-          name: 'Dr. Pradeep K. Sharma',
-          role: 'Senior Orthopaedic Surgeon',
-          specialty: 'Trauma & Joint Replacement',
-          department: 'Orthopaedics & Trauma',
-          qualification: 'MS (Ortho), MCh',
-          room: 'OT Complex 3',
-          shift: '08:00 – 18:00',
-          status: 'in_surgery',
-          active_patients_today: 9,
-          phone: '+91 98402 77303',
-          imageKey: 'surgeonStaff'
-        },
-        {
-          id: 'doc-04',
-          name: 'Dr. Sunita Rao',
-          role: 'Consultant Physician',
-          specialty: 'General Medicine & Diabetology',
-          department: 'Outpatient Medicine',
-          qualification: 'MD (Gen Med)',
-          room: 'Room 201, OPD Block B',
-          shift: '10:00 – 18:00',
-          status: 'available',
-          active_patients_today: 18,
-          phone: '+91 97422 88404',
-          imageKey: 'doctorConsultation'
-        },
-        {
-          id: 'doc-05',
-          name: 'Dr. Meenakshi Sundaram',
-          role: 'Blood Bank Officer',
-          specialty: 'Immunohematology & Apheresis',
-          department: 'Transfusion Medicine',
-          qualification: 'MD (Pathology), DCP',
-          room: 'Blood Bank Clinical Lab',
-          shift: '08:00 – 16:00',
-          status: 'available',
-          active_patients_today: 12,
-          phone: '+91 98315 99505',
-          imageKey: 'doctorMaleScrubs'
-        },
-        {
-          id: 'stf-06',
-          name: 'Sister Savitri Devi',
-          role: 'Nursing Supervisor',
-          specialty: 'Critical Care & Phlebotomy',
-          department: 'Inpatient Nursing & Blood Bank',
-          qualification: 'B.Sc Nursing, BLS',
-          room: 'Central Nursing Station 2',
-          shift: '07:00 – 15:00',
-          status: 'on_duty',
-          active_patients_today: 34,
-          phone: '+91 98320 11606',
-          imageKey: 'nurseCare'
-        }
-      ]
-    };
+    const qs = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : '';
+    const remote = await apiFetch(`/doctors${qs}`);
+    if (remote && remote.data) return { data: remote.data, isMock: false };
+    return { data: remote || [], isMock: false };
   }
 };
 

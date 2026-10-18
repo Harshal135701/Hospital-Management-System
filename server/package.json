@@ -11,7 +11,10 @@
     "test:blood-bank": "node tests/blood-bank.test.mjs",
     "test:auth-bloodbank": "node --test tests/auth-bloodbank-flow.test.mjs",
     "test:appointment-blood-request": "node --test tests/appointment-blood-request.test.mjs",
-    "test:security-rbac": "node --test tests/security-rbac.test.mjs",
+    "test:clinical-consultation": "node --test tests/clinical-consultation.test.mjs",
+    "test:appointment-queue": "node --test tests/appointment-queue.test.mjs",
+    "test:doctor-department-booking": "node --test tests/doctor-department-booking.test.mjs",
+    "test:modules-8-15": "node --test tests/modules-8-to-15.test.mjs",
     "migrate:create": "node-pg-migrate create",
     "migrate:up": "dotenv -e .env -- node-pg-migrate up",
     "seed": "node seeds/seed-dev-staff.js"

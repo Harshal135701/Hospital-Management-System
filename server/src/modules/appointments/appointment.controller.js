@@ -98,6 +98,25 @@ const getPatientHistory = async (req, res, next) => {
   }
 };
 
+const updateAppointmentStatus = async (req, res, next) => {
+  try {
+    const validated = validation.updateAppointmentStatusSchema.parse(req.body);
+    const data = await service.updateAppointmentStatus(
+      req.params.id,
+      validated.status,
+      validated,
+      req.user
+    );
+    res.status(200).json({
+      success: true,
+      message: `Appointment status updated to '${validated.status}' successfully`,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createAppointment,
   getAppointments,
@@ -105,6 +124,7 @@ module.exports = {
   getAvailableSlots,
   rescheduleAppointment,
   cancelAppointment,
+  updateAppointmentStatus,
   getPatientHistory,
 
 };
