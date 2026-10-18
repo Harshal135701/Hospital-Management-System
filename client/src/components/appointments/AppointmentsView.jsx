@@ -19,10 +19,21 @@ import {
   ClinicalStaffService,
   TokenManager
 } from '../../services/api';
+import { SubmoduleScrollbarNav } from './SubmoduleScrollbarNav';
+import { SubmodulesView } from './SubmodulesView';
+import { SUBMODULES } from './submoduleRegistry';
 import { useAuth } from '../../context/AuthContext';
-
-export function AppointmentsView() {
+export function AppointmentsView({ initialSubtab, onNavigate }) {
   const { user, isAuthenticated, openLoginModal } = useAuth();
+
+  // Submodule navigation state (supports '3.1' through '15.5')
+  const [activeSubmodule, setActiveSubmodule] = useState(initialSubtab || '3.1');
+
+  useEffect(() => {
+    if (initialSubtab) {
+      setActiveSubmodule(initialSubtab);
+    }
+  }, [initialSubtab]);
 
   // State
   const [activeTab, setActiveTab] = useState('appointments'); // 'appointments' | 'blood_requests'
@@ -407,7 +418,33 @@ export function AppointmentsView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Header */}
+      {/* 52 Submodules Horizontal Scrollbar Ribbon */}
+      <SubmoduleScrollbarNav
+        activeSubmoduleId={activeSubmodule}
+        onSelectSubmodule={(id) => {
+          setActiveSubmodule(id);
+          if (onNavigate) {
+            onNavigate(`appointments:${id}`);
+          }
+        }}
+      />
+
+      {activeSubmodule !== '3.1' ? (
+        <SubmodulesView
+          submodule={
+            SUBMODULES.find((s) => s.id === activeSubmodule) || SUBMODULES[0]
+          }
+          onBack={() => setActiveSubmodule('3.1')}
+          onNavigateSubmodule={(id) => {
+            setActiveSubmodule(id);
+            if (onNavigate) {
+              onNavigate(`appointments:${id}`);
+            }
+          }}
+        />
+      ) : (
+        <>
+          {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -803,6 +840,8 @@ export function AppointmentsView() {
             </div>
           )}
         </Card>
+      )}
+        </>
       )}
 
       {/* MODAL 1: Order Blood Requisition for Appointment */}

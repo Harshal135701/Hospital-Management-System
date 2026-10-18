@@ -33,7 +33,7 @@ export function App() {
         return <PatientsView />;
 
       case 'appointments':
-        return <AppointmentsView />;
+        return <AppointmentsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'clinical':
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

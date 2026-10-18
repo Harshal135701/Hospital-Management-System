@@ -41,9 +41,11 @@ export const AppShell = ({
     }
     return false;
   });
+  const isAppointmentsRoute = currentRoute === 'appointments' || (typeof currentRoute === 'string' && currentRoute.startsWith('appointments:'));
   const isClinicalRoute = currentRoute === 'clinical' || (typeof currentRoute === 'string' && currentRoute.startsWith('clinical:'));
-  const [isClinicalExpandedManual, setIsClinicalExpandedManual] = useState(null);
-  const isClinicalExpanded = isClinicalExpandedManual !== null ? isClinicalExpandedManual : isClinicalRoute;
+  const [expandedSectionsManual, setExpandedSectionsManual] = useState({
+    appointments: true,
+  });
   const [searchQuery, setSearchQuery] = useState('');
 
   const toggleCollapse = () => {
@@ -67,7 +69,77 @@ export const AppShell = ({
       title: 'Clinical Operations',
       items: [
         { id: 'patients', label: 'Patients', icon: Users, badge: '4 New' },
-        { id: 'appointments', label: 'Appointments', icon: Calendar, badge: 'Today' },
+        {
+          id: 'appointments',
+          label: 'Appointments',
+          icon: Calendar,
+          badge: '52',
+          subItems: [
+            { id: 'appointments:3.1', label: '3.1 Book / Reschedule' },
+            { id: 'appointments:3.2', label: '3.2 Doctor Roster' },
+            { id: 'appointments:3.3', label: '3.3 Token Queue Display' },
+            { id: 'appointments:3.4', label: '3.4 Reminders & Alerts' },
+            { id: 'appointments:4.1', label: '4.1 OPD Billing POS' },
+            { id: 'appointments:4.2', label: '4.2 IPD Interim Bill' },
+            { id: 'appointments:4.3', label: '4.3 Discharge Final Bill' },
+            { id: 'appointments:4.4', label: '4.4 Advance Deposit' },
+            { id: 'appointments:4.5', label: '4.5 My Refunds' },
+            { id: 'appointments:4.6', label: '4.6 Cashier Settlement' },
+            { id: 'appointments:5.1', label: '5.1 Donor Screening' },
+            { id: 'appointments:5.2', label: '5.2 Phlebotomy Barcode' },
+            { id: 'appointments:5.3', label: '5.3 Component Separation' },
+            { id: 'appointments:5.4', label: '5.4 Serology Safe Release' },
+            { id: 'appointments:5.5', label: '5.5 Cross Match & Issue' },
+            { id: 'appointments:6.1', label: '6.1 Consultation Desk' },
+            { id: 'appointments:6.2', label: '6.2 Vitals & Exam' },
+            { id: 'appointments:6.3', label: '6.3 Complaints & History' },
+            { id: 'appointments:6.4', label: '6.4 Orders CPOE' },
+            { id: 'appointments:6.5', label: '6.5 Progress Notes' },
+            { id: 'appointments:7.1', label: '7.1 Insurance Pre-Auth' },
+            { id: 'appointments:7.2', label: '7.2 Enhancement Requests' },
+            { id: 'appointments:7.3', label: '7.3 Claim Dossier' },
+            { id: 'appointments:7.4', label: '7.4 Co-Payment Collection' },
+            { id: 'appointments:7.5', label: '7.5 TPA Reconciliation' },
+            { id: 'appointments:8.1', label: '8.1 Day Care Admission' },
+            { id: 'appointments:8.2', label: '8.2 Chair / Bed Alloc' },
+            { id: 'appointments:8.3', label: '8.3 Procedure Monitoring' },
+            { id: 'appointments:8.4', label: '8.4 Same-Day Discharge' },
+            { id: 'appointments:9.1', label: '9.1 Dietitian Assessment' },
+            { id: 'appointments:9.2', label: '9.2 Diet Ordering' },
+            { id: 'appointments:9.3', label: '9.3 Kitchen Production' },
+            { id: 'appointments:9.4', label: '9.4 Meal Delivery' },
+            { id: 'appointments:10.1', label: '10.1 OPU Recording' },
+            { id: 'appointments:10.2', label: '10.2 IVF/ICSI Fertilization' },
+            { id: 'appointments:10.3', label: '10.3 Embryo Grading' },
+            { id: 'appointments:10.4', label: '10.4 Embryo Transfer ET' },
+            { id: 'appointments:10.5', label: '10.5 Cryostorage' },
+            { id: 'appointments:11.1', label: '11.1 Triage Assessment' },
+            { id: 'appointments:11.2', label: '11.2 MLC Registry' },
+            { id: 'appointments:11.3', label: '11.3 Emergency Bay' },
+            { id: 'appointments:11.4', label: '11.4 Trauma Charting' },
+            { id: 'appointments:11.5', label: '11.5 Rapid Disposition' },
+            { id: 'appointments:12.1', label: '12.1 Patient Timeline' },
+            { id: 'appointments:12.2', label: '12.2 E-Prescription Rx' },
+            { id: 'appointments:12.3', label: '12.3 ICD-10 & SNOMED' },
+            { id: 'appointments:12.4', label: '12.4 Previous Encounters' },
+            { id: 'appointments:12.5', label: '12.5 Document Attach' },
+            { id: 'appointments:13.1', label: '13.1 Chart of Accounts' },
+            { id: 'appointments:13.2', label: '13.2 Payment Vouchers' },
+            { id: 'appointments:13.3', label: '13.3 Doctor Payout' },
+            { id: 'appointments:13.4', label: '13.4 Bank Reconciliation' },
+            { id: 'appointments:13.5', label: '13.5 P&L / Balance Sheet' },
+            { id: 'appointments:14.1', label: '14.1 Asset Master Tag' },
+            { id: 'appointments:14.2', label: '14.2 AMC/CMC Contracts' },
+            { id: 'appointments:14.3', label: '14.3 Maintenance Sched' },
+            { id: 'appointments:14.4', label: '14.4 Breakdown Ticket' },
+            { id: 'appointments:14.5', label: '14.5 Asset Depreciation' },
+            { id: 'appointments:15.1', label: '15.1 Hospital & Branch' },
+            { id: 'appointments:15.2', label: '15.2 Department Hierarchy' },
+            { id: 'appointments:15.3', label: '15.3 Doctor & Consultant' },
+            { id: 'appointments:15.4', label: '15.4 Service Catalog' },
+            { id: 'appointments:15.5', label: '15.5 Corporate Tariffs' }
+          ]
+        },
         {
           id: 'clinical',
           label: 'Clinical',
@@ -97,9 +169,6 @@ export const AppShell = ({
   ];
 
   const handleSelectNav = (id) => {
-    if (typeof id === 'string' && !id.startsWith('clinical')) {
-      setIsClinicalExpandedManual(null);
-    }
     onNavigate(id);
     setIsMobileMenuOpen(false);
   };
@@ -385,14 +454,21 @@ export const AppShell = ({
                   const isItemActive = currentRoute === item.id || (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
                   const hasSubItems = item.subItems && item.subItems.length > 0;
-                  const isExpanded = isClinicalExpanded && !effectiveCollapsed;
+                  const isExpanded = Boolean(
+                    expandedSectionsManual[item.id] !== undefined
+                      ? expandedSectionsManual[item.id]
+                      : isItemActive
+                  ) && !effectiveCollapsed;
 
                   const handleItemClick = () => {
                     if (hasSubItems) {
                       if (effectiveCollapsed) {
                         handleSelectNav(item.id);
                       } else {
-                        setIsClinicalExpandedManual(prev => (prev !== null ? !prev : !isClinicalRoute));
+                        setExpandedSectionsManual(prev => ({
+                          ...prev,
+                          [item.id]: !isExpanded
+                        }));
                         if (!isItemActive) {
                           handleSelectNav(item.id);
                         }
@@ -516,7 +592,11 @@ export const AppShell = ({
                             marginTop: '2px',
                             marginLeft: '12px',
                             paddingLeft: '14px',
-                            borderLeft: '1.5px solid var(--color-border)'
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: item.id === 'appointments' ? '280px' : 'none',
+                            overflowY: item.id === 'appointments' ? 'auto' : 'visible',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
                           }}
                         >
                           {item.subItems.map((sub) => {
