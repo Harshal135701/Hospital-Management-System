@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { LoginModal } from './components/auth/LoginModal';
@@ -7,9 +6,12 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { PatientsView } from './components/patients/PatientsView';
 import { AppointmentsView } from './components/appointments/AppointmentsView';
 import { ClinicalsView } from './components/clinicals/ClinicalsView';
+import { BillingView } from './components/billing/BillingView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { WardsView } from './components/wards/WardsView';
+import { SubmodulesView } from './components/appointments/SubmodulesView';
+import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
 import {
   Building2,
@@ -23,7 +25,9 @@ export function App() {
 
   const renderCurrentView = () => {
     const routeBase = typeof currentRoute === 'string' ? currentRoute.split(':')[0] : currentRoute;
-    const routeSubtab = typeof currentRoute === 'string' && currentRoute.includes(':') ? currentRoute.split(':')[1] : null;
+    const routeSubtab = typeof currentRoute === 'string' && currentRoute.includes(':')
+      ? currentRoute.slice(currentRoute.indexOf(':') + 1)
+      : null;
 
     switch (routeBase) {
       case 'dashboard':
@@ -35,11 +39,25 @@ export function App() {
       case 'appointments':
         return <AppointmentsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
+      case 'billing':
+        return <BillingView initialSubtab={routeSubtab || '4.1'} onNavigate={setCurrentRoute} />;
+
       case 'clinical':
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'bloodbank':
         return <BloodBankView />;
+
+      case 'submodule': {
+        const sub = SUBMODULES.find(s => s.id === routeSubtab) || SUBMODULES[0];
+        return (
+          <SubmodulesView
+            submodule={sub}
+            onBack={() => setCurrentRoute('dashboard')}
+            onNavigateSubmodule={(id) => setCurrentRoute(`submodule:${id}`)}
+          />
+        );
+      }
 
       case 'doctors':
         return (

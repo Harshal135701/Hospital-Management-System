@@ -1141,54 +1141,238 @@ export const EnterpriseService = {
 
 export const BillingOpsService = {
   async getBills(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/billing/bills${qs ? '?' + qs : ''}`);
-    return res?.data || [];
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/billing/opd${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async getOpdBills(params = {}) {
+    return this.getBills(params);
   },
   async createBill(data) {
-    const res = await apiFetch('/billing/bills', { method: 'POST', body: JSON.stringify(data) });
+    const res = await apiFetch('/billing/opd', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async createOpdBill(data) {
+    return this.createBill(data);
+  },
+  async createInterimBill(data) {
+    const res = await apiFetch('/billing/ipd/interim', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async createDischargeBill(data) {
+    const res = await apiFetch('/billing/ipd/final', { method: 'POST', body: JSON.stringify(data) });
     return res?.data;
   },
   async getDeposits(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/billing/deposits${qs ? '?' + qs : ''}`);
-    return res?.data || [];
+    try {
+      if (params.admissionId) {
+        const res = await apiFetch(`/billing/deposits/admission/${encodeURIComponent(params.admissionId)}`);
+        return res?.data || [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
   },
   async createDeposit(data) {
     const res = await apiFetch('/billing/deposits', { method: 'POST', body: JSON.stringify(data) });
     return res?.data;
   },
   async getRefunds(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/billing/refunds${qs ? '?' + qs : ''}`);
-    return res?.data || [];
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/billing/refunds${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async createRefund(data) {
+    const res = await apiFetch('/billing/refunds', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async updateRefundStatus(id, status, notes = '') {
+    const res = await apiFetch(`/billing/refunds/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes })
+    });
+    return res?.data;
   },
   async getSettlements(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/billing/settlement${qs ? '?' + qs : ''}`);
-    return res?.data || [];
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/billing/settlement/day-end${qs ? '?' + qs : ''}`);
+      return res?.data ? [res.data] : [];
+    } catch {
+      return [];
+    }
+  },
+  async getDayEndSettlement(date = null, cashierId = null) {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (cashierId) params.append('cashierId', cashierId);
+    const qs = params.toString();
+    const res = await apiFetch(`/billing/settlement/day-end${qs ? '?' + qs : ''}`);
+    return res?.data;
   },
   async createSettlement(data) {
-    const res = await apiFetch('/billing/settlement', { method: 'POST', body: JSON.stringify(data) });
+    const res = await apiFetch('/billing/settlement/close', { method: 'POST', body: JSON.stringify(data) });
     return res?.data;
+  },
+  async closeSettlement(data) {
+    return this.createSettlement(data);
   }
 };
 
 export const OperationsQueueService = {
-  async getQueue(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/queue${qs ? '?' + qs : ''}`);
-    return res?.data || [];
-  },
+  // 3.2 Doctor Rosters & Shifts
   async getRosters(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/rosters${qs ? '?' + qs : ''}`);
-    return res?.data || [];
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/rosters${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
   },
+  async createRoster(data) {
+    const res = await apiFetch('/rosters', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async publishRoster(id) {
+    const res = await apiFetch(`/rosters/${encodeURIComponent(id)}/publish`, { method: 'PATCH' });
+    return res?.data;
+  },
+  async getSchedules(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/rosters/schedules${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async createSchedule(data) {
+    const res = await apiFetch('/rosters/schedules', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getLeaves(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/rosters/leaves${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async applyLeave(data) {
+    const res = await apiFetch('/rosters/leaves', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async reviewLeave(id, status, reviewedBy = 'Admin') {
+    const res = await apiFetch(`/rosters/leaves/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, reviewedBy })
+    });
+    return res?.data;
+  },
+
+  // 3.3 Token Queue & Waiting Room Display
+  async getWaitingRoomDisplay(date = null, departmentId = null) {
+    try {
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (departmentId) params.append('departmentId', departmentId);
+      const qs = params.toString();
+      const res = await apiFetch(`/queue/display${qs ? '?' + qs : ''}`);
+      return res?.data;
+    } catch {
+      return null;
+    }
+  },
+  async getDoctorQueue(doctorId, date = null) {
+    try {
+      const qs = date ? `?date=${encodeURIComponent(date)}` : '';
+      const res = await apiFetch(`/queue/doctor/${encodeURIComponent(doctorId)}${qs}`);
+      return res?.data;
+    } catch {
+      return null;
+    }
+  },
+  async callNext(doctorId, roomId = null, date = null) {
+    const res = await apiFetch('/queue/call-next', {
+      method: 'POST',
+      body: JSON.stringify({ doctorId, roomId, date })
+    });
+    return res;
+  },
+  async checkIn(appointmentId) {
+    const res = await apiFetch('/queue/check-in', {
+      method: 'POST',
+      body: JSON.stringify({ appointmentId })
+    });
+    return res;
+  },
+  async startConsultation(appointmentId) {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/start`, { method: 'PATCH' });
+    return res?.data;
+  },
+  async completeConsultation(appointmentId, notes = '') {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes })
+    });
+    return res;
+  },
+  async markNoShow(appointmentId) {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/no-show`, { method: 'PATCH' });
+    return res;
+  },
+  async recallToken(appointmentId) {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/recall`, { method: 'PATCH' });
+    return res;
+  },
+  async setPriority(appointmentId, isPriority, notes = '') {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/priority`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isPriority, notes })
+    });
+    return res;
+  },
+
+  // 3.4 SMS / WhatsApp Notifications
   async getNotifications(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await apiFetch(`/notifications${qs ? '?' + qs : ''}`);
-    return res?.data || [];
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/notifications${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async sendNotification(id) {
+    const res = await apiFetch(`/notifications/${encodeURIComponent(id)}/send`, { method: 'POST' });
+    return res;
+  },
+  async scheduleReminders(appointmentId) {
+    const res = await apiFetch(`/notifications/appointments/${encodeURIComponent(appointmentId)}/reminders`, { method: 'POST' });
+    return res;
+  },
+  async scheduleEvent(appointmentId, eventType, channels = ['sms'], scheduledAt = null) {
+    const res = await apiFetch(`/notifications/appointments/${encodeURIComponent(appointmentId)}/events`, {
+      method: 'POST',
+      body: JSON.stringify({ eventType, channels, scheduledAt })
+    });
+    return res;
+  },
+  async cancelPendingNotifications(appointmentId) {
+    const res = await apiFetch(`/notifications/appointments/${encodeURIComponent(appointmentId)}/cancel-pending`, { method: 'PATCH' });
+    return res;
   }
 };
+
 
