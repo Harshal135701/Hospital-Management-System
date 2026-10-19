@@ -11,6 +11,7 @@
     "test:blood-bank": "node tests/blood-bank.test.mjs",
     "test:auth-bloodbank": "node --test tests/auth-bloodbank-flow.test.mjs",
     "test:appointment-blood-request": "node --test tests/appointment-blood-request.test.mjs",
+    "test:clinical": "node --test tests/clinical-module-integration.test.mjs",
     "test:clinical-consultation": "node --test tests/clinical-consultation.test.mjs",
     "test:appointment-queue": "node --test tests/appointment-queue.test.mjs",
     "test:doctor-department-booking": "node --test tests/doctor-department-booking.test.mjs",

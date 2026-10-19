@@ -38,6 +38,23 @@ async function getClinicalHistoryByEncounterId(req, res, next) {
   }
 }
 
+async function getClinicalHistoryByPatientId(req, res, next) {
+  try {
+    const history = await service.getClinicalHistoryByPatientId(
+      req.params.patientId,
+      req.user
+    );
+
+    res.status(200).json({
+      success: true,
+      count: history.length,
+      data: history,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateClinicalHistory(req, res, next) {
   try {
     const validated = updateHistorySchema.parse(req.body);
@@ -60,5 +77,6 @@ async function updateClinicalHistory(req, res, next) {
 module.exports = {
   createClinicalHistory,
   getClinicalHistoryByEncounterId,
+  getClinicalHistoryByPatientId,
   updateClinicalHistory,
 };

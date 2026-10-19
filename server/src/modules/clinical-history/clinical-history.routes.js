@@ -9,11 +9,18 @@ const {
 
 router.use(authenticateToken);
 
-// Create: doctors and super admins only
+// Create or upsert: doctors and super admins only
 router.post(
   "/",
   requireRoles("clinician_doctor", "super_admin"),
   controller.createClinicalHistory
+);
+
+// Read by patient ID: longitudinal clinical history
+router.get(
+  "/patient/:patientId",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
+  controller.getClinicalHistoryByPatientId
 );
 
 // Read: doctors, nurses, and super admins

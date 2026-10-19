@@ -1,4 +1,3 @@
-
 const pool = require("../../config/db");
 
 async function createOrder(data, client = pool) {
@@ -34,13 +33,22 @@ async function createOrder(data, client = pool) {
       orderName,
       instructions ?? null,
       priority ?? "routine",
-      status ?? "placed",
+      status ?? "submitted",
       orderDetails == null ? null : JSON.stringify(orderDetails),
       orderedBy,
     ]
   );
 
   return result.rows[0];
+}
+
+async function createOrdersBatch(orders, client = pool) {
+  const inserted = [];
+  for (const ord of orders) {
+    const res = await createOrder(ord, client);
+    inserted.push(res);
+  }
+  return inserted;
 }
 
 async function getOrdersByEncounterId(encounterId, client = pool) {
@@ -50,7 +58,7 @@ async function getOrdersByEncounterId(encounterId, client = pool) {
      FROM provider_orders o
      JOIN doctors d ON d.id = o.ordered_by
      WHERE o.encounter_id = $1
-     ORDER BY o.created_at DESC`,
+     ORDER BY o.created_at ASC`,
     [encounterId]
   );
 
@@ -90,10 +98,19 @@ async function updateOrderStatus(id, data, client = pool) {
   return result.rows[0] || null;
 }
 
+async function getCatalog(client = pool) {
+  const result = await client.query(
+    `SELECT * FROM clinical_order_catalog WHERE is_active = true ORDER BY category, name`
+  );
+  return result.rows;
+}
+
 module.exports = {
   pool,
   createOrder,
+  createOrdersBatch,
   getOrdersByEncounterId,
   getOrderById,
   updateOrderStatus,
+  getCatalog,
 };

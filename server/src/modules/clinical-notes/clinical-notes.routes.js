@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -10,11 +9,18 @@ const {
 
 router.use(authenticateToken);
 
-// Create notes: doctors and super admins
+// Create notes (draft or finalized): doctors and super admins
 router.post(
   "/",
   requireRoles("clinician_doctor", "super_admin"),
   controller.createClinicalNote
+);
+
+// View notes across encounters for a patient
+router.get(
+  "/patient/:patientId",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
+  controller.getNotesByPatientId
 );
 
 // View notes for an encounter
@@ -24,6 +30,13 @@ router.get(
   controller.getNotesByEncounterId
 );
 
+// Finalize / sign note
+router.patch(
+  "/:id/finalize",
+  requireRoles("clinician_doctor", "super_admin"),
+  controller.finalizeClinicalNote
+);
+
 // View a single note
 router.get(
   "/:id",
@@ -31,7 +44,7 @@ router.get(
   controller.getClinicalNoteById
 );
 
-// Update notes: doctors and super admins
+// Update notes (drafts or amendments): doctors and super admins
 router.patch(
   "/:id",
   requireRoles("clinician_doctor", "super_admin"),

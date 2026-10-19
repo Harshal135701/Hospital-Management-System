@@ -1,50 +1,6 @@
 const repository = require("./clinical-history.repository");
 const ApiError = require("../../utils/ApiError");
 
-const textFields = [
-  "chief_complaints",
-  "history_of_present_illness",
-  "past_medical_history",
-  "medication_history",
-  "allergy_history",
-  "family_history",
-  "social_history",
-  "review_of_systems",
-];
-
-function validateHistory(data, isUpdate = false) {
-  if (
-    !isUpdate &&
-    (typeof data.chief_complaints !== "string" ||
-      !data.chief_complaints.trim())
-  ) {
-    throw ApiError.badRequest("Chief complaints are required");
-  }
-
-  for (const field of textFields) {
-    const value = data[field];
-
-    if (
-      value !== undefined &&
-      value !== null &&
-      typeof value !== "string"
-    ) {
-      throw ApiError.badRequest(`${field} must be text`);
-    }
-  }
-
-  if (
-    isUpdate &&
-    !textFields.some(
-      (field) => data[field] !== undefined
-    )
-  ) {
-    throw ApiError.badRequest(
-      "Provide at least one field to update"
-    );
-  }
-}
-
 async function validateEncounterAccess(
   encounterId,
   currentUser,
@@ -71,17 +27,8 @@ async function validateEncounterAccess(
     throw ApiError.notFound("Consultation encounter not found");
   }
 
-  if (currentUser.role === "clinician_doctor") {
-    if (
-      !currentUser.doctor_id ||
-      String(encounter.doctor_id) !== String(currentUser.doctor_id)
-    ) {
-      throw ApiError.forbidden(
-        "You are not authorized to access another clinician's consultation history"
-      );
-    }
-  } else if (
-    !["staff_nurse", "super_admin"].includes(currentUser.role)
+  if (
+    !["clinician_doctor", "staff_nurse", "super_admin"].includes(currentUser.role)
   ) {
     throw ApiError.forbidden(
       "Insufficient permissions to access clinical history"
@@ -100,8 +47,6 @@ async function validateEncounterAccess(
 async function createClinicalHistory(data, currentUser) {
   const encounterId = data.encounter_id || data.encounterId;
 
-  validateHistory(data);
-
   if (currentUser?.role === "staff_nurse") {
     throw ApiError.forbidden(
       "Staff nurses may view history but cannot create clinical history"
@@ -110,26 +55,38 @@ async function createClinicalHistory(data, currentUser) {
 
   await validateEncounterAccess(encounterId, currentUser, true);
 
-  const existing =
-    await repository.getClinicalHistoryByEncounterId(encounterId);
+  const chiefComplaints =
+    data.chief_complaints ||
+    data.chiefComplaints ||
+    data.presentingComplaint ||
+    "Outpatient presentation";
 
-  if (existing) {
-    throw ApiError.conflict(
-      "Clinical history already exists for this encounter"
-    );
-  }
-
-  return repository.createClinicalHistory({
+  const historyRecord = await repository.upsertClinicalHistory({
     encounter_id: encounterId,
-    chief_complaints: data.chief_complaints,
-    history_of_present_illness: data.history_of_present_illness,
-    past_medical_history: data.past_medical_history,
-    medication_history: data.medication_history,
-    allergy_history: data.allergy_history,
-    family_history: data.family_history,
-    social_history: data.social_history,
-    review_of_systems: data.review_of_systems,
+    chief_complaints: chiefComplaints,
+    history_of_present_illness: data.history_of_present_illness || data.historyOfPresentIllness || null,
+    onset_duration: data.onset_duration || data.onsetDuration || null,
+    severity: data.severity || null,
+    aggravating_factors: data.aggravating_factors || data.aggravatingFactors || null,
+    relieving_factors: data.relieving_factors || data.relievingFactors || null,
+    past_medical_history: data.past_medical_history || data.pastMedicalHistory || data.medicalHistory || null,
+    past_surgical_history: data.past_surgical_history || data.pastSurgicalHistory || data.surgicalHistory || null,
+    medication_history: data.medication_history || data.medicationHistory || data.currentMedications || null,
+    allergy_history: data.allergy_history || data.allergyHistory || data.allergies || null,
+    family_history: data.family_history || data.familyHistory || null,
+    social_history: data.social_history || data.socialHistory || null,
+    review_of_systems: data.review_of_systems || data.reviewOfSystems || null,
   });
+
+  // Sync chief complaint to encounter
+  await repository.pool.query(
+    `UPDATE consultation_encounters
+     SET chief_complaint = $2, updated_at = NOW()
+     WHERE id = $1`,
+    [encounterId, chiefComplaints]
+  );
+
+  return historyRecord;
 }
 
 async function getClinicalHistoryByEncounterId(
@@ -141,13 +98,23 @@ async function getClinicalHistoryByEncounterId(
   const history =
     await repository.getClinicalHistoryByEncounterId(encounterId);
 
-  if (!history) {
-    throw ApiError.notFound(
-      "Clinical history for this encounter has not been recorded yet"
-    );
-  }
-
-  return history;
+  // Return empty history object with default structure if not recorded yet
+  return history || {
+    encounter_id: encounterId,
+    chief_complaints: '',
+    history_of_present_illness: '',
+    onset_duration: '',
+    severity: 'Moderate',
+    aggravating_factors: '',
+    relieving_factors: '',
+    past_medical_history: '',
+    past_surgical_history: '',
+    medication_history: '',
+    allergy_history: '',
+    family_history: '',
+    social_history: '',
+    review_of_systems: '',
+  };
 }
 
 async function updateClinicalHistory(
@@ -155,8 +122,6 @@ async function updateClinicalHistory(
   data,
   currentUser
 ) {
-  validateHistory(data, true);
-
   if (currentUser?.role === "staff_nurse") {
     throw ApiError.forbidden(
       "Staff nurses may view history but cannot update clinical history"
@@ -169,22 +134,39 @@ async function updateClinicalHistory(
     await repository.getClinicalHistoryByEncounterId(encounterId);
 
   if (!existing) {
-    throw ApiError.notFound("Clinical history not found");
+    return createClinicalHistory({ ...data, encounter_id: encounterId }, currentUser);
   }
 
-  const updatedData = {};
+  const updated = await repository.updateClinicalHistory(encounterId, data);
 
-  for (const field of textFields) {
-    if (data[field] !== undefined) {
-      updatedData[field] = data[field];
-    }
+  const chief = data.chief_complaints || data.chiefComplaints || data.presentingComplaint;
+  if (chief) {
+    await repository.pool.query(
+      `UPDATE consultation_encounters
+       SET chief_complaint = $2, updated_at = NOW()
+       WHERE id = $1`,
+      [encounterId, chief]
+    );
   }
 
-  return repository.updateClinicalHistory(encounterId, updatedData);
+  return updated;
+}
+
+async function getClinicalHistoryByPatientId(patientId, currentUser) {
+  if (
+    !["clinician_doctor", "staff_nurse", "super_admin"].includes(currentUser?.role)
+  ) {
+    throw ApiError.forbidden(
+      "Insufficient permissions to access patient clinical history"
+    );
+  }
+
+  return repository.getClinicalHistoryByPatientId(patientId);
 }
 
 module.exports = {
   createClinicalHistory,
   getClinicalHistoryByEncounterId,
   updateClinicalHistory,
+  getClinicalHistoryByPatientId,
 };

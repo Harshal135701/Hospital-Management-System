@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Save,
   CheckCircle2,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Modal, Badge } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
+import { ClinicalService } from '../../services/api';
 
 export const ProgressNotes = ({ patient, onSaveNote }) => {
   const { user } = useAuth();
@@ -28,6 +29,11 @@ export const ProgressNotes = ({ patient, onSaveNote }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setHistoricalNotes(patient?.notes || []);
+  }, [patient?.id, patient?.notes]);
 
   const [currentDateTimeStr] = useState(() => new Date().toLocaleString('en-US', {
     day: '2-digit',
@@ -37,12 +43,103 @@ export const ProgressNotes = ({ patient, onSaveNote }) => {
     minute: '2-digit'
   }));
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
+    setIsSaving(true);
+    if (patient?.is_live && patient?.encounter_id) {
+      try {
+        const saved = await ClinicalService.saveProgressNote({
+          encounter_id: patient.encounter_id,
+          patient_id: patient.patient_id,
+          note_type: 'soap',
+          subjective: subjective || undefined,
+          objective: objective || undefined,
+          assessment: assessment || undefined,
+          plan: plan || undefined,
+          status: 'draft'
+        });
+
+        const newNote = {
+          id: saved?.id || `note-${Date.now()}`,
+          author: authorName,
+          timestamp: currentDateTimeStr,
+          status: 'Draft',
+          subjective: subjective || 'None recorded',
+          objective: objective || 'None recorded',
+          assessment: assessment || 'None recorded',
+          plan: plan || 'None recorded'
+        };
+
+        const updated = [newNote, ...historicalNotes];
+        setHistoricalNotes(updated);
+        if (onSaveNote) onSaveNote(updated);
+
+        setToastMessage('SOAP progress note draft saved to database.');
+        setTimeout(() => setToastMessage(''), 4000);
+        return;
+      } catch (err) {
+        console.error('[ProgressNotes] Save draft error:', err);
+        setToastMessage(`Failed to save draft note: ${err.message}`);
+        setTimeout(() => setToastMessage(''), 5000);
+        return;
+      } finally {
+        setIsSaving(false);
+      }
+    }
+
     setToastMessage('SOAP progress note draft saved in local session.');
     setTimeout(() => setToastMessage(''), 4000);
+    setIsSaving(false);
   };
 
-  const handleConfirmFinalize = () => {
+  const handleConfirmFinalize = async () => {
+    setIsSaving(true);
+    if (patient?.is_live && patient?.encounter_id) {
+      try {
+        const saved = await ClinicalService.saveProgressNote({
+          encounter_id: patient.encounter_id,
+          patient_id: patient.patient_id,
+          note_type: 'soap',
+          subjective: subjective || undefined,
+          objective: objective || undefined,
+          assessment: assessment || undefined,
+          plan: plan || undefined,
+          status: 'finalized'
+        });
+
+        const newNote = {
+          id: saved?.id || `note-${Date.now()}`,
+          author: authorName,
+          timestamp: currentDateTimeStr,
+          status: 'Finalized',
+          subjective: subjective || 'None recorded',
+          objective: objective || 'None recorded',
+          assessment: assessment || 'None recorded',
+          plan: plan || 'None recorded'
+        };
+
+        const updated = [newNote, ...historicalNotes];
+        setHistoricalNotes(updated);
+        if (onSaveNote) onSaveNote(updated);
+
+        setSubjective('');
+        setObjective('');
+        setAssessment('');
+        setPlan('');
+        setIsFinalizeModalOpen(false);
+
+        setToastMessage('Progress note successfully signed, finalized, and saved to database.');
+        setTimeout(() => setToastMessage(''), 4000);
+        return;
+      } catch (err) {
+        console.error('[ProgressNotes] Finalize note error:', err);
+        setToastMessage(`Failed to finalize note: ${err.message}`);
+        setTimeout(() => setToastMessage(''), 5000);
+        return;
+      } finally {
+        setIsSaving(false);
+      }
+    }
+
     const newNote = {
       id: `note-${Date.now()}`,
       author: authorName,
@@ -60,12 +157,12 @@ export const ProgressNotes = ({ patient, onSaveNote }) => {
       onSaveNote(updated);
     }
 
-    // Reset current form
     setSubjective('');
     setObjective('');
     setAssessment('');
     setPlan('');
     setIsFinalizeModalOpen(false);
+    setIsSaving(false);
 
     setToastMessage('Progress note successfully signed and finalized.');
     setTimeout(() => setToastMessage(''), 4000);
@@ -454,7 +551,14 @@ export const ProgressNotes = ({ patient, onSaveNote }) => {
             <Button variant="outline" size="md" onClick={() => setIsFinalizeModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primary" size="md" icon={FileCheck} onClick={handleConfirmFinalize}>
+            <Button
+              variant="primary"
+              size="md"
+              icon={FileCheck}
+              loading={isSaving}
+              disabled={isSaving}
+              onClick={handleConfirmFinalize}
+            >
               Sign & Finalize Note
             </Button>
           </div>

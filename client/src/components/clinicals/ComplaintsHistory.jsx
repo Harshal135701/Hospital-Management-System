@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Save,
   CheckCircle2,
@@ -24,6 +24,20 @@ export const ComplaintsHistory = ({ patient, onSaveHistory }) => {
 
   const [toastMessage, setToastMessage] = useState('');
 
+  useEffect(() => {
+    const h = patient?.history || {};
+    setPresentingComplaint(h.presentingComplaint || patient?.chief_complaint || '');
+    setOnsetDuration(h.onsetDuration || '');
+    setSeverity(h.severity || 'Moderate');
+    setAggravatingFactors(h.aggravatingFactors || '');
+    setRelievingFactors(h.relievingFactors || '');
+    setMedicalHistory(h.medicalHistory || '');
+    setSurgicalHistory(h.surgicalHistory || '');
+    setFamilyHistory(h.familyHistory || '');
+    setCurrentMedications(h.currentMedications || '');
+    setAllergies(h.allergies || (patient?.allergies?.join(', ') || ''));
+  }, [patient?.id, patient?.history, patient?.chief_complaint, patient?.allergies]);
+
   const severityOptions = [
     { label: 'Mild', color: 'var(--color-success)', bg: 'var(--color-success-bg)', border: 'var(--color-success-border)' },
     { label: 'Moderate', color: '#B45309', bg: '#FEF3C7', border: '#FDE68A' },
@@ -31,9 +45,9 @@ export const ComplaintsHistory = ({ patient, onSaveHistory }) => {
     { label: 'Critical', color: 'var(--color-error)', bg: 'var(--color-error-bg)', border: 'var(--color-error-border)' }
   ];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (onSaveHistory) {
-      onSaveHistory({
+      await onSaveHistory({
         presentingComplaint,
         onsetDuration,
         severity,
@@ -46,7 +60,9 @@ export const ComplaintsHistory = ({ patient, onSaveHistory }) => {
         allergies
       });
     }
-    setToastMessage('Clinical history & complaints saved locally.');
+    setToastMessage(patient?.is_live
+      ? 'Clinical history & complaints saved to PostgreSQL database.'
+      : 'Clinical history & complaints saved locally.');
     setTimeout(() => setToastMessage(''), 4000);
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Save,
   CheckCircle2,
@@ -29,6 +29,23 @@ export const VitalsExam = ({ patient, onSaveVitals }) => {
   const [cns, setCns] = useState(initialVitals.cns || '');
 
   const [saveToast, setSaveToast] = useState('');
+
+  useEffect(() => {
+    const v = patient?.vitals || {};
+    setSystolic(v.systolic || '');
+    setDiastolic(v.diastolic || '');
+    setHeartRate(v.heartRate || '');
+    setRespiratoryRate(v.respiratoryRate || '');
+    setTemperature(v.temperature || '');
+    setTempUnit(v.tempUnit || 'C');
+    setSpo2(v.spo2 || '');
+    setHeight(v.height || '');
+    setWeight(v.weight || '');
+    setCvs(v.cvs || '');
+    setRs(v.rs || '');
+    setAbdomen(v.abdomen || '');
+    setCns(v.cns || '');
+  }, [patient?.id, patient?.vitals]);
 
   // Auto-calculated BMI
   const bmiInfo = useMemo(() => calculateBMI(height, weight), [height, weight]);
@@ -61,9 +78,9 @@ export const VitalsExam = ({ patient, onSaveVitals }) => {
     setTempUnit(prev => (prev === 'C' ? 'F' : 'C'));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (onSaveVitals) {
-      onSaveVitals({
+      await onSaveVitals({
         systolic,
         diastolic,
         heartRate,
@@ -79,7 +96,9 @@ export const VitalsExam = ({ patient, onSaveVitals }) => {
         cns
       });
     }
-    setSaveToast('Vitals and physical examination notes saved locally.');
+    setSaveToast(patient?.is_live
+      ? 'Vitals and physical examination notes persisted to PostgreSQL database.'
+      : 'Vitals and physical examination notes saved locally.');
     setTimeout(() => setSaveToast(''), 4000);
   };
 

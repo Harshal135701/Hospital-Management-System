@@ -1375,4 +1375,212 @@ export const OperationsQueueService = {
   }
 };
 
+/* ==========================================================================
+   CLINICAL MODULE SERVICES (Doctor Desk, Vitals, History, CPOE, Notes)
+   ========================================================================== */
+
+export const ClinicalService = {
+  // 1. Doctor Consultation Desk & Encounters
+  async getEncounters(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/consultations${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+
+  async getEncounterById(id) {
+    const res = await apiFetch(`/consultations/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+
+  async getEncounterByAppointmentId(appointmentId) {
+    try {
+      const res = await apiFetch(`/consultations/appointment/${encodeURIComponent(appointmentId)}`);
+      return res?.data;
+    } catch (err) {
+      if (err.status === 404) return null;
+      throw err;
+    }
+  },
+
+  async startConsultation(data) {
+    const res = await apiFetch('/consultations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async updateConsultationDraft(id, data) {
+    const res = await apiFetch(`/consultations/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async completeConsultation(id, data = {}) {
+    const res = await apiFetch(`/consultations/${encodeURIComponent(id)}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getPatientClinicalSummary(patientId) {
+    const res = await apiFetch(`/consultations/patient/${encodeURIComponent(patientId)}/clinical-summary`);
+    return res?.data;
+  },
+
+  // 2. Vitals Recording & Physical Examination
+  async saveVitals(data) {
+    const res = await apiFetch('/vitals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getEncounterVitals(encounterId) {
+    try {
+      const res = await apiFetch(`/vitals/${encodeURIComponent(encounterId)}`);
+      return res?.data || [];
+    } catch (err) {
+      if (err.status === 404) return [];
+      throw err;
+    }
+  },
+
+  async getPatientVitalsHistory(patientId) {
+    try {
+      const res = await apiFetch(`/vitals/patient/${encodeURIComponent(patientId)}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  // 3. Chief Complaints & Clinical History
+  async saveClinicalHistory(data) {
+    const res = await apiFetch('/clinical-history', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async updateClinicalHistory(encounterId, data) {
+    const res = await apiFetch(`/clinical-history/${encodeURIComponent(encounterId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getClinicalHistory(encounterId) {
+    try {
+      const res = await apiFetch(`/clinical-history/${encodeURIComponent(encounterId)}`);
+      return res?.data;
+    } catch (err) {
+      if (err.status === 404) return null;
+      throw err;
+    }
+  },
+
+  async getPatientHistory(patientId) {
+    try {
+      const res = await apiFetch(`/clinical-history/patient/${encodeURIComponent(patientId)}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  // 4. Computerized Provider Order Entry (CPOE)
+  async getOrderCatalog() {
+    try {
+      const res = await apiFetch('/provider-orders/catalog');
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async createOrder(data) {
+    const res = await apiFetch('/provider-orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async createOrdersBatch(data) {
+    const res = await apiFetch('/provider-orders/batch', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data || [];
+  },
+
+  async getEncounterOrders(encounterId) {
+    try {
+      const res = await apiFetch(`/provider-orders/encounter/${encodeURIComponent(encounterId)}`);
+      return res?.data || [];
+    } catch (err) {
+      if (err.status === 404) return [];
+      throw err;
+    }
+  },
+
+  async cancelOrder(orderId) {
+    const res = await apiFetch(`/provider-orders/${encodeURIComponent(orderId)}/cancel`, {
+      method: 'PATCH',
+    });
+    return res?.data;
+  },
+
+  async updateOrderStatus(orderId, status, instructions) {
+    const res = await apiFetch(`/provider-orders/${encodeURIComponent(orderId)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, instructions }),
+    });
+    return res?.data;
+  },
+
+  // 5. Clinical Progress Notes (SOAP)
+  async saveProgressNote(data) {
+    const res = await apiFetch('/clinical-notes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getEncounterNotes(encounterId) {
+    try {
+      const res = await apiFetch(`/clinical-notes/encounter/${encodeURIComponent(encounterId)}`);
+      return res?.data || [];
+    } catch (err) {
+      if (err.status === 404) return [];
+      throw err;
+    }
+  },
+
+  async finalizeNote(noteId) {
+    const res = await apiFetch(`/clinical-notes/${encodeURIComponent(noteId)}/finalize`, {
+      method: 'PATCH',
+    });
+    return res?.data;
+  },
+
+  async getPatientNotes(patientId) {
+    try {
+      const res = await apiFetch(`/clinical-notes/patient/${encodeURIComponent(patientId)}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+};
+
+
 

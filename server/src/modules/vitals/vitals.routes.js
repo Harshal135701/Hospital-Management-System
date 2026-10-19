@@ -19,4 +19,11 @@ router.get(
   controller.getVitalsByEncounterId
 );
 
+// View historical vitals across encounters for a patient
+router.get(
+  '/patient/:patientId',
+  requireRoles('clinician_doctor', 'staff_nurse', 'super_admin'),
+  controller.getVitalsByPatientId
+);
+
 module.exports = router;

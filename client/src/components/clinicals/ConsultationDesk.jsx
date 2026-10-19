@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Save,
@@ -25,13 +25,22 @@ export const ConsultationDesk = ({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
+  useEffect(() => {
+    setFormData({
+      chiefComplaint: patient?.chief_complaint || '',
+      summary: patient?.consultationDesk?.summary || '',
+      examination: patient?.consultationDesk?.examination || '',
+      impression: patient?.consultationDesk?.impression || ''
+    });
+  }, [patient?.id, patient?.chief_complaint, patient?.consultationDesk]);
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (onSaveDraft) {
-      onSaveDraft({
+      await onSaveDraft({
         chief_complaint: formData.chiefComplaint,
         consultationDesk: {
           summary: formData.summary,
@@ -40,14 +49,16 @@ export const ConsultationDesk = ({
         }
       });
     }
-    setSaveSuccessMsg('Consultation draft saved locally. (Frontend session only; no backend mutation)');
+    setSaveSuccessMsg(patient?.is_live
+      ? 'Consultation observations draft saved successfully to database.'
+      : 'Consultation draft saved locally.');
     setTimeout(() => setSaveSuccessMsg(''), 4000);
   };
 
-  const handleConfirmComplete = () => {
+  const handleConfirmComplete = async () => {
     setIsConfirmModalOpen(false);
     if (onCompleteConsultation) {
-      onCompleteConsultation({
+      await onCompleteConsultation({
         chief_complaint: formData.chiefComplaint,
         consultationDesk: {
           summary: formData.summary,

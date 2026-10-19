@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -10,11 +9,25 @@ const {
 
 router.use(authenticateToken);
 
-// Create orders: doctors and super admins
+// Get diagnostic test catalog
+router.get(
+  "/catalog",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin", "receptionist"),
+  controller.getCatalog
+);
+
+// Create single order: doctors and super admins
 router.post(
   "/",
   requireRoles("clinician_doctor", "super_admin"),
   controller.createOrder
+);
+
+// Create batch orders: doctors and super admins
+router.post(
+  "/batch",
+  requireRoles("clinician_doctor", "super_admin"),
+  controller.createOrdersBatch
 );
 
 // View orders for an encounter
@@ -22,6 +35,13 @@ router.get(
   "/encounter/:encounterId",
   requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
   controller.getOrdersByEncounterId
+);
+
+// Cancel order
+router.patch(
+  "/:id/cancel",
+  requireRoles("clinician_doctor", "super_admin"),
+  controller.cancelOrder
 );
 
 // View a single order

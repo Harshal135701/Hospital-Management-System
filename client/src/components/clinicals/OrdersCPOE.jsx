@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Modal, Badge } from '../common/UIPrimitives';
 import { DEMO_DIAGNOSTIC_CATALOG } from './clinicalDemoData';
+import { ClinicalService } from '../../services/api';
 
 export const OrdersCPOE = ({ patient, onUpdateOrders }) => {
   const existingOrders = patient?.orders || [];
@@ -27,22 +28,54 @@ export const OrdersCPOE = ({ patient, onUpdateOrders }) => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [orderList, setOrderList] = useState(existingOrders);
+  const [catalog, setCatalog] = useState(DEMO_DIAGNOSTIC_CATALOG);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setOrderList(patient?.orders || []);
+  }, [patient?.id, patient?.orders]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCatalog = async () => {
+      try {
+        const remote = await ClinicalService.getOrderCatalog();
+        if (isMounted && Array.isArray(remote) && remote.length > 0) {
+          const mapped = remote.map((item) => ({
+            id: item.id || item.item_code,
+            code: item.item_code,
+            name: item.name,
+            category: item.category,
+            department: item.department || `${item.category} Laboratory`,
+            turnaroundTime: item.turnaround_time || '2-4 Hours',
+            specimen: item.specimen || 'Clinical Specimen',
+            description: item.description || item.name,
+          }));
+          setCatalog(mapped);
+        }
+      } catch (err) {
+        console.warn('[OrdersCPOE] Catalog fetch fallback:', err.message);
+      }
+    };
+    fetchCatalog();
+    return () => { isMounted = false; };
+  }, []);
 
   const categories = ['All', 'Hematology', 'Biochemistry', 'Blood Bank', 'Radiology', 'Cardiology'];
 
   // Filtered catalog
   const filteredCatalog = useMemo(() => {
-    return DEMO_DIAGNOSTIC_CATALOG.filter(item => {
+    return catalog.filter(item => {
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
       const q = searchTerm.toLowerCase();
       const matchesSearch = !q ||
         item.name.toLowerCase().includes(q) ||
         item.code.toLowerCase().includes(q) ||
         item.department.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q);
+        (item.description && item.description.toLowerCase().includes(q));
       return matchesCategory && matchesSearch;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [catalog, searchTerm, selectedCategory]);
 
   const handleAddTest = (test) => {
     // Check if already in pending list
@@ -73,8 +106,65 @@ export const OrdersCPOE = ({ patient, onUpdateOrders }) => {
     setIsReviewModalOpen(true);
   };
 
-  const handleConfirmSubmitOrders = () => {
+  const handleConfirmSubmitOrders = async () => {
+    setIsSubmitting(true);
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (patient?.is_live && patient?.encounter_id) {
+      try {
+        const payload = {
+          encounter_id: patient.encounter_id,
+          patient_id: patient.patient_id,
+          doctor_id: patient.doctor_id,
+          priority: selectedPriority.toLowerCase(),
+          clinical_indication: clinicalIndication || 'Routine clinical investigation',
+          instructions: specialInstructions || 'Standard department protocol',
+          items: pendingOrders.map((item) => ({
+            test_id: item.testId,
+            item_code: item.testCode,
+            item_name: item.testName,
+            category: item.category,
+            department: item.department,
+            specimen: item.specimen
+          }))
+        };
+
+        const createdRows = await ClinicalService.createOrdersBatch(payload);
+        const mappedCreated = (createdRows || []).map((o) => ({
+          id: o.id,
+          testId: o.item_code || o.id,
+          testCode: o.item_code,
+          testName: o.item_name,
+          category: o.category || 'Laboratory',
+          priority: selectedPriority,
+          indication: o.clinical_indication || clinicalIndication,
+          instructions: o.instructions || specialInstructions,
+          status: 'Submitted',
+          orderedAt: `Today, ${timestamp}`
+        }));
+
+        const updated = [...orderList, ...mappedCreated];
+        setOrderList(updated);
+        if (onUpdateOrders) onUpdateOrders(updated);
+
+        setPendingOrders([]);
+        setClinicalIndication('');
+        setSpecialInstructions('');
+        setSelectedPriority('Routine');
+        setIsReviewModalOpen(false);
+
+        setToastMessage(`${mappedCreated.length} diagnostic order(s) successfully recorded in PostgreSQL.`);
+        setTimeout(() => setToastMessage(''), 4500);
+        return;
+      } catch (err) {
+        console.error('[OrdersCPOE] Order placement error:', err);
+        setToastMessage(`Failed to place orders: ${err.message}`);
+        setTimeout(() => setToastMessage(''), 5000);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     const newPlacedOrders = pendingOrders.map((item, idx) => ({
       id: `ord-cpoe-${Date.now()}-${idx}`,
       testId: item.testId,
@@ -100,13 +190,21 @@ export const OrdersCPOE = ({ patient, onUpdateOrders }) => {
     setSpecialInstructions('');
     setSelectedPriority('Routine');
     setIsReviewModalOpen(false);
+    setIsSubmitting(false);
 
     setToastMessage(`${newPlacedOrders.length} order(s) submitted locally for UI evaluation.`);
     setTimeout(() => setToastMessage(''), 4500);
   };
 
-  const handleCancelOrder = (orderId) => {
-    const updated = orderList.map(o => o.id === orderId ? { ...o, status: 'Cancelled' } : o);
+  const handleCancelOrder = async (orderId) => {
+    if (patient?.is_live) {
+      try {
+        await ClinicalService.cancelOrder(orderId);
+      } catch (err) {
+        console.warn('[OrdersCPOE] Remote cancel error:', err.message);
+      }
+    }
+    const updated = orderList.map(o => (o.id === orderId ? { ...o, status: 'Cancelled' } : o));
     setOrderList(updated);
     if (onUpdateOrders) {
       onUpdateOrders(updated);
@@ -123,23 +221,42 @@ export const OrdersCPOE = ({ patient, onUpdateOrders }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Explicit Demonstration Notice Banner */}
-      <div
-        style={{
-          backgroundColor: '#FFFBEB',
-          border: '1.5px solid #FCD34D',
-          borderRadius: 'var(--radius-lg)',
-          padding: '12px 18px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px'
-        }}
-      >
-        <AlertCircle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: '0.84rem', color: '#92400E', lineHeight: 1.45 }}>
-          <strong>Demonstration Diagnostic Catalog (Frontend Prototype):</strong> Tests, specimens, and ordering workflows displayed here are simulated for user interface evaluation. Orders placed are retained in local application state and are <strong>not</strong> dispatched to real hospital laboratories or imaging systems.
+      {/* Dynamic Status / Demonstration Notice Banner */}
+      {patient?.is_live ? (
+        <div
+          style={{
+            backgroundColor: '#F0FDF4',
+            border: '1.5px solid #86EFAC',
+            borderRadius: 'var(--radius-lg)',
+            padding: '12px 18px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}
+        >
+          <CheckCircle2 size={20} color="#16A34A" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ fontSize: '0.84rem', color: '#166534', lineHeight: 1.45 }}>
+            <strong>CPOE Clinical Order System Connected:</strong> Diagnostic orders for {patient.patient_name} are recorded to the PostgreSQL database under encounter <code>{patient.encounter_id || patient.appointment_number}</code>. Orders are queued for laboratory and radiology dispatch.
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          style={{
+            backgroundColor: '#FFFBEB',
+            border: '1.5px solid #FCD34D',
+            borderRadius: 'var(--radius-lg)',
+            padding: '12px 18px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}
+        >
+          <AlertCircle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ fontSize: '0.84rem', color: '#92400E', lineHeight: 1.45 }}>
+            <strong>Demonstration Diagnostic Catalog (Frontend Prototype):</strong> Tests, specimens, and ordering workflows displayed here are simulated for user interface evaluation. Orders placed are retained in local application state and are <strong>not</strong> dispatched to real hospital laboratories or imaging systems.
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toastMessage && (
@@ -682,6 +799,8 @@ export const OrdersCPOE = ({ patient, onUpdateOrders }) => {
               variant="primary"
               size="md"
               icon={Send}
+              loading={isSubmitting}
+              disabled={isSubmitting}
               onClick={handleConfirmSubmitOrders}
             >
               Confirm & Submit Order Batch
