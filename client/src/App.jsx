@@ -10,6 +10,9 @@ import { BillingView } from './components/billing/BillingView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { WardsView } from './components/wards/WardsView';
+import { DayCareView } from './components/daycare/DayCareView';
+import { DietView } from './components/diet/DietView';
+import { EmrView } from './components/emr/EmrView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -48,7 +51,26 @@ export function App() {
       case 'bloodbank':
         return <BloodBankView />;
 
+      case 'daycare':
+        return <DayCareView initialSubtab={routeSubtab || '8.1'} onNavigate={setCurrentRoute} />;
+
+      case 'dietary':
+      case 'diet':
+        return <DietView initialSubtab={routeSubtab || '9.1'} onNavigate={setCurrentRoute} />;
+
+      case 'emr':
+        return <EmrView initialSubtab={routeSubtab || '12.1'} onNavigate={setCurrentRoute} />;
+
       case 'submodule': {
+        if (routeSubtab && routeSubtab.startsWith('8.')) {
+          return <DayCareView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('9.')) {
+          return <DietView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('12.')) {
+          return <EmrView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
         const sub = SUBMODULES.find(s => s.id === routeSubtab) || SUBMODULES[0];
         return (
           <SubmodulesView

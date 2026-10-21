@@ -25,7 +25,9 @@ import {
   Lock,
   User,
   Receipt,
-  Layers
+  Layers,
+  Utensils,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
@@ -110,6 +112,43 @@ export const AppShell = ({
             { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
             { id: 'clinical:orders', label: 'Orders (CPOE)' },
             { id: 'clinical:notes', label: 'Clinical Progress Notes' }
+          ]
+        },
+        {
+          id: 'daycare',
+          label: 'Day Care',
+          icon: Bed,
+          badge: '4 Ops',
+          subItems: [
+            { id: 'daycare:8.1', label: '8.1 Admission & Procedure' },
+            { id: 'daycare:8.2', label: '8.2 Chair & Bed Allocation' },
+            { id: 'daycare:8.3', label: '8.3 Procedure Monitoring' },
+            { id: 'daycare:8.4', label: '8.4 Discharge Summary' }
+          ]
+        },
+        {
+          id: 'dietary',
+          label: 'Diet & Nutrition',
+          icon: Utensils,
+          badge: 'Kitchen',
+          subItems: [
+            { id: 'dietary:9.1', label: '9.1 Nutritional Assessment' },
+            { id: 'dietary:9.2', label: '9.2 Patient Diet Ordering' },
+            { id: 'dietary:9.3', label: '9.3 Kitchen Batch Production' },
+            { id: 'dietary:9.4', label: '9.4 Ward Meal Delivery' }
+          ]
+        },
+        {
+          id: 'emr',
+          label: 'EMR Records',
+          icon: FileSpreadsheet,
+          badge: 'Rx & Chart',
+          subItems: [
+            { id: 'emr:12.1', label: '12.1 Patient Timeline' },
+            { id: 'emr:12.2', label: '12.2 Prescription Studio' },
+            { id: 'emr:12.3', label: '12.3 ICD-10 Diagnoses' },
+            { id: 'emr:12.4', label: '12.4 Encounters Browser' },
+            { id: 'emr:12.5', label: '12.5 Clinical Documents' }
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
