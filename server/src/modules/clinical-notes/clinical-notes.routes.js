@@ -1,35 +1,53 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const controller = require('./clinical-notes.controller');
-const { authenticateToken, requireRoles } = require('../../middleware/auth.middleware');
+
+const controller = require("./clinical-notes.controller");
+const {
+  authenticateToken,
+  requireRoles,
+} = require("../../middleware/auth.middleware");
 
 router.use(authenticateToken);
 
-// Create clinical progress note: Clinician doctors and admin only (Nurses denied)
+// Create notes (draft or finalized): doctors and super admins
 router.post(
-  '/',
-  requireRoles('clinician_doctor', 'super_admin'),
+  "/",
+  requireRoles("clinician_doctor", "super_admin"),
   controller.createClinicalNote
 );
 
-// View notes for encounter: Doctors, Nurses, and Admin
+// View notes across encounters for a patient
 router.get(
-  '/encounter/:encounterId',
-  requireRoles('clinician_doctor', 'staff_nurse', 'super_admin'),
+  "/patient/:patientId",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
+  controller.getNotesByPatientId
+);
+
+// View notes for an encounter
+router.get(
+  "/encounter/:encounterId",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
   controller.getNotesByEncounterId
 );
 
-// View single note
+// Finalize / sign note
+router.patch(
+  "/:id/finalize",
+  requireRoles("clinician_doctor", "super_admin"),
+  controller.finalizeClinicalNote
+);
+
+// View a single note
 router.get(
-  '/:id',
-  requireRoles('clinician_doctor', 'staff_nurse', 'super_admin'),
+  "/:id",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
   controller.getClinicalNoteById
 );
 
-// Update note: Authoring doctor and Admin only
+// Update notes (drafts or amendments): doctors and super admins
 router.patch(
-  '/:id',
-  requireRoles('clinician_doctor', 'super_admin'),
+  "/:id",
+  requireRoles("clinician_doctor", "super_admin"),
   controller.updateClinicalNote
 );
 

@@ -1,13 +1,20 @@
+
 const pool = require("../../config/db");
 
 async function findPatientById(id, client = pool) {
-  const res = await client.query("SELECT * FROM patients WHERE id = $1", [id]);
+  const res = await client.query(
+    "SELECT * FROM patients WHERE id = $1",
+    [id]
+  );
   return res.rows[0] || null;
 }
 
 async function findAppointmentById(id, client = pool) {
   const res = await client.query(
-    `SELECT a.*, p.full_name AS patient_name, d.full_name AS doctor_name, dep.name AS department_name
+    `SELECT a.*,
+            p.full_name AS patient_name,
+            d.full_name AS doctor_name,
+            dep.name AS department_name
      FROM appointments a
      JOIN patients p ON p.id = a.patient_id
      JOIN doctors d ON d.id = a.doctor_id
@@ -29,15 +36,19 @@ async function findDoctorById(id, client = pool) {
 async function generateRequisitionNumber(client = pool) {
   const year = new Date().getFullYear();
   const res = await client.query(
-    `SELECT COUNT(*) AS total FROM blood_requisitions WHERE EXTRACT(YEAR FROM created_at) = $1`,
+    `SELECT COUNT(*) AS total
+     FROM blood_requisitions
+     WHERE EXTRACT(YEAR FROM created_at) = $1`,
     [year]
   );
-  const seq = String(parseInt(res.rows[0].total, 10) + 1).padStart(4, "0");
+
+  const seq = String(Number(res.rows[0].total) + 1).padStart(4, "0");
   return `REQ-${year}-${seq}`;
 }
 
 async function createBloodRequisitionWithClient(data, client) {
   const reqNumber = await generateRequisitionNumber(client);
+
   const query = `
     INSERT INTO blood_requisitions (
       requisition_number,
@@ -55,8 +66,9 @@ async function createBloodRequisitionWithClient(data, client) {
       status
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
-    RETURNING *;
+    RETURNING *
   `;
+
   const values = [
     reqNumber,
     data.patientId,
@@ -71,6 +83,7 @@ async function createBloodRequisitionWithClient(data, client) {
     data.clinicalIndication,
     data.requiredBy || null,
   ];
+
   const res = await client.query(query, values);
   return res.rows[0];
 }
@@ -92,7 +105,7 @@ async function createBloodRequestWithClient(data, client) {
       status
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
-    RETURNING *;
+    RETURNING *
   `;
 
   const values = [
@@ -113,7 +126,10 @@ async function createBloodRequestWithClient(data, client) {
   return res.rows[0];
 }
 
-async function getBloodRequests({ patient_id, appointment_id, status } = {}, client = pool) {
+async function getBloodRequests(
+  { patient_id, appointment_id, status } = {},
+  client = pool
+) {
   const conditions = [];
   const values = [];
 
@@ -132,7 +148,9 @@ async function getBloodRequests({ patient_id, appointment_id, status } = {}, cli
     conditions.push(`abr.status = $${values.length}`);
   }
 
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where = conditions.length
+    ? `WHERE ${conditions.join(" AND ")}`
+    : "";
 
   const query = `
     SELECT abr.*,
@@ -175,19 +193,26 @@ async function getBloodRequestById(id, client = pool) {
     LEFT JOIN appointments a ON a.id = abr.appointment_id
     WHERE abr.id = $1
   `;
+
   const res = await client.query(query, [id]);
   return res.rows[0] || null;
 }
 
-async function updateBloodRequestStatus(id, status, notes, client = pool) {
+async function updateBloodRequestStatus(
+  id,
+  status,
+  notes,
+  client = pool
+) {
   const query = `
     UPDATE appointment_blood_requests
     SET status = $2,
         notes = COALESCE($3, notes),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING *;
+    RETURNING *
   `;
+
   const res = await client.query(query, [id, status, notes ?? null]);
   return res.rows[0] || null;
 }

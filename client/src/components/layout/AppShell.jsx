@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -23,10 +23,13 @@ import {
   LogOut,
   LogIn,
   Lock,
-  User
+  User,
+  Receipt,
+  Layers
 } from 'lucide-react';
 import { Button } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
+import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
 
 export const AppShell = ({
   currentRoute,
@@ -41,10 +44,33 @@ export const AppShell = ({
     }
     return false;
   });
-  const isClinicalRoute = currentRoute === 'clinical' || (typeof currentRoute === 'string' && currentRoute.startsWith('clinical:'));
-  const [isClinicalExpandedManual, setIsClinicalExpandedManual] = useState(null);
-  const isClinicalExpanded = isClinicalExpandedManual !== null ? isClinicalExpandedManual : isClinicalRoute;
+  const [expandedSectionsManual, setExpandedSectionsManual] = useState({
+    appointments: true,
+    clinical: false,
+  });
+  const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({
+    '3': true,
+  });
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Auto-expand active group in Appointment hierarchy when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && currentRoute.startsWith('appointments:')) {
+      const parts = currentRoute.split(':');
+      if (parts[1] === 'group') {
+        const gId = parts[2];
+        if (gId) {
+          setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
+        }
+      } else {
+        const subId = parts[1]?.replace('submodule:', '');
+        const found = SUBMODULES.find(s => s.id === subId);
+        if (found) {
+          setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
+        }
+      }
+    }
+  }, [currentRoute]);
 
   const toggleCollapse = () => {
     setIsCollapsed(prev => {
@@ -67,17 +93,23 @@ export const AppShell = ({
       title: 'Clinical Operations',
       items: [
         { id: 'patients', label: 'Patients', icon: Users, badge: '4 New' },
-        { id: 'appointments', label: 'Appointments', icon: Calendar, badge: 'Today' },
+        {
+          id: 'appointments',
+          label: 'Appointments',
+          icon: Calendar,
+          badge: '30 Groups',
+          isAppointmentHierarchy: true
+        },
         {
           id: 'clinical',
-          label: 'Clinical',
+          label: 'Clinical Desk',
           icon: Stethoscope,
           subItems: [
-            { id: 'clinical:consultation', label: 'Consultation Desk' },
-            { id: 'clinical:vitals', label: 'Vitals & Examination' },
-            { id: 'clinical:history', label: 'Complaints & History' },
+            { id: 'clinical:consultation', label: 'Doctor Consultation Desk' },
+            { id: 'clinical:vitals', label: 'Vitals Recording & Physical Examination' },
+            { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
             { id: 'clinical:orders', label: 'Orders (CPOE)' },
-            { id: 'clinical:notes', label: 'Progress Notes' }
+            { id: 'clinical:notes', label: 'Clinical Progress Notes' }
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
@@ -97,9 +129,6 @@ export const AppShell = ({
   ];
 
   const handleSelectNav = (id) => {
-    if (typeof id === 'string' && !id.startsWith('clinical')) {
-      setIsClinicalExpandedManual(null);
-    }
     onNavigate(id);
     setIsMobileMenuOpen(false);
   };
@@ -382,17 +411,39 @@ export const AppShell = ({
 
               <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 {section.items.map((item) => {
-                  const isItemActive = currentRoute === item.id || (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
+                  const isItemActive = currentRoute === item.id ||
+                    (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
-                  const hasSubItems = item.subItems && item.subItems.length > 0;
-                  const isExpanded = isClinicalExpanded && !effectiveCollapsed;
+                  const hasSubItems = Boolean(item.isAppointmentHierarchy || (item.subItems && item.subItems.length > 0));
+                  const isExpanded = Boolean(
+                    expandedSectionsManual[item.id] !== undefined
+                      ? expandedSectionsManual[item.id]
+                      : isItemActive
+                  ) && !effectiveCollapsed;
 
                   const handleItemClick = () => {
+                    if (item.isAppointmentHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('appointments');
+                      } else {
+                        if (currentRoute !== 'appointments' && !currentRoute.startsWith('appointments:')) {
+                          handleSelectNav('appointments');
+                          setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, appointments: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
                     if (hasSubItems) {
                       if (effectiveCollapsed) {
                         handleSelectNav(item.id);
                       } else {
-                        setIsClinicalExpandedManual(prev => (prev !== null ? !prev : !isClinicalRoute));
+                        setExpandedSectionsManual(prev => ({
+                          ...prev,
+                          [item.id]: !isExpanded
+                        }));
                         if (!isItemActive) {
                           handleSelectNav(item.id);
                         }
@@ -506,8 +557,172 @@ export const AppShell = ({
                         )}
                       </button>
 
-                      {/* Expandable Sub-Navigation */}
-                      {hasSubItems && isExpanded && (
+                      {/* Expandable Appointment Module Complete Hierarchy */}
+                      {item.isAppointmentHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '3px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: '360px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                          }}
+                        >
+                          {MODULE_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedAppointmentGroups[group.id]);
+                            const groupSubmodules = SUBMODULES.filter(s => s.groupId === group.id);
+                            const isGroupActive =
+                              currentRoute === `appointments:group:${group.id}` ||
+                              (typeof currentRoute === 'string' &&
+                                (currentRoute.startsWith(`appointments:${group.id}.`) ||
+                                 currentRoute.startsWith(`appointments:submodule:${group.id}.`)));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  {/* Click group title -> Level 2 Group Dashboard */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectNav(`appointments:group:${group.id}`);
+                                      setExpandedAppointmentGroups(prev => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={group.label}
+                                  >
+                                    {group.label}
+                                  </button>
+
+                                  {/* Toggle Group Chevron */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedAppointmentGroups(prev => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'var(--color-text-muted)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                                    aria-label={isGroupExpanded ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Nested Sub-modules (Simple non-numerical bullet points) */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {groupSubmodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === `appointments:${sub.id}` ||
+                                        currentRoute === `appointments:submodule:${sub.id}`;
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(`appointments:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={sub.title}
+                                        >
+                                          {/* Simple non-numerical bullet point */}
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {sub.title}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Expandable Sub-Navigation for other modules (e.g. Clinical) */}
+                      {!item.isAppointmentHierarchy && hasSubItems && isExpanded && (
                         <div
                           style={{
                             display: 'flex',
@@ -516,7 +731,8 @@ export const AppShell = ({
                             marginTop: '2px',
                             marginLeft: '12px',
                             paddingLeft: '14px',
-                            borderLeft: '1.5px solid var(--color-border)'
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: 'none'
                           }}
                         >
                           {item.subItems.map((sub) => {
@@ -783,33 +999,115 @@ export const AppShell = ({
             </button>
 
             {/* Global Patient Search Input */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                backgroundColor: 'var(--color-bg-soft-cyan)',
-                padding: '8px 16px',
-                borderRadius: 'var(--radius-full)',
-                border: '1.5px solid var(--color-border)',
-                width: '340px',
-                transition: 'border-color 0.15s ease'
-              }}
-            >
-              <Search size={16} color="var(--color-text-muted)" />
-              <input
-                type="text"
-                placeholder="Search UHID, patient name, doctor, or blood unit..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+            <div style={{ position: 'relative' }}>
+              <div
                 style={{
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  width: '100%',
-                  fontSize: 'var(--font-size-xs)',
-                  outline: 'none'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  backgroundColor: 'var(--color-bg-soft-cyan)',
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1.5px solid var(--color-border)',
+                  width: '340px',
+                  transition: 'border-color 0.15s ease'
                 }}
-              />
+              >
+                <Search size={16} color="var(--color-text-muted)" />
+                <input
+                  type="text"
+                  placeholder="Search modules, doctors, patients, UHID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    width: '100%',
+                    fontSize: 'var(--font-size-xs)',
+                    outline: 'none'
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '0.8rem', padding: '0 2px' }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {searchQuery.trim().length > 1 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    width: '420px',
+                    maxHeight: '360px',
+                    overflowY: 'auto',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-modal, 0 10px 25px rgba(0,0,0,0.15))',
+                    border: '1px solid var(--color-border)',
+                    zIndex: 150,
+                    padding: '8px'
+                  }}
+                >
+                  <div style={{ padding: '4px 8px 6px', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
+                    Matching Modules & Submodules
+                  </div>
+                  {SUBMODULES.filter(s =>
+                    s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    s.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (s.subtitle && s.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))
+                  ).slice(0, 8).map(sub => (
+                    <button
+                      type="button"
+                      key={sub.id}
+                      onClick={() => {
+                        if (sub.id.startsWith('3.')) {
+                          handleSelectNav(`appointments:${sub.id}`);
+                        } else if (sub.id.startsWith('4.')) {
+                          handleSelectNav(`billing:${sub.id}`);
+                        } else {
+                          handleSelectNav(`submodule:${sub.id}`);
+                        }
+                        setSearchQuery('');
+                      }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.1s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-pale-aqua)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                          {sub.title}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--color-primary-teal)', fontWeight: '500' }}>
+                          {sub.groupName}
+                        </span>
+                      </div>
+                      {sub.subtitle && (
+                        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                          {sub.subtitle}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

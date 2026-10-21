@@ -1,4 +1,4 @@
-const pool = require('../../config/db');
+const pool = require("../../config/db");
 
 async function createOrder(data, client = pool) {
   const {
@@ -32,9 +32,9 @@ async function createOrder(data, client = pool) {
       orderType,
       orderName,
       instructions ?? null,
-      priority ?? 'routine',
-      status ?? 'placed',
-      orderDetails ? JSON.stringify(orderDetails) : null,
+      priority ?? "routine",
+      status ?? "submitted",
+      orderDetails == null ? null : JSON.stringify(orderDetails),
       orderedBy,
     ]
   );
@@ -42,53 +42,75 @@ async function createOrder(data, client = pool) {
   return result.rows[0];
 }
 
+async function createOrdersBatch(orders, client = pool) {
+  const inserted = [];
+  for (const ord of orders) {
+    const res = await createOrder(ord, client);
+    inserted.push(res);
+  }
+  return inserted;
+}
+
 async function getOrdersByEncounterId(encounterId, client = pool) {
   const result = await client.query(
-    `SELECT o.*, d.full_name AS doctor_name, d.employee_code AS doctor_code
+    `SELECT o.*, d.full_name AS doctor_name,
+            d.employee_code AS doctor_code
      FROM provider_orders o
      JOIN doctors d ON d.id = o.ordered_by
      WHERE o.encounter_id = $1
      ORDER BY o.created_at ASC`,
     [encounterId]
   );
+
   return result.rows;
 }
 
 async function getOrderById(id, client = pool) {
   const result = await client.query(
-    `SELECT o.*, d.full_name AS doctor_name, d.employee_code AS doctor_code
+    `SELECT o.*, d.full_name AS doctor_name,
+            d.employee_code AS doctor_code
      FROM provider_orders o
      JOIN doctors d ON d.id = o.ordered_by
      WHERE o.id = $1`,
     [id]
   );
+
   return result.rows[0] || null;
 }
 
-async function updateOrderStatus(id, { status, instructions }, client = pool) {
-  const fields = ['status = $2', 'updated_at = NOW()'];
-  const params = [id, status];
+async function updateOrderStatus(id, data, client = pool) {
+  const fields = ["status = $2", "updated_at = NOW()"];
+  const params = [id, data.status];
 
-  if (instructions !== undefined) {
-    fields.push('instructions = $3');
-    params.push(instructions);
+  if (data.instructions !== undefined) {
+    fields.push(`instructions = $${params.length + 1}`);
+    params.push(data.instructions);
   }
 
-  const query = `
-    UPDATE provider_orders
-    SET ${fields.join(', ')}
-    WHERE id = $1
-    RETURNING *
-  `;
+  const result = await client.query(
+    `UPDATE provider_orders
+     SET ${fields.join(", ")}
+     WHERE id = $1
+     RETURNING *`,
+    params
+  );
 
-  const result = await client.query(query, params);
   return result.rows[0] || null;
+}
+
+async function getCatalog(client = pool) {
+  const result = await client.query(
+    `SELECT * FROM clinical_order_catalog WHERE is_active = true ORDER BY category, name`
+  );
+  return result.rows;
 }
 
 module.exports = {
   pool,
   createOrder,
+  createOrdersBatch,
   getOrdersByEncounterId,
   getOrderById,
   updateOrderStatus,
+  getCatalog,
 };

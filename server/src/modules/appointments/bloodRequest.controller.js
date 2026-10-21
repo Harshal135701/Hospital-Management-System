@@ -1,3 +1,4 @@
+
 const service = require("./bloodRequest.service");
 const validation = require("./bloodRequest.validation");
 
@@ -47,6 +48,7 @@ async function getBloodRequestById(req, res, next) {
 async function updateBloodRequestStatus(req, res, next) {
   try {
     const validated = validation.updateBloodRequestStatusSchema.parse(req.body);
+
     const request = await service.updateBloodRequestStatus(
       req.params.id,
       validated.status,

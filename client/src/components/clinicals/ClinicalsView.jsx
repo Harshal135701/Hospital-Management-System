@@ -19,7 +19,7 @@ import { VitalsExam } from './VitalsExam';
 import { ComplaintsHistory } from './ComplaintsHistory';
 import { OrdersCPOE } from './OrdersCPOE';
 import { ProgressNotes } from './ProgressNotes';
-import { AppointmentService, TokenManager } from '../../services/api';
+import { AppointmentService, ClinicalService, TokenManager } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 const mapAppointmentToEncounter = (apt) => {
@@ -33,6 +33,8 @@ const mapAppointmentToEncounter = (apt) => {
   return {
     id: apt.id,
     appointment_id: apt.id,
+    patient_id: apt.patient_id,
+    encounter_id: null,
     is_live: true,
     uhid: apt.patient_uhid,
     appointment_number: apt.appointment_number || `APT-${apt.id.slice(0, 8)}`,
@@ -83,6 +85,95 @@ const mapAppointmentToEncounter = (apt) => {
     },
     orders: [],
     notes: [],
+  };
+};
+
+const hydrateEncounterIntoPatient = (existingPatient, encounterData) => {
+  if (!encounterData) return existingPatient;
+
+  const latestVitals = encounterData.latest_vitals || (Array.isArray(encounterData.vitals) ? encounterData.vitals[0] : null);
+  const clinicalHist = encounterData.clinical_history;
+
+  const mappedVitals = latestVitals ? {
+    systolic: latestVitals.systolic != null ? String(latestVitals.systolic) : existingPatient.vitals.systolic,
+    diastolic: latestVitals.diastolic != null ? String(latestVitals.diastolic) : existingPatient.vitals.diastolic,
+    heartRate: latestVitals.heart_rate != null ? String(latestVitals.heart_rate) : existingPatient.vitals.heartRate,
+    respiratoryRate: latestVitals.respiratory_rate != null ? String(latestVitals.respiratory_rate) : existingPatient.vitals.respiratoryRate,
+    temperature: latestVitals.temperature != null ? String(latestVitals.temperature) : existingPatient.vitals.temperature,
+    tempUnit: latestVitals.temp_unit || existingPatient.vitals.tempUnit || 'C',
+    spo2: latestVitals.spo2 != null ? String(latestVitals.spo2) : existingPatient.vitals.spo2,
+    height: latestVitals.height != null ? String(latestVitals.height) : existingPatient.vitals.height,
+    weight: latestVitals.weight != null ? String(latestVitals.weight) : existingPatient.vitals.weight,
+    cvs: latestVitals.cvs || existingPatient.vitals.cvs,
+    rs: latestVitals.rs || existingPatient.vitals.rs,
+    abdomen: latestVitals.abdomen || existingPatient.vitals.abdomen,
+    cns: latestVitals.cns || existingPatient.vitals.cns,
+  } : existingPatient.vitals;
+
+  const mappedHistory = clinicalHist ? {
+    presentingComplaint: clinicalHist.chief_complaints || clinicalHist.history_of_present_illness || existingPatient.history.presentingComplaint,
+    onsetDuration: clinicalHist.onset_duration || existingPatient.history.onsetDuration,
+    severity: clinicalHist.severity || existingPatient.history.severity,
+    aggravatingFactors: clinicalHist.aggravating_factors || existingPatient.history.aggravatingFactors,
+    relievingFactors: clinicalHist.relieving_factors || existingPatient.history.relievingFactors,
+    medicalHistory: clinicalHist.past_medical_history || existingPatient.history.medicalHistory,
+    surgicalHistory: clinicalHist.past_surgical_history || existingPatient.history.surgicalHistory,
+    familyHistory: clinicalHist.family_history || existingPatient.history.familyHistory,
+    currentMedications: clinicalHist.current_medications || existingPatient.history.currentMedications,
+    allergies: clinicalHist.allergies || existingPatient.history.allergies,
+  } : existingPatient.history;
+
+  const mappedOrders = (encounterData.orders || []).map((o) => {
+    const rawPriority = (o.priority || 'Routine').toLowerCase();
+    const formattedPriority = rawPriority.charAt(0).toUpperCase() + rawPriority.slice(1);
+    const rawStatus = (o.status || 'submitted').toLowerCase();
+    const formattedStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+
+    return {
+      id: o.id,
+      testId: o.item_code || o.id,
+      testCode: o.item_code,
+      testName: o.item_name,
+      category: o.category || 'Laboratory',
+      priority: formattedPriority,
+      indication: o.clinical_indication || 'Routine clinical investigation',
+      instructions: o.instructions || 'Standard department protocol',
+      status: formattedStatus,
+      orderedAt: o.created_at ? new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today'
+    };
+  });
+
+  const mappedNotes = (encounterData.progress_notes || []).map((n) => {
+    const rawStatus = (n.status || 'finalized').toLowerCase();
+    const formattedStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+    const authorStr = n.author_doctor_name ? `${n.author_doctor_name}${n.doctor_code ? ` (${n.doctor_code})` : ''}` : 'Attending Clinician';
+
+    return {
+      id: n.id,
+      author: authorStr,
+      timestamp: n.created_at ? new Date(n.created_at).toLocaleString([], { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Today',
+      status: formattedStatus,
+      subjective: n.subjective || 'None recorded',
+      objective: n.objective || 'None recorded',
+      assessment: n.assessment || 'None recorded',
+      plan: n.plan || 'None recorded'
+    };
+  });
+
+  return {
+    ...existingPatient,
+    encounter_id: encounterData.id,
+    status: encounterData.status === 'completed' ? 'completed' : existingPatient.status,
+    chief_complaint: encounterData.chief_complaint || existingPatient.chief_complaint,
+    consultationDesk: {
+      summary: encounterData.summary !== undefined && encounterData.summary !== null ? encounterData.summary : existingPatient.consultationDesk.summary,
+      examination: encounterData.examination !== undefined && encounterData.examination !== null ? encounterData.examination : existingPatient.consultationDesk.examination,
+      impression: encounterData.impression !== undefined && encounterData.impression !== null ? encounterData.impression : existingPatient.consultationDesk.impression,
+    },
+    vitals: mappedVitals,
+    history: mappedHistory,
+    orders: mappedOrders.length > 0 ? mappedOrders : existingPatient.orders,
+    notes: mappedNotes.length > 0 ? mappedNotes : existingPatient.notes,
   };
 };
 
@@ -252,31 +343,88 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
     }
   };
 
+  const ensureLiveEncounter = useCallback(async (patientObj) => {
+    if (!patientObj?.is_live) return patientObj;
+    try {
+      let encounter = null;
+      try {
+        encounter = await ClinicalService.getEncounterByAppointmentId(patientObj.id);
+      } catch (err) {
+        if (err.status !== 404) {
+          console.warn('[ClinicalsView] getEncounterByAppointmentId error:', err.message);
+        }
+      }
+
+      if (!encounter && (patientObj.status === 'waiting' || patientObj.status === 'arrived' || patientObj.status === 'booked' || patientObj.status === 'in_consultation')) {
+        encounter = await ClinicalService.startConsultation({
+          appointment_id: patientObj.id,
+          patient_id: patientObj.patient_id,
+          doctor_id: patientObj.doctor_id,
+          chief_complaint: patientObj.chief_complaint
+        });
+      }
+
+      if (encounter) {
+        const hydrated = hydrateEncounterIntoPatient(patientObj, encounter);
+        setPatients(prev => prev.map(p => (p.id === patientObj.id ? hydrated : p)));
+        return hydrated;
+      }
+    } catch (err) {
+      console.warn('[ClinicalsView] Could not load or start live encounter:', err.message);
+    }
+    return patientObj;
+  }, []);
+
+  // Auto-sync encounter data when activePatient is selected
+  useEffect(() => {
+    if (activePatient && activePatient.is_live && !activePatient.encounter_id) {
+      ensureLiveEncounter(activePatient);
+    }
+  }, [activePatient, ensureLiveEncounter]);
+
   // Handle open consultation
   const handleOpenConsultation = async (patientId, targetSubtab = 'consultation') => {
     setActivePatientId(patientId);
     setCurrentSubtab(targetSubtab);
     const pat = patients.find(p => p.id === patientId);
-    if (pat && (pat.status === 'waiting' || pat.status === 'arrived')) {
-      if (pat.is_live) {
-        try {
-          await AppointmentService.updateAppointmentStatus(patientId, 'in_consultation');
-          fetchLiveQueue();
-        } catch (err) {
-          console.warn('Could not auto-transition live appointment to in_consultation:', err.message);
-        }
+    if (!pat) return;
+
+    if (pat.is_live) {
+      const hydrated = await ensureLiveEncounter(pat);
+      if (hydrated && pat.status !== 'completed' && pat.status !== 'in_consultation') {
+        fetchLiveQueue();
       }
-      setPatients(prev => prev.map(p => {
-        if (p.id === patientId) {
-          return { ...p, status: 'in_consultation' };
-        }
-        return p;
-      }));
+    } else if (pat.status === 'waiting' || pat.status === 'arrived') {
+      setPatients(prev => prev.map(p => (p.id === patientId ? { ...p, status: 'in_consultation' } : p)));
     }
   };
 
-  const handleSaveDraftConsultation = (deskData) => {
+  const handleSaveDraftConsultation = async (deskData) => {
     handleUpdateActivePatient(deskData);
+    if (activePatient?.is_live) {
+      try {
+        let encId = activePatient.encounter_id;
+        if (!encId) {
+          const enc = await ensureLiveEncounter(activePatient);
+          encId = enc?.encounter_id;
+        }
+        if (encId) {
+          await ClinicalService.updateConsultationDraft(encId, {
+            summary: deskData.consultationDesk?.summary,
+            examination: deskData.consultationDesk?.examination,
+            impression: deskData.consultationDesk?.impression,
+            chief_complaint: deskData.chief_complaint
+          });
+          setWorkspaceToast(`Consultation observations draft saved to database for ${activePatient.patient_name}.`);
+          setTimeout(() => setWorkspaceToast(''), 4500);
+          return;
+        }
+      } catch (err) {
+        console.error('[ClinicalsView] Save draft error:', err);
+        setWorkspaceToast(`Error saving draft: ${err.message}`);
+        setTimeout(() => setWorkspaceToast(''), 5000);
+      }
+    }
   };
 
   const handleCompleteConsultation = async (deskData) => {
@@ -288,29 +436,117 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
 
     if (activePatient?.is_live) {
       try {
-        await AppointmentService.updateAppointmentStatus(activePatient.id, 'completed');
+        let encId = activePatient.encounter_id;
+        if (!encId) {
+          const enc = await ensureLiveEncounter(activePatient);
+          encId = enc?.encounter_id;
+        }
+        if (encId) {
+          await ClinicalService.completeConsultation(encId, {
+            summary: deskData.consultationDesk?.summary,
+            examination: deskData.consultationDesk?.examination,
+            impression: deskData.consultationDesk?.impression,
+            chief_complaint: deskData.chief_complaint
+          });
+        }
         await fetchLiveQueue();
+        setWorkspaceToast(`Consultation for ${activePatient?.patient_name} (${activePatient?.uhid}) finalized and marked completed in PostgreSQL.`);
+        setTimeout(() => setWorkspaceToast(''), 4500);
+        return;
       } catch (err) {
-        console.warn('Failed to update live appointment status to completed:', err.message);
+        console.error('[ClinicalsView] Complete consultation error:', err);
+        setWorkspaceToast(`Failed to finalize consultation: ${err.message}`);
+        setTimeout(() => setWorkspaceToast(''), 5000);
       }
+    } else {
+      setWorkspaceToast(`Consultation for ${activePatient?.patient_name} (${activePatient?.uhid}) completed.`);
+      setTimeout(() => setWorkspaceToast(''), 4500);
     }
-
-    setWorkspaceToast(`Consultation for ${activePatient?.patient_name} (${activePatient?.uhid}) completed.`);
-    setTimeout(() => setWorkspaceToast(''), 4500);
   };
 
-  const handleSaveVitals = (vitalsData) => {
+  const handleSaveVitals = async (vitalsData) => {
     handleUpdateActivePatient(p => ({
       ...p,
       vitals: { ...p.vitals, ...vitalsData }
     }));
+
+    if (activePatient?.is_live) {
+      try {
+        let encId = activePatient.encounter_id;
+        if (!encId) {
+          const enc = await ensureLiveEncounter(activePatient);
+          encId = enc?.encounter_id;
+        }
+        if (encId) {
+          await ClinicalService.saveVitals({
+            encounter_id: encId,
+            patient_id: activePatient.patient_id,
+            systolic: vitalsData.systolic !== '' ? Number(vitalsData.systolic) : undefined,
+            diastolic: vitalsData.diastolic !== '' ? Number(vitalsData.diastolic) : undefined,
+            heart_rate: vitalsData.heartRate !== '' ? Number(vitalsData.heartRate) : undefined,
+            respiratory_rate: vitalsData.respiratoryRate !== '' ? Number(vitalsData.respiratoryRate) : undefined,
+            temperature: vitalsData.temperature !== '' ? Number(vitalsData.temperature) : undefined,
+            temp_unit: vitalsData.tempUnit || 'C',
+            spo2: vitalsData.spo2 !== '' ? Number(vitalsData.spo2) : undefined,
+            height: vitalsData.height !== '' ? Number(vitalsData.height) : undefined,
+            weight: vitalsData.weight !== '' ? Number(vitalsData.weight) : undefined,
+            cvs: vitalsData.cvs || undefined,
+            rs: vitalsData.rs || undefined,
+            abdomen: vitalsData.abdomen || undefined,
+            cns: vitalsData.cns || undefined,
+          });
+          setWorkspaceToast(`Patient vitals & physical examination persisted to PostgreSQL for ${activePatient.patient_name}.`);
+          setTimeout(() => setWorkspaceToast(''), 4500);
+          return;
+        }
+      } catch (err) {
+        console.error('[ClinicalsView] Save vitals error:', err);
+        setWorkspaceToast(`Failed to record vitals: ${err.message}`);
+        setTimeout(() => setWorkspaceToast(''), 5000);
+      }
+    }
   };
 
-  const handleSaveHistory = (historyData) => {
+  const handleSaveHistory = async (historyData) => {
     handleUpdateActivePatient(p => ({
       ...p,
       history: { ...p.history, ...historyData }
     }));
+
+    if (activePatient?.is_live) {
+      try {
+        let encId = activePatient.encounter_id;
+        if (!encId) {
+          const enc = await ensureLiveEncounter(activePatient);
+          encId = enc?.encounter_id;
+        }
+        if (encId) {
+          await ClinicalService.saveClinicalHistory({
+            encounter_id: encId,
+            patient_id: activePatient.patient_id,
+            presenting_complaint: historyData.presentingComplaint,
+            chief_complaints: historyData.presentingComplaint,
+            onset_duration: historyData.onsetDuration,
+            severity: historyData.severity,
+            aggravating_factors: historyData.aggravatingFactors,
+            relieving_factors: historyData.relievingFactors,
+            medical_history: historyData.medicalHistory,
+            past_medical_history: historyData.medicalHistory,
+            past_surgical_history: historyData.surgicalHistory,
+            family_history: historyData.familyHistory,
+            current_medications: historyData.currentMedications,
+            allergies: historyData.allergies,
+          });
+          setWorkspaceToast(`Chief complaints & clinical history saved to PostgreSQL for ${activePatient.patient_name}.`);
+          setTimeout(() => setWorkspaceToast(''), 4500);
+          return;
+        }
+      } catch (err) {
+        console.error('[ClinicalsView] Save history error:', err);
+        setWorkspaceToast(`Failed to save clinical history: ${err.message}`);
+        setTimeout(() => setWorkspaceToast(''), 5000);
+      }
+    }
   };
 
   const handleUpdateOrders = (ordersList) => {

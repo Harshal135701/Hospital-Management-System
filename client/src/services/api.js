@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Central API Client and Typed Data Services
  * Integrates with existing backend /api endpoints and provides explicit demo-labeled mock adapters.
  */
@@ -46,7 +46,6 @@ export const TokenManager = {
     this.setToken(null);
   }
 };
-
 const MOCK_PATIENTS = [
   {
     id: 'p-001',
@@ -267,6 +266,16 @@ export const AppointmentService = {
   async getPatientHistory(patientId) {
     const res = await apiFetch(`/appointments/patient/${encodeURIComponent(patientId)}`);
     return res?.data || res || [];
+  },
+
+  async getMeta() {
+    try {
+      const res = await apiFetch('/meta');
+      return res?.data || { departments: [], doctors: [], patients: [], rooms: [] };
+    } catch (err) {
+      console.warn('[AppointmentService] Meta fetch failed:', err.message);
+      return { departments: [], doctors: [], patients: [], rooms: [] };
+    }
   }
 };
 
@@ -725,3 +734,850 @@ export const AuthService = {
   }
 };
 
+/* ==========================================================================
+   MODULES 3 - 15 SERVICES
+   ========================================================================== */
+
+export const DayCareService = {
+  async getAdmissions(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/daycare/admissions${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createAdmission(data) {
+    const res = await apiFetch('/daycare/admissions', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async updateStatus(id, status) {
+    const res = await apiFetch(`/daycare/admissions/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    return res?.data;
+  },
+  async getChairs(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/daycare/chairs${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createChair(data) {
+    const res = await apiFetch('/daycare/chairs', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async allocateChair(admissionId, chairId) {
+    const res = await apiFetch(`/daycare/admissions/${admissionId}/allocate-chair`, { method: 'POST', body: JSON.stringify({ chair_id: chairId }) });
+    return res?.data;
+  },
+  async releaseChair(admissionId) {
+    const res = await apiFetch(`/daycare/admissions/${admissionId}/release-chair`, { method: 'POST' });
+    return res?.data;
+  },
+  async addMonitoring(admissionId, data) {
+    const res = await apiFetch(`/daycare/admissions/${admissionId}/monitoring`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getMonitoring(admissionId) {
+    const res = await apiFetch(`/daycare/admissions/${admissionId}/monitoring`);
+    return res?.data || [];
+  },
+  async createDischarge(admissionId, data) {
+    const res = await apiFetch(`/daycare/admissions/${admissionId}/discharge`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const DietaryService = {
+  async getAssessments(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/dietary/assessments${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createAssessment(data) {
+    const res = await apiFetch('/dietary/assessments', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getOrders(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/dietary/orders${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createOrder(data) {
+    const res = await apiFetch('/dietary/orders', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async updateOrderStatus(id, status) {
+    const res = await apiFetch(`/dietary/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    return res?.data;
+  },
+  async getBatches(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/dietary/batches${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createBatch(data) {
+    const res = await apiFetch('/dietary/batches', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getDeliveries(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/dietary/deliveries${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createDelivery(data) {
+    const res = await apiFetch('/dietary/deliveries', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const IvfService = {
+  async getCycles(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/ivf/cycles${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createCycle(data) {
+    const res = await apiFetch('/ivf/cycles', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getOpu(cycleId) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/opu`);
+    return res?.data || [];
+  },
+  async recordOpu(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/opu`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getFertilization(cycleId) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/fertilization`);
+    return res?.data || [];
+  },
+  async recordFertilization(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/fertilization`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getEmbryos(cycleId) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/embryos`);
+    return res?.data || [];
+  },
+  async createEmbryo(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/embryos`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async recordTransfer(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${cycleId}/transfer`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getCryostorage(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/ivf/cryostorage${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async storeEmbryo(embryoId, data) {
+    const res = await apiFetch(`/ivf/embryos/${embryoId}/cryostore`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const EmergencyService = {
+  async getTriageList(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/emergency/triage${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createTriage(data) {
+    const res = await apiFetch('/emergency/triage', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getMlcList(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/emergency/mlc${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createMlc(data) {
+    const res = await apiFetch('/emergency/mlc', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getBays(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/emergency/bays${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createBay(data) {
+    const res = await apiFetch('/emergency/bays', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async allocateBay(triageId, bayId, allocatedBy) {
+    const res = await apiFetch(`/emergency/triage/${triageId}/allocate-bay`, {
+      method: 'POST',
+      body: JSON.stringify({ bay_id: bayId, allocated_by: allocatedBy })
+    });
+    return res?.data;
+  },
+  async vacateBay(triageId) {
+    const res = await apiFetch(`/emergency/triage/${triageId}/vacate-bay`, { method: 'POST' });
+    return res?.data;
+  },
+  async createTraumaChart(triageId, data) {
+    const res = await apiFetch(`/emergency/triage/${triageId}/trauma-chart`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getTraumaChart(triageId) {
+    const res = await apiFetch(`/emergency/triage/${triageId}/trauma-chart`);
+    return res?.data || [];
+  },
+  async createDisposition(triageId, data) {
+    const res = await apiFetch(`/emergency/triage/${triageId}/disposition`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const EmrService = {
+  async getTimeline(patientId) {
+    const res = await apiFetch(`/emr/timeline/${encodeURIComponent(patientId)}`);
+    return res?.data || [];
+  },
+  async getEncounters(patientId) {
+    const res = await apiFetch(`/emr/encounters/${encodeURIComponent(patientId)}`);
+    return res?.data || [];
+  },
+  async getPrescriptions(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/emr/prescriptions${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createPrescription(data) {
+    const res = await apiFetch('/emr/prescriptions', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async markDispensed(id) {
+    const res = await apiFetch(`/emr/prescriptions/${id}/dispense`, { method: 'PATCH' });
+    return res?.data;
+  },
+  async getDiagnoses(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/emr/diagnoses${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createDiagnosis(data) {
+    const res = await apiFetch('/emr/diagnoses', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getDocuments(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/emr/documents${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createDocument(data) {
+    const res = await apiFetch('/emr/documents', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const FinanceService = {
+  async getAccounts(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/finance/accounts${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createAccount(data) {
+    const res = await apiFetch('/finance/accounts', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getJournalEntries(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/finance/journal-entries${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createJournalEntry(data) {
+    const res = await apiFetch('/finance/journal-entries', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getVouchers(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/finance/vouchers${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createVoucher(data) {
+    const res = await apiFetch('/finance/vouchers', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getDoctorPayouts(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/finance/doctor-payouts${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async calculateDoctorPayout(data) {
+    const res = await apiFetch('/finance/doctor-payouts/calculate', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getBankReconciliations() {
+    const res = await apiFetch('/finance/bank-reconciliations');
+    return res?.data || [];
+  },
+  async createBankReconciliation(data) {
+    const res = await apiFetch('/finance/bank-reconciliations', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getProfitAndLoss(startDate, endDate) {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const qs = params.toString();
+    const res = await apiFetch(`/finance/reports/profit-and-loss${qs ? '?' + qs : ''}`);
+    return res?.data || {};
+  },
+  async getBalanceSheet() {
+    const res = await apiFetch('/finance/reports/balance-sheet');
+    return res?.data || {};
+  }
+};
+
+export const AssetService = {
+  async getAssets(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/assets${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createAsset(data) {
+    const res = await apiFetch('/assets', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async updateStatus(id, status) {
+    const res = await apiFetch(`/assets/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    return res?.data;
+  },
+  async getContracts(assetId) {
+    const res = await apiFetch(`/assets/${assetId}/contracts`);
+    return res?.data || [];
+  },
+  async createContract(assetId, data) {
+    const res = await apiFetch(`/assets/${assetId}/contracts`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getPmSchedules(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/assets/pm-schedules/all${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createPmSchedule(assetId, data) {
+    const res = await apiFetch(`/assets/${assetId}/pm-schedules`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getBreakdownTickets(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/assets/breakdown-tickets/all${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createBreakdownTicket(assetId, data) {
+    const res = await apiFetch(`/assets/${assetId}/breakdown-tickets`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async updateBreakdownTicket(ticketId, data) {
+    const res = await apiFetch(`/assets/breakdown-tickets/${ticketId}`, { method: 'PATCH', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async calculateDepreciation(assetId, data) {
+    const res = await apiFetch(`/assets/${assetId}/depreciation/calculate`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const EnterpriseService = {
+  async getHospitals() {
+    const res = await apiFetch('/enterprise/hospitals');
+    return res?.data || [];
+  },
+  async createHospital(data) {
+    const res = await apiFetch('/enterprise/hospitals', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getBranches(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/enterprise/branches${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createBranch(hospitalId, data) {
+    const res = await apiFetch(`/enterprise/hospitals/${hospitalId}/branches`, { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getClinics(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/enterprise/clinics${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createClinic(data) {
+    const res = await apiFetch('/enterprise/clinics', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getHierarchy() {
+    const res = await apiFetch('/enterprise/hierarchy');
+    return res?.data || {};
+  },
+  async getDoctors(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/enterprise/doctors${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createDoctor(data) {
+    const res = await apiFetch('/enterprise/doctors', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getServices(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/enterprise/services${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createService(data) {
+    const res = await apiFetch('/enterprise/services', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getCorporateTariffs(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/enterprise/corporate-tariffs${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+  async createCorporateTariff(data) {
+    const res = await apiFetch('/enterprise/corporate-tariffs', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  }
+};
+
+export const BillingOpsService = {
+  async getBills(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/billing/opd${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async getOpdBills(params = {}) {
+    return this.getBills(params);
+  },
+  async createBill(data) {
+    const res = await apiFetch('/billing/opd', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async createOpdBill(data) {
+    return this.createBill(data);
+  },
+  async createInterimBill(data) {
+    const res = await apiFetch('/billing/ipd/interim', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async createDischargeBill(data) {
+    const res = await apiFetch('/billing/ipd/final', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getDeposits(params = {}) {
+    try {
+      if (params.admissionId) {
+        const res = await apiFetch(`/billing/deposits/admission/${encodeURIComponent(params.admissionId)}`);
+        return res?.data || [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+  async createDeposit(data) {
+    const res = await apiFetch('/billing/deposits', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getRefunds(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/billing/refunds${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async createRefund(data) {
+    const res = await apiFetch('/billing/refunds', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async updateRefundStatus(id, status, notes = '') {
+    const res = await apiFetch(`/billing/refunds/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes })
+    });
+    return res?.data;
+  },
+  async getSettlements(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/billing/settlement/day-end${qs ? '?' + qs : ''}`);
+      return res?.data ? [res.data] : [];
+    } catch {
+      return [];
+    }
+  },
+  async getDayEndSettlement(date = null, cashierId = null) {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (cashierId) params.append('cashierId', cashierId);
+    const qs = params.toString();
+    const res = await apiFetch(`/billing/settlement/day-end${qs ? '?' + qs : ''}`);
+    return res?.data;
+  },
+  async createSettlement(data) {
+    const res = await apiFetch('/billing/settlement/close', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async closeSettlement(data) {
+    return this.createSettlement(data);
+  }
+};
+
+export const OperationsQueueService = {
+  // 3.2 Doctor Rosters & Shifts
+  async getRosters(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/rosters${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async createRoster(data) {
+    const res = await apiFetch('/rosters', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async publishRoster(id) {
+    const res = await apiFetch(`/rosters/${encodeURIComponent(id)}/publish`, { method: 'PATCH' });
+    return res?.data;
+  },
+  async getSchedules(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/rosters/schedules${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async createSchedule(data) {
+    const res = await apiFetch('/rosters/schedules', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async getLeaves(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/rosters/leaves${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async applyLeave(data) {
+    const res = await apiFetch('/rosters/leaves', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data;
+  },
+  async reviewLeave(id, status, reviewedBy = 'Admin') {
+    const res = await apiFetch(`/rosters/leaves/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, reviewedBy })
+    });
+    return res?.data;
+  },
+
+  // 3.3 Token Queue & Waiting Room Display
+  async getWaitingRoomDisplay(date = null, departmentId = null) {
+    try {
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (departmentId) params.append('departmentId', departmentId);
+      const qs = params.toString();
+      const res = await apiFetch(`/queue/display${qs ? '?' + qs : ''}`);
+      return res?.data;
+    } catch {
+      return null;
+    }
+  },
+  async getDoctorQueue(doctorId, date = null) {
+    try {
+      const qs = date ? `?date=${encodeURIComponent(date)}` : '';
+      const res = await apiFetch(`/queue/doctor/${encodeURIComponent(doctorId)}${qs}`);
+      return res?.data;
+    } catch {
+      return null;
+    }
+  },
+  async callNext(doctorId, roomId = null, date = null) {
+    const res = await apiFetch('/queue/call-next', {
+      method: 'POST',
+      body: JSON.stringify({ doctorId, roomId, date })
+    });
+    return res;
+  },
+  async checkIn(appointmentId) {
+    const res = await apiFetch('/queue/check-in', {
+      method: 'POST',
+      body: JSON.stringify({ appointmentId })
+    });
+    return res;
+  },
+  async startConsultation(appointmentId) {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/start`, { method: 'PATCH' });
+    return res?.data;
+  },
+  async completeConsultation(appointmentId, notes = '') {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes })
+    });
+    return res;
+  },
+  async markNoShow(appointmentId) {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/no-show`, { method: 'PATCH' });
+    return res;
+  },
+  async recallToken(appointmentId) {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/recall`, { method: 'PATCH' });
+    return res;
+  },
+  async setPriority(appointmentId, isPriority, notes = '') {
+    const res = await apiFetch(`/queue/${encodeURIComponent(appointmentId)}/priority`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isPriority, notes })
+    });
+    return res;
+  },
+
+  // 3.4 SMS / WhatsApp Notifications
+  async getNotifications(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/notifications${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async sendNotification(id) {
+    const res = await apiFetch(`/notifications/${encodeURIComponent(id)}/send`, { method: 'POST' });
+    return res;
+  },
+  async scheduleReminders(appointmentId) {
+    const res = await apiFetch(`/notifications/appointments/${encodeURIComponent(appointmentId)}/reminders`, { method: 'POST' });
+    return res;
+  },
+  async scheduleEvent(appointmentId, eventType, channels = ['sms'], scheduledAt = null) {
+    const res = await apiFetch(`/notifications/appointments/${encodeURIComponent(appointmentId)}/events`, {
+      method: 'POST',
+      body: JSON.stringify({ eventType, channels, scheduledAt })
+    });
+    return res;
+  },
+  async cancelPendingNotifications(appointmentId) {
+    const res = await apiFetch(`/notifications/appointments/${encodeURIComponent(appointmentId)}/cancel-pending`, { method: 'PATCH' });
+    return res;
+  }
+};
+
+/* ==========================================================================
+   CLINICAL MODULE SERVICES (Doctor Desk, Vitals, History, CPOE, Notes)
+   ========================================================================== */
+
+export const ClinicalService = {
+  // 1. Doctor Consultation Desk & Encounters
+  async getEncounters(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiFetch(`/consultations${qs ? '?' + qs : ''}`);
+    return res?.data || [];
+  },
+
+  async getEncounterById(id) {
+    const res = await apiFetch(`/consultations/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+
+  async getEncounterByAppointmentId(appointmentId) {
+    try {
+      const res = await apiFetch(`/consultations/appointment/${encodeURIComponent(appointmentId)}`);
+      return res?.data;
+    } catch (err) {
+      if (err.status === 404) return null;
+      throw err;
+    }
+  },
+
+  async startConsultation(data) {
+    const res = await apiFetch('/consultations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async updateConsultationDraft(id, data) {
+    const res = await apiFetch(`/consultations/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async completeConsultation(id, data = {}) {
+    const res = await apiFetch(`/consultations/${encodeURIComponent(id)}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getPatientClinicalSummary(patientId) {
+    const res = await apiFetch(`/consultations/patient/${encodeURIComponent(patientId)}/clinical-summary`);
+    return res?.data;
+  },
+
+  // 2. Vitals Recording & Physical Examination
+  async saveVitals(data) {
+    const res = await apiFetch('/vitals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getEncounterVitals(encounterId) {
+    try {
+      const res = await apiFetch(`/vitals/${encodeURIComponent(encounterId)}`);
+      return res?.data || [];
+    } catch (err) {
+      if (err.status === 404) return [];
+      throw err;
+    }
+  },
+
+  async getPatientVitalsHistory(patientId) {
+    try {
+      const res = await apiFetch(`/vitals/patient/${encodeURIComponent(patientId)}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  // 3. Chief Complaints & Clinical History
+  async saveClinicalHistory(data) {
+    const res = await apiFetch('/clinical-history', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async updateClinicalHistory(encounterId, data) {
+    const res = await apiFetch(`/clinical-history/${encodeURIComponent(encounterId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getClinicalHistory(encounterId) {
+    try {
+      const res = await apiFetch(`/clinical-history/${encodeURIComponent(encounterId)}`);
+      return res?.data;
+    } catch (err) {
+      if (err.status === 404) return null;
+      throw err;
+    }
+  },
+
+  async getPatientHistory(patientId) {
+    try {
+      const res = await apiFetch(`/clinical-history/patient/${encodeURIComponent(patientId)}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  // 4. Computerized Provider Order Entry (CPOE)
+  async getOrderCatalog() {
+    try {
+      const res = await apiFetch('/provider-orders/catalog');
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async createOrder(data) {
+    const res = await apiFetch('/provider-orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async createOrdersBatch(data) {
+    const res = await apiFetch('/provider-orders/batch', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data || [];
+  },
+
+  async getEncounterOrders(encounterId) {
+    try {
+      const res = await apiFetch(`/provider-orders/encounter/${encodeURIComponent(encounterId)}`);
+      return res?.data || [];
+    } catch (err) {
+      if (err.status === 404) return [];
+      throw err;
+    }
+  },
+
+  async cancelOrder(orderId) {
+    const res = await apiFetch(`/provider-orders/${encodeURIComponent(orderId)}/cancel`, {
+      method: 'PATCH',
+    });
+    return res?.data;
+  },
+
+  async updateOrderStatus(orderId, status, instructions) {
+    const res = await apiFetch(`/provider-orders/${encodeURIComponent(orderId)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, instructions }),
+    });
+    return res?.data;
+  },
+
+  // 5. Clinical Progress Notes (SOAP)
+  async saveProgressNote(data) {
+    const res = await apiFetch('/clinical-notes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res?.data;
+  },
+
+  async getEncounterNotes(encounterId) {
+    try {
+      const res = await apiFetch(`/clinical-notes/encounter/${encodeURIComponent(encounterId)}`);
+      return res?.data || [];
+    } catch (err) {
+      if (err.status === 404) return [];
+      throw err;
+    }
+  },
+
+  async finalizeNote(noteId) {
+    const res = await apiFetch(`/clinical-notes/${encodeURIComponent(noteId)}/finalize`, {
+      method: 'PATCH',
+    });
+    return res?.data;
+  },
+
+  async getPatientNotes(patientId) {
+    try {
+      const res = await apiFetch(`/clinical-notes/patient/${encodeURIComponent(patientId)}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+};

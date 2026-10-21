@@ -1,131 +1,213 @@
-const repository = require('./clinical-notes.repository');
-const ApiError = require('../../utils/ApiError');
+const repository = require("./clinical-notes.repository");
+const ApiError = require("../../utils/ApiError");
 
-async function validateEncounter(encounterId) {
+const NOTE_TYPES = ["initial", "progress", "follow_up"];
+const NOTE_STATUSES = ["draft", "finalized", "amended"];
+
+const textFields = [
+  "subjective",
+  "objective",
+  "assessment",
+  "plan",
+  "follow_up_instructions",
+];
+
+async function validateEncounter(encounterId, requireActive = true) {
+  if (!encounterId) {
+    throw ApiError.badRequest("Encounter ID is required");
+  }
+
   const result = await repository.pool.query(
-    `SELECT id, patient_id, doctor_id, status FROM consultation_encounters WHERE id = $1`,
+    `SELECT id, patient_id, doctor_id, status
+     FROM consultation_encounters
+     WHERE id = $1`,
     [encounterId]
   );
+
   const encounter = result.rows[0];
 
   if (!encounter) {
-    throw ApiError.notFound('Consultation encounter not found');
+    throw ApiError.notFound("Consultation encounter not found");
+  }
+
+  if (requireActive && encounter.status !== "in_progress") {
+    throw ApiError.badRequest(
+      "Clinical notes can only be modified during an active consultation"
+    );
   }
 
   return encounter;
 }
 
-async function createClinicalNote(data, currentUser = {}) {
-  const encounterId = data.encounter_id || data.encounterId;
-
-  // 1. Role verification: Only licensed doctors or super_admin may author progress notes
-  if (!['clinician_doctor', 'super_admin'].includes(currentUser.role)) {
-    throw ApiError.forbidden('Only clinician doctors and administrators may author clinical progress notes');
+function requireRole(currentUser, allowedRoles, message) {
+  if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+    throw ApiError.forbidden(message);
   }
+}
 
+async function createClinicalNote(data, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "super_admin"],
+    "Only clinician doctors and administrators may author clinical progress notes"
+  );
+
+  const encounterId = data.encounter_id || data.encounterId;
   const encounter = await validateEncounter(encounterId);
 
-  // 2. Active status check
-  if (encounter.status !== 'in_progress') {
-    throw ApiError.badRequest(`Cannot author clinical progress notes for encounter in '${encounter.status}' status. Consultation must be active.`);
+  const authorDoctorId =
+    currentUser.role === "clinician_doctor"
+      ? (currentUser.doctor_id || encounter.doctor_id)
+      : encounter.doctor_id;
+
+  const noteStatus = data.status || "finalized";
+  if (!NOTE_STATUSES.includes(noteStatus)) {
+    throw ApiError.badRequest(`status must be one of: ${NOTE_STATUSES.join(", ")}`);
   }
 
-  // 3. Attending doctor ownership verification
-  let authorDoctorId;
-  if (currentUser.role === 'clinician_doctor') {
-    if (!currentUser.doctor_id) {
-      throw ApiError.forbidden('Authenticated user does not have an associated doctor record');
+  if (noteStatus === "finalized") {
+    if (!data.assessment || !data.assessment.trim()) {
+      throw ApiError.badRequest("Assessment is required before finalizing a progress note");
     }
-    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
-      throw ApiError.forbidden('You are not authorized to author notes for another doctor\'s encounter');
+    if (!data.plan || !data.plan.trim()) {
+      throw ApiError.badRequest("Plan is required before finalizing a progress note");
     }
-    authorDoctorId = currentUser.doctor_id;
-  } else {
-    authorDoctorId = encounter.doctor_id;
   }
 
   return repository.createClinicalNote({
     encounterId,
-    noteType: data.note_type || 'progress',
+    noteType: data.note_type || "progress",
+    status: noteStatus,
     subjective: data.subjective,
     objective: data.objective,
     assessment: data.assessment,
     plan: data.plan,
     followUpInstructions: data.follow_up_instructions,
     authorDoctorId,
+    amendedFromNoteId: data.amended_from_note_id || null,
+    amendmentReason: data.amendment_reason || null,
   });
 }
 
 async function getNotesByEncounterId(encounterId, currentUser = {}) {
-  if (!['clinician_doctor', 'staff_nurse', 'super_admin'].includes(currentUser.role)) {
-    throw ApiError.forbidden('Insufficient permissions to view clinical progress notes');
-  }
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view clinical progress notes"
+  );
 
-  const encounter = await validateEncounter(encounterId);
-
-  if (currentUser.role === 'clinician_doctor') {
-    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
-      throw ApiError.forbidden('You are not authorized to view notes for another doctor\'s encounter');
-    }
-  }
-
+  await validateEncounter(encounterId, false);
   return repository.getNotesByEncounterId(encounterId);
 }
 
+async function getNotesByPatientId(patientId, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view clinical progress notes history"
+  );
+
+  return repository.getNotesByPatientId(patientId);
+}
+
 async function getClinicalNoteById(id, currentUser = {}) {
-  if (!['clinician_doctor', 'staff_nurse', 'super_admin'].includes(currentUser.role)) {
-    throw ApiError.forbidden('Insufficient permissions to view clinical progress notes');
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "staff_nurse", "super_admin"],
+    "Insufficient permissions to view clinical progress notes"
+  );
+
+  if (!id) {
+    throw ApiError.badRequest("Clinical note ID is required");
   }
 
   const note = await repository.getClinicalNoteById(id);
-  if (!note) {
-    throw ApiError.notFound('Clinical progress note not found');
-  }
 
-  const encounter = await validateEncounter(note.encounter_id);
-  if (currentUser.role === 'clinician_doctor') {
-    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
-      throw ApiError.forbidden('You are not authorized to view this note');
-    }
+  if (!note) {
+    throw ApiError.notFound("Clinical progress note not found");
   }
 
   return note;
 }
 
 async function updateClinicalNote(id, data, currentUser = {}) {
-  if (!['clinician_doctor', 'super_admin'].includes(currentUser.role)) {
-    throw ApiError.forbidden('Only clinician doctors and administrators may update clinical progress notes');
-  }
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "super_admin"],
+    "Only clinician doctors and administrators may update clinical progress notes"
+  );
 
   const note = await repository.getClinicalNoteById(id);
-  if (!note) {
-    throw ApiError.notFound('Clinical progress note not found');
-  }
 
-  const encounter = await validateEncounter(note.encounter_id);
-  if (encounter.status !== 'in_progress') {
-    throw ApiError.badRequest(`Cannot modify notes for encounter in '${encounter.status}' status`);
+  if (!note) {
+    throw ApiError.notFound("Clinical progress note not found");
   }
 
   if (currentUser.role === 'clinician_doctor') {
     if (String(note.author_doctor_id) !== String(currentUser.doctor_id)) {
-      throw ApiError.forbidden('You are not authorized to modify another doctor\'s progress note');
+      throw ApiError.forbidden("You are not authorized to modify another doctor's progress note");
     }
   }
 
-  return repository.updateClinicalNote(id, {
+  if (note.status === "finalized" && data.status !== "amended") {
+    throw ApiError.conflict(
+      "Finalized clinical notes are legally signed and cannot be modified without amendment"
+    );
+  }
+
+  await validateEncounter(note.encounter_id);
+
+  const updatedData = {
     noteType: data.note_type,
+    status: data.status,
     subjective: data.subjective,
     objective: data.objective,
     assessment: data.assessment,
     plan: data.plan,
     followUpInstructions: data.follow_up_instructions,
-  });
+    amendmentReason: data.amendment_reason,
+  };
+
+  return repository.updateClinicalNote(id, updatedData);
+}
+
+async function finalizeClinicalNote(id, currentUser = {}) {
+  requireRole(
+    currentUser,
+    ["clinician_doctor", "super_admin"],
+    "Only clinician doctors and administrators may sign clinical progress notes"
+  );
+
+  const note = await repository.getClinicalNoteById(id);
+  if (!note) {
+    throw ApiError.notFound("Clinical progress note not found");
+  }
+
+  if (currentUser.role === 'clinician_doctor') {
+    if (String(note.author_doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden("You are not authorized to sign another doctor's progress note");
+    }
+  }
+
+  if (note.status === "finalized") {
+    throw ApiError.conflict("Clinical note is already finalized and signed");
+  }
+
+  if (!note.assessment || !note.assessment.trim()) {
+    throw ApiError.badRequest("Assessment is required before finalizing a progress note");
+  }
+  if (!note.plan || !note.plan.trim()) {
+    throw ApiError.badRequest("Plan is required before finalizing a progress note");
+  }
+
+  return repository.updateClinicalNote(id, { status: "finalized" });
 }
 
 module.exports = {
   createClinicalNote,
   getNotesByEncounterId,
+  getNotesByPatientId,
   getClinicalNoteById,
   updateClinicalNote,
+  finalizeClinicalNote,
 };

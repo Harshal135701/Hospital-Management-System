@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   Users,
   Heart,
@@ -25,6 +25,7 @@ import {
   Lock,
   LogIn
 } from 'lucide-react';
+
 import { Card, Button, Badge, Input, Select, Modal } from '../common/UIPrimitives';
 import { BloodBankService, PatientService, TokenManager } from '../../services/api';
 import { HEALTHCARE_IMAGES } from '../../assets/images';
@@ -587,6 +588,12 @@ export const BloodBankView = () => {
         className="bloodbank-banner"
       >
         <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
+              Submodules 5.1 – 5.6
+            </span>
+            <Badge variant="blood" size="sm">Dual-Gated Transfusion Safety</Badge>
+          </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
             Blood Bank & Transfusion Medicine Workspace
           </h1>

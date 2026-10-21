@@ -11,13 +11,22 @@ function convertTemperatureToCelsius(rawTemp, tempUnit) {
   }
 
   if (tempUnit === 'F') {
-    // Standard Fahrenheit to Celsius conversion
     const celsius = ((num - 32) * 5) / 9;
     return Math.round(celsius * 10) / 10;
   }
 
-  // Already Celsius
   return Math.round(num * 10) / 10;
+}
+
+function calculateBMI(heightCm, weightKg) {
+  if (!heightCm || !weightKg) return null;
+  const h = Number(heightCm);
+  const w = Number(weightKg);
+  if (h <= 0 || w <= 0) return null;
+
+  const heightM = h / 100;
+  const bmi = w / (heightM * heightM);
+  return Math.round(bmi * 10) / 10;
 }
 
 function assembleExaminationFindings(data) {
@@ -74,7 +83,6 @@ async function createVitals(data, currentUser = {}) {
     }
     recordedBy = currentUser.doctor_id;
   } else if (currentUser.role === 'staff_nurse') {
-    // Approved policy: nurses record vitals with recorded_by = null due to doctor FK reference
     recordedBy = null;
   } else if (currentUser.role === 'super_admin') {
     recordedBy = currentUser.doctor_id || null;
@@ -103,21 +111,41 @@ async function createVitals(data, currentUser = {}) {
     throw ApiError.badRequest('Oxygen saturation must be between 0 and 100 percent');
   }
 
+  // Auto-calculated BMI
+  const computedBmi = calculateBMI(heightCm, weightKg);
   const examinationFindings = assembleExaminationFindings(data);
 
-  return repository.createVitals({
+  const vitalsRecord = await repository.createVitals({
     encounterId,
-    systolicBp: systolicBp != null ? Number(systolicBp) : null,
-    diastolicBp: diastolicBp != null ? Number(diastolicBp) : null,
-    pulseRate: pulseRate != null ? Number(pulseRate) : null,
+    systolicBp: systolicBp != null && systolicBp !== '' ? Number(systolicBp) : null,
+    diastolicBp: diastolicBp != null && diastolicBp !== '' ? Number(diastolicBp) : null,
+    pulseRate: pulseRate != null && pulseRate !== '' ? Number(pulseRate) : null,
     temperatureC,
-    respiratoryRate: respiratoryRate != null ? Number(respiratoryRate) : null,
-    oxygenSaturation: oxygenSaturation != null ? Number(oxygenSaturation) : null,
-    heightCm: heightCm != null ? Number(heightCm) : null,
-    weightKg: weightKg != null ? Number(weightKg) : null,
+    tempUnit,
+    respiratoryRate: respiratoryRate != null && respiratoryRate !== '' ? Number(respiratoryRate) : null,
+    oxygenSaturation: oxygenSaturation != null && oxygenSaturation !== '' ? Number(oxygenSaturation) : null,
+    heightCm: heightCm != null && heightCm !== '' ? Number(heightCm) : null,
+    weightKg: weightKg != null && weightKg !== '' ? Number(weightKg) : null,
+    bmi: computedBmi,
+    cvs: data.cvs || null,
+    rs: data.rs || null,
+    abdomen: data.abdomen || null,
+    cns: data.cns || null,
     examinationFindings,
     recordedBy,
   });
+
+  // Sync examination notes to consultation_encounters if currently unset or updated
+  if (examinationFindings) {
+    await repository.pool.query(
+      `UPDATE consultation_encounters
+       SET examination = COALESCE(examination, $2), updated_at = NOW()
+       WHERE id = $1`,
+      [encounterId, examinationFindings]
+    );
+  }
+
+  return vitalsRecord;
 }
 
 async function getVitalsByEncounterId(encounterId, currentUser = {}) {
@@ -135,17 +163,21 @@ async function getVitalsByEncounterId(encounterId, currentUser = {}) {
     throw ApiError.notFound('Consultation encounter not found');
   }
 
-  if (currentUser.role === 'clinician_doctor') {
-    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
-      throw ApiError.forbidden('You are not authorized to view vitals for another doctor\'s encounter');
-    }
+  return repository.getVitalsByEncounterId(encounterId);
+}
+
+async function getVitalsByPatientId(patientId, currentUser = {}) {
+  if (!['clinician_doctor', 'staff_nurse', 'super_admin'].includes(currentUser.role)) {
+    throw ApiError.forbidden('Insufficient permissions to view patient vitals history');
   }
 
-  return repository.getVitalsByEncounterId(encounterId);
+  return repository.getVitalsByPatientId(patientId);
 }
 
 module.exports = {
   createVitals,
   getVitalsByEncounterId,
+  getVitalsByPatientId,
+  calculateBMI,
   convertTemperatureToCelsius,
 };

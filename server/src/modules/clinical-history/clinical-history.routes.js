@@ -1,28 +1,39 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const controller = require('./clinical-history.controller');
-const { authenticateToken, requireRoles } = require('../../middleware/auth.middleware');
+
+const controller = require("./clinical-history.controller");
+const {
+  authenticateToken,
+  requireRoles,
+} = require("../../middleware/auth.middleware");
 
 router.use(authenticateToken);
 
-// Create clinical history: Doctors and Admin only (Nurses denied)
+// Create or upsert: doctors and super admins only
 router.post(
-  '/',
-  requireRoles('clinician_doctor', 'super_admin'),
+  "/",
+  requireRoles("clinician_doctor", "super_admin"),
   controller.createClinicalHistory
 );
 
-// View clinical history: Doctors, Nurses, and Admin
+// Read by patient ID: longitudinal clinical history
 router.get(
-  '/:encounterId',
-  requireRoles('clinician_doctor', 'staff_nurse', 'super_admin'),
+  "/patient/:patientId",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
+  controller.getClinicalHistoryByPatientId
+);
+
+// Read: doctors, nurses, and super admins
+router.get(
+  "/:encounterId",
+  requireRoles("clinician_doctor", "staff_nurse", "super_admin"),
   controller.getClinicalHistoryByEncounterId
 );
 
-// Update clinical history: Attending doctor and Admin only
+// Update: doctors and super admins only
 router.patch(
-  '/:encounterId',
-  requireRoles('clinician_doctor', 'super_admin'),
+  "/:encounterId",
+  requireRoles("clinician_doctor", "super_admin"),
   controller.updateClinicalHistory
 );
 

@@ -29,7 +29,21 @@ async function getVitalsByEncounterId(req, res, next) {
   }
 }
 
+async function getVitalsByPatientId(req, res, next) {
+  try {
+    const vitals = await service.getVitalsByPatientId(req.params.patientId, req.user);
+    res.status(200).json({
+      success: true,
+      count: vitals.length,
+      data: vitals,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   createVitals,
   getVitalsByEncounterId,
+  getVitalsByPatientId,
 };
