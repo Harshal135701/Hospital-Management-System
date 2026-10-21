@@ -41,7 +41,7 @@ const deleteSchedule = async (req, res, next) => {
 const applyLeave = async (req, res, next) => {
   try {
     const val = validation.applyLeaveSchema.parse(req.body);
-    const data = await service.applyLeave(val);
+    const data = await service.applyLeave(val, req.user);
     res.status(201).json({ success: true, message: "Leave request submitted", data });
   } catch (e) { next(e); }
 };
@@ -54,7 +54,7 @@ const getLeaves = async (req, res, next) => {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
     };
-    const data = await service.getLeaves(filters);
+    const data = await service.getLeaves(filters, req.user);
     res.status(200).json({ success: true, data });
   } catch (e) { next(e); }
 };
@@ -73,7 +73,7 @@ const reviewLeave = async (req, res, next) => {
 
 const deleteLeave = async (req, res, next) => {
   try {
-    await service.deleteLeave(req.params.id);
+    await service.deleteLeave(req.params.id, req.user);
     res.status(200).json({ success: true, message: "Leave request cancelled/deleted" });
   } catch (e) { next(e); }
 };

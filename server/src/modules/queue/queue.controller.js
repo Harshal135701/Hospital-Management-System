@@ -4,7 +4,7 @@ const service = require("./queue.service");
 const checkIn = async (req, res, next) => {
   try {
     const val = validation.checkInSchema.parse(req.body);
-    const data = await service.checkIn(val.appointmentId);
+    const data = await service.checkIn(val.appointmentId, req.user);
     res.status(200).json({ success: true, ...data });
   } catch (e) { next(e); }
 };
@@ -12,14 +12,14 @@ const checkIn = async (req, res, next) => {
 const callNext = async (req, res, next) => {
   try {
     const val = validation.callNextSchema.parse(req.body);
-    const data = await service.callNext(val.doctorId, val.roomId, val.date);
+    const data = await service.callNext(val.doctorId, val.roomId, val.date, req.user);
     res.status(200).json({ success: true, ...data });
   } catch (e) { next(e); }
 };
 
 const startConsultation = async (req, res, next) => {
   try {
-    const data = await service.startConsultation(req.params.appointmentId);
+    const data = await service.startConsultation(req.params.appointmentId, req.user);
     res.status(200).json({
       success: true,
       message: "Consultation started",
@@ -31,14 +31,14 @@ const startConsultation = async (req, res, next) => {
 const completeConsultation = async (req, res, next) => {
   try {
     const val = validation.completeConsultationSchema.parse(req.body || {});
-    const data = await service.completeConsultation(req.params.appointmentId, val.notes);
+    const data = await service.completeConsultation(req.params.appointmentId, val.notes, req.user);
     res.status(200).json({ success: true, ...data });
   } catch (e) { next(e); }
 };
 
 const markNoShow = async (req, res, next) => {
   try {
-    const data = await service.markNoShow(req.params.appointmentId);
+    const data = await service.markNoShow(req.params.appointmentId, req.user);
     res.status(200).json({
       success: true,
       message: "Patient marked as no-show",
@@ -49,7 +49,7 @@ const markNoShow = async (req, res, next) => {
 
 const recallToken = async (req, res, next) => {
   try {
-    const data = await service.recallToken(req.params.appointmentId);
+    const data = await service.recallToken(req.params.appointmentId, req.user);
     res.status(200).json({ success: true, ...data });
   } catch (e) { next(e); }
 };
@@ -57,7 +57,7 @@ const recallToken = async (req, res, next) => {
 const setPriority = async (req, res, next) => {
   try {
     const val = validation.setPrioritySchema.parse(req.body);
-    const data = await service.setPriority(req.params.appointmentId, val.isPriority, val.notes);
+    const data = await service.setPriority(req.params.appointmentId, val.isPriority, val.notes, req.user);
     res.status(200).json({
       success: true,
       message: `Priority updated to ${val.isPriority}`,
@@ -69,7 +69,7 @@ const setPriority = async (req, res, next) => {
 const getDoctorQueue = async (req, res, next) => {
   try {
     const date = req.query.date;
-    const data = await service.getDoctorQueue(req.params.doctorId, date);
+    const data = await service.getDoctorQueue(req.params.doctorId, date, req.user);
     res.status(200).json({ success: true, data });
   } catch (e) { next(e); }
 };

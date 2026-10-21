@@ -56,8 +56,26 @@ const deleteSchedule = async (id) => {
 
 // ==================== DOCTOR LEAVES ====================
 
-const applyLeave = async (data) => {
-  const doctor = await aptRepo.findDoctorById(data.doctorId);
+const applyLeave = async (data, currentUser = {}) => {
+  let effectiveDoctorId = data.doctorId;
+
+  if (currentUser.role === "clinician_doctor") {
+    if (!currentUser.doctor_id) {
+      throw ApiError.forbidden(
+        "Clinician account is not linked to an active doctor profile"
+      );
+    }
+    if (data.doctorId && String(data.doctorId) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden(
+        "Clinician doctors may only apply for their own leave"
+      );
+    }
+    effectiveDoctorId = currentUser.doctor_id;
+  } else if (currentUser.role !== "super_admin") {
+    throw ApiError.forbidden("Not authorized to submit leave requests");
+  }
+
+  const doctor = await aptRepo.findDoctorById(effectiveDoctorId);
   if (!doctor) throw ApiError.notFound("Doctor not found or inactive");
 
   const today = new Date().toISOString().slice(0, 10);
@@ -67,7 +85,7 @@ const applyLeave = async (data) => {
 
   // Check if leave already exists
   const existingLeaves = await repo.getLeaves({
-    doctorId: data.doctorId,
+    doctorId: effectiveDoctorId,
     startDate: data.startDate,
     endDate: data.endDate,
   });
@@ -78,7 +96,7 @@ const applyLeave = async (data) => {
     );
   }
 
-  return await repo.createLeave(data);
+  return await repo.createLeave({ ...data, doctorId: effectiveDoctorId });
 };
 
 const reviewLeave = async (id, status, reviewedBy) => {
@@ -119,13 +137,34 @@ const reviewLeave = async (id, status, reviewedBy) => {
   };
 };
 
-const getLeaves = async (filters) => {
-  return await repo.getLeaves(filters);
+const getLeaves = async (filters, currentUser = {}) => {
+  const finalFilters = { ...filters };
+  if (currentUser.role === "clinician_doctor") {
+    if (!currentUser.doctor_id) {
+      return [];
+    }
+    finalFilters.doctorId = currentUser.doctor_id;
+  }
+  return await repo.getLeaves(finalFilters);
 };
 
-const deleteLeave = async (id) => {
+const deleteLeave = async (id, currentUser = {}) => {
   const leave = await repo.findLeaveById(id);
   if (!leave) throw ApiError.notFound("Leave not found");
+
+  if (currentUser.role === "clinician_doctor") {
+    if (
+      !currentUser.doctor_id ||
+      String(currentUser.doctor_id) !== String(leave.doctor_id)
+    ) {
+      throw ApiError.forbidden(
+        "Clinician doctors may only delete their own leave requests"
+      );
+    }
+  } else if (currentUser.role !== "super_admin") {
+    throw ApiError.forbidden("Not authorized to delete leave requests");
+  }
+
   if (leave.status !== "pending") {
     throw ApiError.badRequest("Only 'pending' leave requests can be deleted");
   }

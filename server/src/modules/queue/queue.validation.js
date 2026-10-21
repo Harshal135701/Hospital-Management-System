@@ -9,7 +9,7 @@ const checkInSchema = z.object({
 });
 
 const callNextSchema = z.object({
-  doctorId: uuidSchema,
+  doctorId: uuidSchema.optional().nullable(),
   roomId: uuidSchema.optional().nullable(),
   date: z.string().regex(dateRegex).optional(),
 });

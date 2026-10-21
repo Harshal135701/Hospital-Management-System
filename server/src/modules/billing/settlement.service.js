@@ -48,14 +48,29 @@ const closeSettlement = async (data) => {
     businessDate
   );
 
-  const totalCollected = Number(figures.total_collected);
-  const totalRefunded = Number(figures.total_refunded);
-  const cashCollected = Number(figures.cash_collected);
-  const cashRefunded = Number(figures.cash_refunded);
+// Monetary arithmetic helper using integer minor units (paisa) to prevent IEEE-754 floating-point drift
+const toMinorUnits = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100);
+const fromMinorUnits = (minor) => Number((minor / 100).toFixed(2));
 
-  const expectedCash = openingCash + cashCollected - cashRefunded;
-  const cashVariance = countedCash - expectedCash;
-  const netAmount = totalCollected - totalRefunded;
+  const totalCollectedMinor = toMinorUnits(figures.total_collected);
+  const totalRefundedMinor = toMinorUnits(figures.total_refunded);
+  const cashCollectedMinor = toMinorUnits(figures.cash_collected);
+  const cashRefundedMinor = toMinorUnits(figures.cash_refunded);
+
+  const openingCashMinor = toMinorUnits(openingCash);
+  const countedCashMinor = toMinorUnits(countedCash);
+
+  const expectedCashMinor = openingCashMinor + cashCollectedMinor - cashRefundedMinor;
+  const cashVarianceMinor = countedCashMinor - expectedCashMinor;
+  const netAmountMinor = totalCollectedMinor - totalRefundedMinor;
+
+  const totalCollected = fromMinorUnits(totalCollectedMinor);
+  const totalRefunded = fromMinorUnits(totalRefundedMinor);
+  const openingCashVal = fromMinorUnits(openingCashMinor);
+  const countedCashVal = fromMinorUnits(countedCashMinor);
+  const expectedCash = fromMinorUnits(expectedCashMinor);
+  const cashVariance = fromMinorUnits(cashVarianceMinor);
+  const netAmount = fromMinorUnits(netAmountMinor);
 
   const settlementNumber =
     `SET-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -64,9 +79,9 @@ const closeSettlement = async (data) => {
     settlementNumber,
     businessDate,
     cashierName,
-    openingCash,
+    openingCash: openingCashVal,
     expectedCash,
-    countedCash,
+    countedCash: countedCashVal,
     cashVariance,
     totalCollected,
     totalRefunded,

@@ -13,7 +13,7 @@ async function getPatientTimeline(req, res, next) {
 // 12.2 E-Prescription (Rx) Studio
 async function createPrescription(req, res, next) {
   try {
-    const data = await service.createPrescription(req.body);
+    const data = await service.createPrescription(req.body, req.user);
     res.status(201).json({ success: true, message: "E-prescription generated successfully", data });
   } catch (err) {
     next(err);

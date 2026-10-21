@@ -1,5 +1,6 @@
 const repo = require("./queue.repository");
 const aptRepo = require("../appointments/appointment.repository");
+const aptService = require("../appointments/appointment.service");
 const ApiError = require("../../utils/ApiError");
 
 const maskPatientName = (name) => {
@@ -12,37 +13,58 @@ const maskPatientName = (name) => {
 
 const getTodayDateStr = () => new Date().toISOString().slice(0, 10);
 
-const checkIn = async (appointmentId) => {
-  const existing = await aptRepo.findAppointmentById(appointmentId);
-  if (!existing) throw ApiError.notFound("Appointment not found");
-
-  if (existing.status !== "booked") {
-    throw ApiError.badRequest(
-      `Cannot check in appointment with status '${existing.status}'. Expected 'booked'.`
-    );
-  }
-
-  const updated = await repo.checkIn(appointmentId);
-  const detailed = await aptRepo.findAppointmentById(updated.id);
+const checkIn = async (appointmentId, currentUser = {}) => {
+  const updated = await aptService.updateAppointmentStatus(
+    appointmentId,
+    "arrived",
+    {},
+    currentUser
+  );
 
   return {
-    appointment: detailed,
-    tokenNumber: detailed.token_number,
-    status: detailed.status,
-    arrivedAt: detailed.arrived_at,
-    roomNumber: detailed.room_number || "OPD Waiting Area",
-    message: `Patient checked in successfully. Assigned Token #${detailed.token_number}`,
+    appointment: updated,
+    tokenNumber: updated.token_number,
+    status: updated.status,
+    arrivedAt: updated.arrived_at,
+    roomNumber: updated.room_number || "OPD Waiting Area",
+    message: `Patient checked in successfully. Assigned Token #${updated.token_number}`,
   };
 };
 
-const callNext = async (doctorId, roomId = null, date = null) => {
-  const doctor = await aptRepo.findDoctorById(doctorId);
+const callNext = async (doctorId, roomId = null, date = null, currentUser = {}) => {
+  let effectiveDoctorId = doctorId;
+
+  if (currentUser.role === "clinician_doctor") {
+    if (!currentUser.doctor_id) {
+      throw ApiError.forbidden(
+        "Clinician account is not linked to an active doctor profile"
+      );
+    }
+    if (doctorId && String(doctorId) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden(
+        "Clinician doctors may only advance their own consultation queue"
+      );
+    }
+    effectiveDoctorId = currentUser.doctor_id;
+  } else if (currentUser.role === "super_admin") {
+    if (!effectiveDoctorId) {
+      throw ApiError.badRequest(
+        "Doctor ID is required for administrative queue advancement"
+      );
+    }
+  } else {
+    throw ApiError.forbidden(
+      "Only attending clinicians and administrators may advance the consultation queue"
+    );
+  }
+
+  const doctor = await aptRepo.findDoctorById(effectiveDoctorId);
   if (!doctor) throw ApiError.notFound("Doctor not found or inactive");
 
   const targetDate = date || getTodayDateStr();
   const assignedRoomId = roomId || doctor.room_id || null;
 
-  const called = await repo.callNextPatient(doctorId, targetDate, assignedRoomId);
+  const called = await repo.callNextPatient(effectiveDoctorId, targetDate, assignedRoomId);
   if (!called) {
     return {
       hasWaiting: false,
@@ -66,64 +88,70 @@ const callNext = async (doctorId, roomId = null, date = null) => {
   };
 };
 
-const startConsultation = async (appointmentId) => {
-  const existing = await aptRepo.findAppointmentById(appointmentId);
-  if (!existing) throw ApiError.notFound("Appointment not found");
-
-  if (!["arrived", "waiting", "in_consultation"].includes(existing.status)) {
-    throw ApiError.badRequest(
-      `Cannot start consultation for appointment with status '${existing.status}'`
-    );
-  }
-
-  const updated = await repo.startConsultation(appointmentId);
-  return await aptRepo.findAppointmentById(updated.id);
+const startConsultation = async (appointmentId, currentUser = {}) => {
+  return await aptService.updateAppointmentStatus(
+    appointmentId,
+    "in_consultation",
+    {},
+    currentUser
+  );
 };
 
-const completeConsultation = async (appointmentId, notes = null) => {
-  const existing = await aptRepo.findAppointmentById(appointmentId);
-  if (!existing) throw ApiError.notFound("Appointment not found");
-
-  if (existing.status !== "in_consultation") {
-    throw ApiError.badRequest(
-      `Cannot complete consultation. Current status is '${existing.status}', expected 'in_consultation'`
-    );
-  }
-
-  const updated = await repo.completeConsultation(appointmentId, notes);
-  const detailed = await aptRepo.findAppointmentById(updated.id);
+const completeConsultation = async (appointmentId, notes = null, currentUser = {}) => {
+  const updated = await aptService.updateAppointmentStatus(
+    appointmentId,
+    "completed",
+    { notes },
+    currentUser
+  );
 
   let durationMinutes = null;
-  if (detailed.consultation_started_at && detailed.consultation_ended_at) {
-    const startMs = new Date(detailed.consultation_started_at).getTime();
-    const endMs = new Date(detailed.consultation_ended_at).getTime();
+  if (updated.consultation_started_at && updated.consultation_ended_at) {
+    const startMs = new Date(updated.consultation_started_at).getTime();
+    const endMs = new Date(updated.consultation_ended_at).getTime();
     durationMinutes = Math.round((endMs - startMs) / 60000);
   }
 
   return {
-    appointment: detailed,
+    appointment: updated,
     durationMinutes,
     message: "Consultation marked as completed successfully.",
   };
 };
 
-const markNoShow = async (appointmentId) => {
-  const existing = await aptRepo.findAppointmentById(appointmentId);
-  if (!existing) throw ApiError.notFound("Appointment not found");
-
-  if (["completed", "cancelled"].includes(existing.status)) {
-    throw ApiError.badRequest(
-      `Cannot mark as no-show. Appointment is already '${existing.status}'`
-    );
-  }
-
-  const updated = await repo.markNoShow(appointmentId);
-  return await aptRepo.findAppointmentById(updated.id);
+const markNoShow = async (appointmentId, currentUser = {}) => {
+  return await aptService.updateAppointmentStatus(
+    appointmentId,
+    "no_show",
+    {},
+    currentUser
+  );
 };
 
-const recallToken = async (appointmentId) => {
+const recallToken = async (appointmentId, currentUser = {}) => {
   const existing = await aptRepo.findAppointmentById(appointmentId);
   if (!existing) throw ApiError.notFound("Appointment not found");
+
+  if (!["clinician_doctor", "super_admin"].includes(currentUser.role)) {
+    throw ApiError.forbidden("Not authorized to recall tokens");
+  }
+
+  if (currentUser.role === "clinician_doctor") {
+    if (
+      !currentUser.doctor_id ||
+      String(currentUser.doctor_id) !== String(existing.doctor_id)
+    ) {
+      throw ApiError.forbidden(
+        "Clinician doctors may only recall tokens for their own assigned appointments"
+      );
+    }
+  }
+
+  if (!["arrived", "waiting", "in_consultation"].includes(existing.status)) {
+    throw ApiError.badRequest(
+      `Cannot recall token for appointment with status '${existing.status}'. Expected active queue status ('arrived', 'waiting', 'in_consultation').`
+    );
+  }
 
   const updated = await repo.recallToken(appointmentId);
   const detailed = await aptRepo.findAppointmentById(updated.id);
@@ -140,15 +168,30 @@ const recallToken = async (appointmentId) => {
   };
 };
 
-const setPriority = async (appointmentId, isPriority, notes = null) => {
+const setPriority = async (appointmentId, isPriority, notes = null, currentUser = {}) => {
   const existing = await aptRepo.findAppointmentById(appointmentId);
   if (!existing) throw ApiError.notFound("Appointment not found");
+
+  if (!["receptionist", "staff_nurse", "super_admin"].includes(currentUser.role)) {
+    throw ApiError.forbidden("Not authorized to modify appointment priority");
+  }
 
   const updated = await repo.setPriority(appointmentId, isPriority, notes);
   return await aptRepo.findAppointmentById(updated.id);
 };
 
-const getDoctorQueue = async (doctorId, date = getTodayDateStr()) => {
+const getDoctorQueue = async (doctorId, date = getTodayDateStr(), currentUser = {}) => {
+  if (currentUser.role === "clinician_doctor") {
+    if (
+      !currentUser.doctor_id ||
+      String(currentUser.doctor_id) !== String(doctorId)
+    ) {
+      throw ApiError.forbidden(
+        "Clinician doctors may only access their own consultation queue board"
+      );
+    }
+  }
+
   const doctor = await aptRepo.findDoctorById(doctorId);
   if (!doctor) throw ApiError.notFound("Doctor not found or inactive");
 
