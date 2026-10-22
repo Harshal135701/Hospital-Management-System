@@ -19,6 +19,8 @@ import {
   Utensils,
   Egg,
   Siren,
+  ShieldAlert,
+  ArrowRightCircle,
   History,
   Pill,
   Paperclip,
@@ -72,7 +74,7 @@ export const MODULE_GROUPS = [
   { id: '8', label: 'Day Care', count: 4, icon: Bed, category: 'clinical', description: 'Short-stay day care admissions, chemotherapy/dialysis chair allocation, procedure monitoring, and same-day discharge summaries.' },
   { id: '9', label: 'Diet & Nutrition', count: 4, icon: Utensils, category: 'operations', description: 'Dietitian clinical nutritional assessment, therapeutic diet ordering, kitchen batch meal production, and ward tray delivery tracking.' },
   { id: '10', label: '10. Embryology', count: 5, icon: Egg, category: 'diagnostic', description: 'Oocyte retrieval (OPU) dish logs, ICSI fertilization verification, Gardner embryo grading, embryo transfer, and cryo-tank storage.' },
-  { id: '11', label: 'Emergency', count: 5, icon: Siren, category: 'clinical', description: 'Level 1 to 4 Manchester triage, MLC registry, trauma bay resuscitation, trauma charting, and rapid ICU/OT disposition.' },
+  { id: '11', label: '11. Emergency', count: 5, icon: Siren, category: 'clinical', description: 'Level 1 to 4 Manchester triage, MLC registry, trauma bay resuscitation, trauma charting, and rapid ICU/OT disposition.' },
   { id: '12', label: 'Patient Clinical Records', count: 5, icon: FileSpreadsheet, category: 'clinical', description: 'Longitudinal lifetime patient timeline, e-Prescription studio, ICD-10 & SNOMED CT coding, encounters browser, and attachments.' },
   { id: '13', label: 'Finance & Accounting', count: 5, icon: Landmark, category: 'admin', description: 'Hospital chart of accounts, debit/credit payment vouchers, doctor revenue share payouts, bank reconciliation, and P&L reports.' },
   { id: '14', label: 'Assets & Maintenance', count: 5, icon: Wrench, category: 'admin', description: 'Biomedical equipment master, AMC/CMC warranties, preventive maintenance scheduler, breakdown tickets, and depreciation.' },
@@ -547,7 +549,7 @@ export const SUBMODULES = [
     groupName: 'Emergency',
     title: 'Medico-Legal Case (MLC) Registry',
     subtitle: 'Police intimation, RTA, assault, poisoning registry, and injury certificates',
-    icon: ShieldCheck,
+    icon: ShieldAlert,
     badge: 'MLC'
   },
   {
@@ -574,7 +576,7 @@ export const SUBMODULES = [
     groupName: 'Emergency',
     title: 'Rapid Disposition (ICU/OT/Ward/Discharge)',
     subtitle: 'Fast-track transfer to Cath Lab, ICU, OT, Inpatient Ward, or discharge',
-    icon: CheckCircle2,
+    icon: ArrowRightCircle,
     badge: 'Disposition'
   },
 

@@ -26,7 +26,8 @@ import {
   User,
   Receipt,
   Layers,
-  Egg
+  Egg,
+  Siren
 } from 'lucide-react';
 import { Button } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
@@ -87,6 +88,13 @@ export const AppShell = ({
   useEffect(() => {
     if (typeof currentRoute === 'string' && (currentRoute === 'embryology' || currentRoute.startsWith('embryology:') || currentRoute.startsWith('submodule:10.'))) {
       setExpandedSectionsManual(prev => ({ ...prev, embryology: true }));
+    }
+  }, [currentRoute]);
+
+  // Auto-expand Emergency when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'emergency' || currentRoute.startsWith('emergency:') || currentRoute.startsWith('submodule:11.'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, emergency: true }));
     }
   }, [currentRoute]);
 
@@ -168,6 +176,19 @@ export const AppShell = ({
             { id: 'embryology:10.3', label: 'Embryo Morphological Grading' },
             { id: 'embryology:10.4', label: 'Embryo Transfer (ET) Protocol' },
             { id: 'embryology:10.5', label: 'Embryo Cryostorage Management' }
+          ]
+        },
+        {
+          id: 'emergency',
+          label: 'Emergency',
+          icon: Siren,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'emergency:11.1', label: '11.1 Triage Assessment (Level 1 to 4)' },
+            { id: 'emergency:11.2', label: '11.2 Medico-Legal Case (MLC) Registry' },
+            { id: 'emergency:11.3', label: '11.3 Emergency Bay & Bed Allocation' },
+            { id: 'emergency:11.4', label: '11.4 Trauma Clinical Charting' },
+            { id: 'emergency:11.5', label: '11.5 Rapid Disposition (ICU/OT/Ward/Discharge)' }
           ]
         },
         {
@@ -985,7 +1006,9 @@ export const AppShell = ({
                               (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
                               (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') ||
                               (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) ||
-                              (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`));
+                              (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) ||
+                              (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) ||
+                              (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`));
                             return (
                               <button
                                 type="button"
@@ -1320,6 +1343,8 @@ export const AppShell = ({
                           handleSelectNav(`billing:${sub.id}`);
                         } else if (sub.id.startsWith('10.')) {
                           handleSelectNav(`embryology:${sub.id}`);
+                        } else if (sub.id.startsWith('11.')) {
+                          handleSelectNav(`emergency:${sub.id}`);
                         } else {
                           handleSelectNav(`submodule:${sub.id}`);
                         }
