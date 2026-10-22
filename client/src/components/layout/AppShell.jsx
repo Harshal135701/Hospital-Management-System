@@ -30,6 +30,7 @@ import {
 import { Button } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
 import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
+import { BILLING_GROUPS } from '../billing/billingConstants';
 
 export const AppShell = ({
   currentRoute,
@@ -51,7 +52,28 @@ export const AppShell = ({
   const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({
     '3': true,
   });
+  const [expandedBillingGroups, setExpandedBillingGroups] = useState({
+    '1': true,
+    '2': false,
+    '3': false,
+    '4': true,
+  });
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Auto-expand active group in Billing hierarchy when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && currentRoute.startsWith('billing:')) {
+      const parts = currentRoute.split(':');
+      const subId = parts[1];
+      if (subId) {
+        const groupNum = subId.split('.')[0];
+        if (groupNum) {
+          setExpandedBillingGroups(prev => ({ ...prev, [groupNum]: true }));
+        }
+      }
+      setExpandedSectionsManual(prev => ({ ...prev, billing: true }));
+    }
+  }, [currentRoute]);
 
   // Auto-expand active group in Appointment hierarchy when currentRoute changes
   useEffect(() => {
@@ -99,6 +121,13 @@ export const AppShell = ({
           icon: Calendar,
           badge: '30 Groups',
           isAppointmentHierarchy: true
+        },
+        {
+          id: 'billing',
+          label: 'Billing',
+          icon: Receipt,
+          badge: '16 Modules',
+          isBillingHierarchy: true
         },
         {
           id: 'clinical',
@@ -415,7 +444,7 @@ export const AppShell = ({
                   const isItemActive = currentRoute === item.id ||
                     (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
-                  const hasSubItems = Boolean(item.isAppointmentHierarchy || (item.subItems && item.subItems.length > 0));
+                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || (item.subItems && item.subItems.length > 0));
                   const isExpanded = Boolean(
                     expandedSectionsManual[item.id] !== undefined
                       ? expandedSectionsManual[item.id]
@@ -423,6 +452,20 @@ export const AppShell = ({
                   ) && !effectiveCollapsed;
 
                   const handleItemClick = () => {
+                    if (item.isBillingHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('billing:4.1');
+                      } else {
+                        if (currentRoute !== 'billing' && !currentRoute.startsWith('billing:')) {
+                          handleSelectNav('billing:4.1');
+                          setExpandedSectionsManual(prev => ({ ...prev, billing: true }));
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, billing: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
                     if (item.isAppointmentHierarchy) {
                       if (effectiveCollapsed) {
                         handleSelectNav('appointments');
@@ -722,8 +765,167 @@ export const AppShell = ({
                         </div>
                       )}
 
+                      {/* Expandable Billing Module Complete Hierarchy */}
+                      {item.isBillingHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '3px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: '360px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                          }}
+                        >
+                          {BILLING_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedBillingGroups[group.id]);
+                            const groupSubmodules = group.submodules;
+                            const isGroupActive =
+                              typeof currentRoute === 'string' &&
+                              (currentRoute === `billing:group:${group.id}` ||
+                               groupSubmodules.some(s => currentRoute === `billing:${s.id}`));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectNav(`billing:${group.submodules[0].id}`);
+                                      setExpandedBillingGroups(prev => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={group.title}
+                                  >
+                                    {group.shortTitle || group.title}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedBillingGroups(prev => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'var(--color-text-muted)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Submodules */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {groupSubmodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === `billing:${sub.id}` ||
+                                        (currentRoute === 'billing' && sub.id === '4.1');
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(`billing:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={sub.title}
+                                        >
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {sub.title}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Expandable Sub-Navigation for other modules (e.g. Clinical) */}
-                      {!item.isAppointmentHierarchy && hasSubItems && isExpanded && (
+                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && hasSubItems && isExpanded && (
                         <div
                           style={{
                             display: 'flex',
@@ -1070,7 +1272,7 @@ export const AppShell = ({
                       onClick={() => {
                         if (sub.id.startsWith('3.')) {
                           handleSelectNav(`appointments:${sub.id}`);
-                        } else if (sub.id.startsWith('4.')) {
+                        } else if (sub.id.startsWith('1.') || sub.id.startsWith('2.') || sub.id.startsWith('4.')) {
                           handleSelectNav(`billing:${sub.id}`);
                         } else {
                           handleSelectNav(`submodule:${sub.id}`);

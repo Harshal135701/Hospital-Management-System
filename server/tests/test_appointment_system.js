@@ -55,10 +55,19 @@ async function runTests() {
   console.log(`Test server running at ${baseUrl}`);
 
   try {
-    // 1. Health & Meta
+    // 1. Health & Authenticated Meta
     const health = await request("GET", "/api/health");
     console.assert(health.status === 200, "Health check failed");
     console.log("✔ GET /api/health passed");
+
+    const loginRes = await request("POST", "/api/auth/login", {
+      email: "admin@hospital.test",
+      password: "Admin#Pass2026!"
+    });
+    if (loginRes.status === 200 && loginRes.body?.data?.token) {
+      authToken = loginRes.body.data.token;
+      console.log("✔ Auth login successful as super_admin");
+    }
 
     const meta = await request("GET", "/api/meta");
     console.assert(meta.status === 200 && meta.body.success, "Meta fetch failed");
@@ -71,15 +80,6 @@ async function runTests() {
     const patient = patients[0];
     const patient2 = patients[1] || patients[0];
     const room = rooms[0];
-
-    const loginRes = await request("POST", "/api/auth/login", {
-      email: "admin@hospital.test",
-      password: "Admin#Pass2026!"
-    });
-    if (loginRes.status === 200 && loginRes.body?.data?.token) {
-      authToken = loginRes.body.data.token;
-      console.log("✔ Auth login successful as super_admin");
-    }
 
     // Compute future test dates
     const testDate = "2026-11-10"; // Tuesday

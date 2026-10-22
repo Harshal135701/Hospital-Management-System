@@ -1,16 +1,22 @@
 import pg from 'pg';
 const { Pool } = pg;
 import path from 'path';
+import fs from 'fs';
 import http from 'http';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const serverDir = path.resolve(__dirname, '..');
 
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ path: path.join(serverDir, '.env') });
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const derivedKey = crypto.scryptSync(password, salt, 64);
-  return `scrypt$${salt}$${derivedKey.toString('hex')}`;
+  return ['scrypt', salt, derivedKey.toString('hex')].join('$');
 }
 
 // ============================================================================
@@ -24,6 +30,7 @@ if (TEST_DB === DEV_DB) {
 }
 
 // Strictly force DB_NAME to TEST_DB regardless of what is in .env
+process.env.NODE_ENV = 'test';
 process.env.DB_NAME = TEST_DB;
 process.env.DB_HOST = process.env.DB_HOST || 'localhost';
 process.env.DB_PORT = process.env.DB_PORT || '5432';
@@ -40,6 +47,42 @@ if (process.env.DB_NAME !== TEST_DB) {
   throw new Error(`FATAL: DB_NAME is ${process.env.DB_NAME}, expected ${TEST_DB}`);
 }
 
+async function ensureTestDatabaseExists() {
+  if (TEST_DB !== 'medicsprime_disposable_test') {
+    throw new Error(`CRITICAL: Expected TEST_DB 'medicsprime_disposable_test', received '${TEST_DB}'`);
+  }
+  if (TEST_DB === DEV_DB) {
+    throw new Error('CRITICAL: TEST_DB cannot equal DEV_DB');
+  }
+
+  const adminPool = new Pool({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT, 10),
+    database: 'postgres',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+  });
+
+  try {
+    const res = await adminPool.query(
+      'SELECT 1 FROM pg_database WHERE datname = $1',
+      [TEST_DB]
+    );
+    if (res.rowCount === 0) {
+      console.log(`[Safety Provisioning] Test database '${TEST_DB}' not found. Provisioning isolated test DB...`);
+      if (!/^[a-zA-Z0-9_]+$/.test(TEST_DB)) {
+        throw new Error(`Invalid test database name: ${TEST_DB}`);
+      }
+      await adminPool.query(`CREATE DATABASE ${TEST_DB}`);
+      console.log(`[Safety Provisioning] Successfully created isolated test database '${TEST_DB}'.`);
+    } else {
+      console.log(`[Safety Provisioning] Verified dedicated test database '${TEST_DB}' exists.`);
+    }
+  } finally {
+    await adminPool.end();
+  }
+}
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT, 10),
@@ -48,8 +91,16 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD
 });
 
+function resolveMigrationPath(preferred, fallback) {
+  const p1 = path.resolve(serverDir, preferred);
+  if (fs.existsSync(p1)) return preferred;
+  const p2 = path.resolve(serverDir, fallback);
+  if (fs.existsSync(p2)) return fallback;
+  return preferred;
+}
+
 async function executeMigration(client, relPath) {
-  const fullPath = path.resolve('c:/Users/acer/Downloads/Hospital-Management-System/server', relPath);
+  const fullPath = path.resolve(serverDir, relPath);
   const mod = await import('file:///' + fullPath.replace(/\\/g, '/'));
   const sqlStatements = [];
   const pgm = {
@@ -62,22 +113,35 @@ async function executeMigration(client, relPath) {
 }
 
 async function setupDatabase() {
+  await ensureTestDatabaseExists();
+
   const client = await pool.connect();
   try {
+    const dbCheck = await client.query('SELECT current_database() as db');
+    if (dbCheck.rows[0].db !== TEST_DB) {
+      throw new Error(`CRITICAL ABORT: Connected to ${dbCheck.rows[0].db}, expected ${TEST_DB}`);
+    }
+    if (dbCheck.rows[0].db === DEV_DB) {
+      throw new Error(`CRITICAL ABORT: Connected to protected DEV_DB ${DEV_DB}`);
+    }
+
     console.log(`[Setup] Resetting public schema in isolated ${TEST_DB}...`);
     await client.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
 
     console.log('[Setup] Applying Migration 1: 1791635204809_initial-schema.js...');
     await executeMigration(client, 'migrations/1791635204809_initial-schema.js');
 
-    console.log('[Setup] Applying Migration 2: 1791785051918_blood-bank-schema.js...');
-    await executeMigration(client, 'migrations/1791785051918_blood-bank-schema.js');
+    const mig2 = resolveMigrationPath('migrations/1791980000000_blood-bank-schema.js', 'migrations/1791785051918_blood-bank-schema.js');
+    console.log(`[Setup] Applying Migration 2: ${mig2}...`);
+    await executeMigration(client, mig2);
 
-    console.log('[Setup] Applying Migration 3: 1791785895061_blood-bank-refinements.js...');
-    await executeMigration(client, 'migrations/1791785895061_blood-bank-refinements.js');
+    const mig3 = resolveMigrationPath('migrations/1791980000001_blood-bank-refinements.js', 'migrations/1791785895061_blood-bank-refinements.js');
+    console.log(`[Setup] Applying Migration 3: ${mig3}...`);
+    await executeMigration(client, mig3);
 
-    console.log('[Setup] Applying Migration 4: 1791800000000_staff-accounts-and-rbac.js...');
-    await executeMigration(client, 'migrations/1791800000000_staff-accounts-and-rbac.js');
+    const mig4 = resolveMigrationPath('migrations/1791980000002_staff-accounts-and-rbac.js', 'migrations/1791800000000_staff-accounts-and-rbac.js');
+    console.log(`[Setup] Applying Migration 4: ${mig4}...`);
+    await executeMigration(client, mig4);
 
     // Pre-populate Department & Doctor in Disposable DB
     const deptRes = await client.query("INSERT INTO departments (name, code) VALUES ('Transfusion Medicine', 'TM') RETURNING id");
@@ -132,6 +196,8 @@ async function runTests() {
 
   try {
     await setupDatabase();
+
+    
 
     // Dynamically load Express app
     const appMod = await import('../src/app.js');

@@ -49,10 +49,19 @@ import {
   HeartPulse,
   Syringe,
   ScanLine,
-  AlertCircle
+  AlertCircle,
+  Snowflake,
+  Flame,
+  LayoutGrid,
+  Printer,
+  Network,
+  FlaskConical,
+  Settings
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
+  { id: '1', label: 'IVF & Andrology', count: 4, icon: FlaskConical, category: 'diagnostic', description: 'WHO 6th Edition semen analysis, straw cryopreservation, sample thawing, and donor registry.' },
+  { id: '2', label: 'Configuration & Integrations', count: 4, icon: Settings, category: 'admin', description: 'Dashboard widgets, barcode & thermal printers, scanner setup, and external API gateways.' },
   { id: '3', label: 'Appointments', count: 4, icon: Calendar, category: 'clinical', description: 'Outpatient consultation bookings, doctor shift rosters, live waiting room queue display, and patient SMS/WhatsApp alerts.' },
   { id: '4', label: 'Billing', count: 6, icon: Receipt, category: 'operations', description: 'OPD POS billing counters, interim IPD running bills, final discharge clearance, deposits, refunds, and cashier day-end settlements.' },
   { id: '5', label: 'Blood Bank', count: 5, icon: Droplet, category: 'diagnostic', description: 'Donor screening, phlebotomy barcoding, component centrifuge separation, serology testing release, and bedside cross-matching.' },
@@ -86,6 +95,82 @@ export const MODULE_GROUPS = [
 ];
 
 export const SUBMODULES = [
+  // Group 1 — IVF & Andrology Operations
+  {
+    id: '1.1',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Semen Analysis Entry',
+    subtitle: 'WHO 6th Edition compliant andrology entry, motility, morphology & vitality',
+    icon: FlaskConical,
+    badge: 'Diagnostic'
+  },
+  {
+    id: '1.2',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Cryopreservation / Semen Freezing',
+    subtitle: 'Specimen vitrification, straw barcodes, liquid nitrogen tank & canister allocation',
+    icon: Snowflake,
+    badge: 'Cryo-Bank'
+  },
+  {
+    id: '1.3',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Sample Thaw & Usage',
+    subtitle: 'Consent verification, aliquot retrieval, thaw survival rate & cycle deduction',
+    icon: Flame,
+    badge: 'Inventory'
+  },
+  {
+    id: '1.4',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Donor Registry',
+    subtitle: 'Anonymous donor profiles, serology screening, consent audit & legal tracking',
+    icon: Users,
+    badge: 'Registry'
+  },
+
+  // Group 2 — Configuration & Integrations
+  {
+    id: '2.1',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'Widgets & Dashboard Configuration',
+    subtitle: 'Manage operational dashboard widgets, role-based layout & display visibility',
+    icon: LayoutGrid,
+    badge: 'Layout'
+  },
+  {
+    id: '2.2',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'Barcode & Thermal Printer Settings',
+    subtitle: 'Direct thermal, 80mm POS receipt printers, specimen tube & straw label profiles',
+    icon: Printer,
+    badge: 'Hardware'
+  },
+  {
+    id: '2.3',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'Document Scanner & Attachment Setup',
+    subtitle: 'EMR attachment file limits, category configuration & scan upload integration',
+    icon: FileSpreadsheet,
+    badge: 'EMR Setup'
+  },
+  {
+    id: '2.4',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'External API Integration Status',
+    subtitle: 'Live monitoring of SMS gateways, WhatsApp API, Payment Gateways & LIS links',
+    icon: Network,
+    badge: 'Gateway'
+  },
+
   // Group 3 — Appointments
   {
     id: '3.1',

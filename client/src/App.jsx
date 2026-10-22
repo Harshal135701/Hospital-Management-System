@@ -62,6 +62,9 @@ export function App() {
         return <EmrView initialSubtab={routeSubtab || '12.1'} onNavigate={setCurrentRoute} />;
 
       case 'submodule': {
+        if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
+          return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
         if (routeSubtab && routeSubtab.startsWith('8.')) {
           return <DayCareView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }

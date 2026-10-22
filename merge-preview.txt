@@ -1,0 +1,201 @@
+2025abce8ed6abcd592955be39a1ba29c29c04d6
+100644 a63e9cb591b491b0ea3eca85240237cf27f42b9f 1	client/src/App.jsx
+100644 541efc91576f8a164bfef85a19076a1cb798fd26 2	client/src/App.jsx
+100644 cccc43eebef62aca2b392842cccb21d6b9159892 3	client/src/App.jsx
+100644 961285bfa1010cd23dbbbfbe3fdb64b3e71b1705 1	client/src/components/layout/AppShell.jsx
+100644 1eef1fc277d6841de9cbf79f46f2e4f5753f59be 2	client/src/components/layout/AppShell.jsx
+100644 4e6608e0fa08e37c51edc891a0a14d5d6d5c9729 3	client/src/components/layout/AppShell.jsx
+100644 aba64d3020138e1cd4e62e79f70657b55a37d968 1	client/src/services/api.js
+100644 b640b2cb99b2ffc07f47073c243c9908ea27011b 2	client/src/services/api.js
+100644 5870fe51ec45908c28b8b715f7a3cfc6f4b6e79c 3	client/src/services/api.js
+100644 d37e6bf7c495c26fe3f382c6121886049795b31e 1	server/src/app.js
+100644 cf5805908deca2a2f00f28355b8ad5db565bb637 2	server/src/app.js
+100644 0874fb49087c0a2a1d19fc22b084f1f2417864cd 3	server/src/app.js
+100644 b73a5992b66da1070ba2c5b5f23171859940f354 2	server/src/modules/assets/assets.repository.js
+100644 4867b3a955e1b5b8c479c9162661223f91015aa5 3	server/src/modules/assets/assets.repository.js
+100644 31db6299aa229982f37bc8bba4d4ebbe9a3821f7 2	server/src/modules/assets/assets.routes.js
+100644 e8919de29002e53afd0c3e26872f8d528db22be2 3	server/src/modules/assets/assets.routes.js
+100644 0bc7dea625c035b86b9ae05cffff07c0dd1944c3 2	server/src/modules/billing/billing.routes.js
+100644 f4769eba1de6d838d60e8e6650eaaaa7474c3b34 3	server/src/modules/billing/billing.routes.js
+100644 317ceaf2c37db247194e282c1ad6fc15af16e5fe 2	server/src/modules/billing/deposit.routes.js
+100644 5f91d45c6459dd5a2e6f26f2fd3422a8deb79db0 3	server/src/modules/billing/deposit.routes.js
+100644 0f010a1366851e861e5703ad21c2e843605ae481 2	server/src/modules/billing/discharge-billing.routes.js
+100644 daf5172a19179c20da96906e0f40e51487edd4da 3	server/src/modules/billing/discharge-billing.routes.js
+100644 ccf9f91b9d05ed83555503cebb88ce96b3ad6055 2	server/src/modules/billing/ipd-billing.routes.js
+100644 8d5b45ae53556feb4304b489a4dc2ff09c509f2c 3	server/src/modules/billing/ipd-billing.routes.js
+100644 68409bdd1e17dd9091a49e56d894bddab2048495 2	server/src/modules/billing/refund.routes.js
+100644 6674aa7015601d355b88e9f7105d7757dd399f35 3	server/src/modules/billing/refund.routes.js
+100644 7178d10de010b0d3410e74f9f3a8b16725c7ceff 2	server/src/modules/billing/settlement.routes.js
+100644 2abdbaf9f4174a7e2b5dc7f73cb969d9361f88ce 3	server/src/modules/billing/settlement.routes.js
+100644 d96ab9516a980d4ce33226da1eddaf6343110443 2	server/src/modules/billing/settlement.service.js
+100644 d609cb1c7ecc23328a4d1a0d7b1d6971a1301bf3 3	server/src/modules/billing/settlement.service.js
+100644 d861092fc62e303630b1f0f62999a65ea23a2c9e 1	server/src/modules/clinical-history/clinical-history.service.js
+100644 19c98cdd2a6a5885d291bee653184d231d735790 2	server/src/modules/clinical-history/clinical-history.service.js
+100644 8196f1827d19e488c59458a279f510dbb33233ff 3	server/src/modules/clinical-history/clinical-history.service.js
+100644 4c69b650d39ae4e4c09b7c0d3c4fc99a07e1b532 1	server/src/modules/clinical-notes/clinical-notes.service.js
+100644 675570b2943d6e68aec99292dc0acfcde4b787f2 2	server/src/modules/clinical-notes/clinical-notes.service.js
+100644 c69592d211d45cd27742dedf015a0b03bca7dfdc 3	server/src/modules/clinical-notes/clinical-notes.service.js
+100644 019ddde11f7a6ec3432110e916cd394c5e89e6e2 1	server/src/modules/consultations/consultation.service.js
+100644 8f03c3c5c200aec70b704fcaf47e004dff5dfe2b 2	server/src/modules/consultations/consultation.service.js
+100644 1264dab1428c4e490f3f933622dc042773abcef0 3	server/src/modules/consultations/consultation.service.js
+100644 bb6b18c909c77cbe4afbfe584513a7b9f95754ed 2	server/src/modules/daycare/daycare.repository.js
+100644 8df02a603be8f5493d762cff220371aab9363058 3	server/src/modules/daycare/daycare.repository.js
+100644 caaeda3279faa3f475eaf23005bb106e14a2cd10 2	server/src/modules/daycare/daycare.routes.js
+100644 dd379c70a8c6d04ed1a41e3c4c427a887673fc40 3	server/src/modules/daycare/daycare.routes.js
+100644 532e3718627c6489f9ecfa134e41cc8c154cd561 2	server/src/modules/dietary/dietary.repository.js
+100644 f4df39b32301f806d8a0fa07cc5f56b84b85e1ee 3	server/src/modules/dietary/dietary.repository.js
+100644 20a11ede903285d4adc2b187befb3851baece842 2	server/src/modules/dietary/dietary.routes.js
+100644 6e69a9cb1e4381356b9b53a2e3a9a6b1e82c7ec6 3	server/src/modules/dietary/dietary.routes.js
+100644 b089604b92061aa0e6f98494b8d3a6141c3a18a3 2	server/src/modules/emergency/emergency.repository.js
+100644 398db5f5627a2184cba87b741dbb335762364d30 3	server/src/modules/emergency/emergency.repository.js
+100644 ce63715f8e333ccddc797fecc179c97f53ace143 2	server/src/modules/emergency/emergency.routes.js
+100644 531048033be6c0378ecf851615b70136d30d510b 3	server/src/modules/emergency/emergency.routes.js
+100644 e2773cdd6566f1491d712be5c5bad716d3c8ae25 2	server/src/modules/emr/emr.controller.js
+100644 8db483f5e2961d3c5b5cfec67ab253ea269c0a2f 3	server/src/modules/emr/emr.controller.js
+100644 bcb4069f3197f730eb59a8f734d23598d3375f7f 2	server/src/modules/emr/emr.repository.js
+100644 daea4bee6765728e775ae02cf59ccfde783c993d 3	server/src/modules/emr/emr.repository.js
+100644 b3372748b2e10564e6fc78e30f3cdaa0ca04dca4 2	server/src/modules/emr/emr.routes.js
+100644 2234c32ab075e6cd9976cc3e3c0d868f055f094e 3	server/src/modules/emr/emr.routes.js
+100644 fa70f083ccb42fc619ff4e9acf8215bdb47627cf 2	server/src/modules/emr/emr.service.js
+100644 f332defea6efd9459c5be5122aba76fae6eab0aa 3	server/src/modules/emr/emr.service.js
+100644 fc917de6dd4c58d476953bbe8cd3809592848a58 2	server/src/modules/enterprise/enterprise.repository.js
+100644 5e700f11ff9fd270d19c2514f1c7ad8d2bb46274 3	server/src/modules/enterprise/enterprise.repository.js
+100644 834eede612e208b6374b943d961b8be5497164c2 2	server/src/modules/enterprise/enterprise.routes.js
+100644 2927762c23e995817711487817dd5e715f12309f 3	server/src/modules/enterprise/enterprise.routes.js
+100644 6e8701f0bb433e59b56f0641d024ce0dd5be8c59 2	server/src/modules/finance/finance.repository.js
+100644 dea57119807fd187fb4e9fb65427932c107d1a04 3	server/src/modules/finance/finance.repository.js
+100644 5d8601d90b28087ed409a9799a54e57215d90d8c 2	server/src/modules/finance/finance.routes.js
+100644 960f6658206e5b5493ea1291319649318e4434fd 3	server/src/modules/finance/finance.routes.js
+100644 dcb867e758cb02d870b0ae80bbac223a740f8bb8 2	server/src/modules/insurance-tpa/claim-dossier.routes.js
+100644 091ab8c8aa8ffe8e73f6fd405f7f850269ae5ccb 3	server/src/modules/insurance-tpa/claim-dossier.routes.js
+100644 b3a4380987a17b288ac155c78dccde7b405bb19a 2	server/src/modules/insurance-tpa/enhancement.routes.js
+100644 d9a0d12bc058e54b951e38ab38358464e2dc0ddb 3	server/src/modules/insurance-tpa/enhancement.routes.js
+100644 be3e4e48d2ed21c217dc7489225c0295f576458c 2	server/src/modules/insurance-tpa/preauthorization.routes.js
+100644 faeaeff1c6d1e0b33918703144d5f15df31f06f7 3	server/src/modules/insurance-tpa/preauthorization.routes.js
+100644 3acfe2f8a33912f1ef5372420ee9567706b4d762 2	server/src/modules/insurance-tpa/reconciliation.routes.js
+100644 d5a63cfe386768c0f10f14d6859d3adc2c0eaaa0 3	server/src/modules/insurance-tpa/reconciliation.routes.js
+100644 ef35013954de7c2c7077741cb740a27aef1c4ee1 2	server/src/modules/insurance-tpa/responsibility.routes.js
+100644 2a2b960fc9b737af74a277f047911188a82dfea7 3	server/src/modules/insurance-tpa/responsibility.routes.js
+100644 cdd63e70b7a2f184e346ec2bd89c37af838b4fcf 2	server/src/modules/ivf/ivf.repository.js
+100644 fc60ab4bbed9b8e2ddb1c900798df4c91b16c915 3	server/src/modules/ivf/ivf.repository.js
+100644 f549d54776d87fe22f04f3d195c1d7aa7bb3e0bd 2	server/src/modules/ivf/ivf.routes.js
+100644 c62635b05be2b22ff4626bb999af56aa08074aac 3	server/src/modules/ivf/ivf.routes.js
+100644 1e6b08af4217dad83eee96d1a4613275b9cc17a5 2	server/src/modules/notifications/notification.provider.js
+100644 e3eb0fc1294987bcdc51cce7bb44c8e55cb7a81b 3	server/src/modules/notifications/notification.provider.js
+100644 8179cda1fc18b3143d98264b7eb500df1bc98831 2	server/src/modules/notifications/notification.routes.js
+100644 eca922ed31804601142df07e58bcbc525122a1ef 3	server/src/modules/notifications/notification.routes.js
+100644 52894b954b0792f4d65120d4fc938d38d898e567 1	server/src/modules/provider-orders/provider-orders.service.js
+100644 79147d383cba2c620eaced3b2bfd4f963f0a156b 2	server/src/modules/provider-orders/provider-orders.service.js
+100644 30ca2bcea2ea4c3335b112acf0359ca692e3ed66 3	server/src/modules/provider-orders/provider-orders.service.js
+100644 0c01b19d574e8c485c66affb18a81b6dfc96a737 2	server/src/modules/queue/queue.controller.js
+100644 e3f15e2a978b491359a2128585f95953030d07fd 3	server/src/modules/queue/queue.controller.js
+100644 4031c5c6b417856056bc71c1c52025a164f4f9e9 2	server/src/modules/queue/queue.routes.js
+100644 1397b5ec5788ea79e8d5265607fe1c85d33b2381 3	server/src/modules/queue/queue.routes.js
+100644 4b4e863d27c81a659aec3f3d3d6d0efc1a1c001d 2	server/src/modules/queue/queue.service.js
+100644 eef94f65f6f98974aa70e655cc62aab344eeffb9 3	server/src/modules/queue/queue.service.js
+100644 17939f8696b731980dcbe8e9d7fe20f0e27c072b 2	server/src/modules/queue/queue.validation.js
+100644 44c6124351e69f63e69aa98d8b4d897f7cf4c5d9 3	server/src/modules/queue/queue.validation.js
+100644 f5300f98b25ffe949d3396268216f95ab9409da7 2	server/src/modules/rosters/roster.controller.js
+100644 6dcfb59f6d2dc71665f5b605ad1a714d12d7c7d1 3	server/src/modules/rosters/roster.controller.js
+100644 8f9de77b299129d306f2a41f794348be8869b9f6 2	server/src/modules/rosters/roster.routes.js
+100644 bf828511e8442a8c937584cc6f50f9b121e28179 3	server/src/modules/rosters/roster.routes.js
+100644 8f07e25c19a6accc524dd5bd3e273903e15aa22a 2	server/src/modules/rosters/roster.service.js
+100644 beade1d1a31f4b14b3d0645558cad6772450a44c 3	server/src/modules/rosters/roster.service.js
+
+Auto-merging client/src/App.jsx
+CONFLICT (content): Merge conflict in client/src/App.jsx
+Auto-merging client/src/components/bloodbank/BloodBankView.jsx
+Auto-merging client/src/components/layout/AppShell.jsx
+CONFLICT (content): Merge conflict in client/src/components/layout/AppShell.jsx
+Auto-merging client/src/services/api.js
+CONFLICT (content): Merge conflict in client/src/services/api.js
+Auto-merging server/src/app.js
+CONFLICT (content): Merge conflict in server/src/app.js
+Auto-merging server/src/modules/appointments/appointment.controller.js
+Auto-merging server/src/modules/assets/assets.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/assets/assets.repository.js
+Auto-merging server/src/modules/assets/assets.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/assets/assets.routes.js
+Auto-merging server/src/modules/billing/billing.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/billing.routes.js
+Auto-merging server/src/modules/billing/deposit.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/deposit.routes.js
+Auto-merging server/src/modules/billing/discharge-billing.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/discharge-billing.routes.js
+Auto-merging server/src/modules/billing/ipd-billing.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/ipd-billing.routes.js
+Auto-merging server/src/modules/billing/refund.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/refund.routes.js
+Auto-merging server/src/modules/billing/settlement.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/settlement.routes.js
+Auto-merging server/src/modules/billing/settlement.service.js
+CONFLICT (add/add): Merge conflict in server/src/modules/billing/settlement.service.js
+Auto-merging server/src/modules/clinical-history/clinical-history.service.js
+CONFLICT (content): Merge conflict in server/src/modules/clinical-history/clinical-history.service.js
+Auto-merging server/src/modules/clinical-notes/clinical-notes.service.js
+CONFLICT (content): Merge conflict in server/src/modules/clinical-notes/clinical-notes.service.js
+Auto-merging server/src/modules/consultations/consultation.service.js
+CONFLICT (content): Merge conflict in server/src/modules/consultations/consultation.service.js
+Auto-merging server/src/modules/daycare/daycare.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/daycare/daycare.repository.js
+Auto-merging server/src/modules/daycare/daycare.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/daycare/daycare.routes.js
+Auto-merging server/src/modules/dietary/dietary.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/dietary/dietary.repository.js
+Auto-merging server/src/modules/dietary/dietary.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/dietary/dietary.routes.js
+Auto-merging server/src/modules/emergency/emergency.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/emergency/emergency.repository.js
+Auto-merging server/src/modules/emergency/emergency.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/emergency/emergency.routes.js
+Auto-merging server/src/modules/emr/emr.controller.js
+CONFLICT (add/add): Merge conflict in server/src/modules/emr/emr.controller.js
+Auto-merging server/src/modules/emr/emr.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/emr/emr.repository.js
+Auto-merging server/src/modules/emr/emr.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/emr/emr.routes.js
+Auto-merging server/src/modules/emr/emr.service.js
+CONFLICT (add/add): Merge conflict in server/src/modules/emr/emr.service.js
+Auto-merging server/src/modules/enterprise/enterprise.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/enterprise/enterprise.repository.js
+Auto-merging server/src/modules/enterprise/enterprise.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/enterprise/enterprise.routes.js
+Auto-merging server/src/modules/finance/finance.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/finance/finance.repository.js
+Auto-merging server/src/modules/finance/finance.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/finance/finance.routes.js
+Auto-merging server/src/modules/insurance-tpa/claim-dossier.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/insurance-tpa/claim-dossier.routes.js
+Auto-merging server/src/modules/insurance-tpa/enhancement.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/insurance-tpa/enhancement.routes.js
+Auto-merging server/src/modules/insurance-tpa/preauthorization.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/insurance-tpa/preauthorization.routes.js
+Auto-merging server/src/modules/insurance-tpa/reconciliation.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/insurance-tpa/reconciliation.routes.js
+Auto-merging server/src/modules/insurance-tpa/responsibility.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/insurance-tpa/responsibility.routes.js
+Auto-merging server/src/modules/ivf/ivf.repository.js
+CONFLICT (add/add): Merge conflict in server/src/modules/ivf/ivf.repository.js
+Auto-merging server/src/modules/ivf/ivf.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/ivf/ivf.routes.js
+Auto-merging server/src/modules/notifications/notification.provider.js
+CONFLICT (add/add): Merge conflict in server/src/modules/notifications/notification.provider.js
+Auto-merging server/src/modules/notifications/notification.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/notifications/notification.routes.js
+Auto-merging server/src/modules/provider-orders/provider-orders.service.js
+CONFLICT (content): Merge conflict in server/src/modules/provider-orders/provider-orders.service.js
+Auto-merging server/src/modules/queue/queue.controller.js
+CONFLICT (add/add): Merge conflict in server/src/modules/queue/queue.controller.js
+Auto-merging server/src/modules/queue/queue.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/queue/queue.routes.js
+Auto-merging server/src/modules/queue/queue.service.js
+CONFLICT (add/add): Merge conflict in server/src/modules/queue/queue.service.js
+Auto-merging server/src/modules/queue/queue.validation.js
+CONFLICT (add/add): Merge conflict in server/src/modules/queue/queue.validation.js
+Auto-merging server/src/modules/rosters/roster.controller.js
+CONFLICT (add/add): Merge conflict in server/src/modules/rosters/roster.controller.js
+Auto-merging server/src/modules/rosters/roster.routes.js
+CONFLICT (add/add): Merge conflict in server/src/modules/rosters/roster.routes.js
+Auto-merging server/src/modules/rosters/roster.service.js
+CONFLICT (add/add): Merge conflict in server/src/modules/rosters/roster.service.js
+Auto-merging server/src/modules/vitals/vitals.service.js
