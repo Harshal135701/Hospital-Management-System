@@ -14,6 +14,7 @@ import { WardsView } from './components/wards/WardsView';
 import { DayCareView } from './components/daycare/DayCareView';
 import { DietView } from './components/diet/DietView';
 import { EmrView } from './components/emr/EmrView';
+import { EmbryologyView } from './components/embryology/EmbryologyView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -66,6 +67,10 @@ export function App() {
       case 'emr':
         return <EmrView initialSubtab={routeSubtab || '12.1'} onNavigate={setCurrentRoute} />;
 
+      case 'embryology':
+      case 'ivf':
+        return <EmbryologyView initialSubtab={routeSubtab || 'overview'} onNavigate={setCurrentRoute} />;
+
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -78,6 +83,9 @@ export function App() {
         }
         if (routeSubtab && routeSubtab.startsWith('9.')) {
           return <DietView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('10.') || routeSubtab === '10.0')) {
+          return <EmbryologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('12.')) {
           return <EmrView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

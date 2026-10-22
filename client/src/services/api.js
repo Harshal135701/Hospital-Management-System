@@ -1760,3 +1760,139 @@ export const InsuranceTpaService = {
     return res?.data;
   }
 };
+
+
+// Module 10 — Embryology & IVF Laboratory Services
+export const EmbryologyService = {
+  // Cycles
+  async getCycles(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/ivf/cycles${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getCycles fallback:', err.message);
+      return [];
+    }
+  },
+  async getCycleById(id) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createCycle(data) {
+    const res = await apiFetch('/ivf/cycles', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.1 OPU Recording
+  async getOpus(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/opu` : '/ivf/opus';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getOpus fallback:', err.message);
+      return [];
+    }
+  },
+  async recordOpu(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/opu`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.2 Fertilization Records
+  async getFertilizations(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/fertilization` : '/ivf/fertilizations';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getFertilizations fallback:', err.message);
+      return [];
+    }
+  },
+  async recordFertilization(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/fertilization`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.3 Embryo Morphological Grading
+  async getEmbryos(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/embryos` : '/ivf/embryos';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getEmbryos fallback:', err.message);
+      return [];
+    }
+  },
+  async createEmbryo(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/embryos`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async updateEmbryo(embryoId, data) {
+    const res = await apiFetch(`/ivf/embryos/${encodeURIComponent(embryoId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.4 Embryo Transfer Protocol
+  async getTransfers(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/transfer` : '/ivf/transfers';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getTransfers fallback:', err.message);
+      return [];
+    }
+  },
+  async recordTransfer(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.5 Embryo Cryostorage Management
+  async getCryostorage(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/ivf/cryostorage${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getCryostorage fallback:', err.message);
+      return [];
+    }
+  },
+  async storeEmbryo(embryoId, data) {
+    const res = await apiFetch(`/ivf/embryos/${encodeURIComponent(embryoId)}/cryostore`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async updateCryostorageDisposition(id, data) {
+    const res = await apiFetch(`/ivf/cryostorage/${encodeURIComponent(id)}/disposition`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  }
+};

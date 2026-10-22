@@ -56,7 +56,9 @@ import {
   Printer,
   Network,
   FlaskConical,
-  Settings
+  Settings,
+  Dna,
+  Microscope
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
@@ -69,7 +71,7 @@ export const MODULE_GROUPS = [
   { id: '7', label: 'Insurance & TPA', count: 5, icon: ShieldCheck, category: 'operations', description: 'Insurance cashless pre-authorization, package enhancement requests, claim dossier compilation, and corporate co-pay collections.' },
   { id: '8', label: 'Day Care', count: 4, icon: Bed, category: 'clinical', description: 'Short-stay day care admissions, chemotherapy/dialysis chair allocation, procedure monitoring, and same-day discharge summaries.' },
   { id: '9', label: 'Diet & Nutrition', count: 4, icon: Utensils, category: 'operations', description: 'Dietitian clinical nutritional assessment, therapeutic diet ordering, kitchen batch meal production, and ward tray delivery tracking.' },
-  { id: '10', label: 'IVF Laboratory', count: 5, icon: Egg, category: 'diagnostic', description: 'Oocyte retrieval (OPU) dish logs, ICSI fertilization verification, Gardner embryo grading, embryo transfer, and cryo-tank storage.' },
+  { id: '10', label: '10. Embryology', count: 5, icon: Egg, category: 'diagnostic', description: 'Oocyte retrieval (OPU) dish logs, ICSI fertilization verification, Gardner embryo grading, embryo transfer, and cryo-tank storage.' },
   { id: '11', label: 'Emergency', count: 5, icon: Siren, category: 'clinical', description: 'Level 1 to 4 Manchester triage, MLC registry, trauma bay resuscitation, trauma charting, and rapid ICU/OT disposition.' },
   { id: '12', label: 'Patient Clinical Records', count: 5, icon: FileSpreadsheet, category: 'clinical', description: 'Longitudinal lifetime patient timeline, e-Prescription studio, ICD-10 & SNOMED CT coding, encounters browser, and attachments.' },
   { id: '13', label: 'Finance & Accounting', count: 5, icon: Landmark, category: 'admin', description: 'Hospital chart of accounts, debit/credit payment vouchers, doctor revenue share payouts, bank reconciliation, and P&L reports.' },
@@ -482,11 +484,11 @@ export const SUBMODULES = [
     badge: 'Delivery'
   },
 
-  // Group 10 — IVF Laboratory
+  // Group 10 — Embryology
   {
     id: '10.1',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Oocyte Retrieval (OPU) Recording',
     subtitle: 'Follicles aspirated, oocytes retrieved, and MII/MI/GV maturity grading',
     icon: Egg,
@@ -495,38 +497,38 @@ export const SUBMODULES = [
   {
     id: '10.2',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Fertilization (Conventional IVF / ICSI)',
     subtitle: 'Sperm preparation, ICSI microinjection, and 2PN fertilization count',
-    icon: Egg,
-    badge: 'Embryology'
+    icon: Dna,
+    badge: 'Fertilization'
   },
   {
     id: '10.3',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Embryo Morphological Grading',
     subtitle: 'Cleavage stage, Day 3 & Day 5 Blastocyst grading (Gardner criteria)',
-    icon: Egg,
+    icon: Microscope,
     badge: 'Grading'
   },
   {
     id: '10.4',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Embryo Transfer (ET) Protocol',
     subtitle: 'Fresh/frozen ET, catheter tracking, ultrasound guidance, and luteal support',
-    icon: Egg,
+    icon: Syringe,
     badge: 'Transfer'
   },
   {
     id: '10.5',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Embryo Cryostorage Management',
     subtitle: 'Vitrification straws, liquid nitrogen tanks, canister coordinates, and expiry',
-    icon: Droplet,
-    badge: 'Cryo'
+    icon: Snowflake,
+    badge: 'Cryo-Bank'
   },
 
   // Group 11 — Emergency & Trauma

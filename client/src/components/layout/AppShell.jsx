@@ -25,7 +25,8 @@ import {
   Lock,
   User,
   Receipt,
-  Layers
+  Layers,
+  Egg
 } from 'lucide-react';
 import { Button } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
@@ -79,6 +80,13 @@ export const AppShell = ({
   useEffect(() => {
     if (typeof currentRoute === 'string' && (currentRoute === 'credit-billing' || currentRoute.startsWith('credit-billing:'))) {
       setExpandedSectionsManual(prev => ({ ...prev, 'credit-billing': true }));
+    }
+  }, [currentRoute]);
+
+  // Auto-expand Embryology when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'embryology' || currentRoute.startsWith('embryology:') || currentRoute.startsWith('submodule:10.'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, embryology: true }));
     }
   }, [currentRoute]);
 
@@ -147,6 +155,19 @@ export const AppShell = ({
             { id: 'credit-billing:7.3', label: '7.3 Claim Dossiers' },
             { id: 'credit-billing:7.4', label: '7.4 Co-Pay & Deductibles' },
             { id: 'credit-billing:7.5', label: '7.5 TPA Reconciliation' }
+          ]
+        },
+        {
+          id: 'embryology',
+          label: 'Embryology',
+          icon: Egg,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'embryology:10.1', label: 'Oocyte Retrieval (OPU) Recording' },
+            { id: 'embryology:10.2', label: 'Fertilization (Conventional IVF / ICSI)' },
+            { id: 'embryology:10.3', label: 'Embryo Morphological Grading' },
+            { id: 'embryology:10.4', label: 'Embryo Transfer (ET) Protocol' },
+            { id: 'embryology:10.5', label: 'Embryo Cryostorage Management' }
           ]
         },
         {
@@ -962,7 +983,9 @@ export const AppShell = ({
                             const isSubActive =
                               currentRoute === sub.id ||
                               (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
-                              (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing');
+                              (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') ||
+                              (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) ||
+                              (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`));
                             return (
                               <button
                                 type="button"
@@ -1295,6 +1318,8 @@ export const AppShell = ({
                           handleSelectNav(`appointments:${sub.id}`);
                         } else if (sub.id.startsWith('1.') || sub.id.startsWith('2.') || sub.id.startsWith('4.')) {
                           handleSelectNav(`billing:${sub.id}`);
+                        } else if (sub.id.startsWith('10.')) {
+                          handleSelectNav(`embryology:${sub.id}`);
                         } else {
                           handleSelectNav(`submodule:${sub.id}`);
                         }

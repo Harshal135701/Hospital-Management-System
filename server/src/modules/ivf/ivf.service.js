@@ -93,7 +93,27 @@ async function updateCryostorageDisposition(id, data) {
   return item;
 }
 
+async function getAllOpus(filters) {
+  return repository.getAllOpus(filters);
+}
+
+async function getAllFertilizations(filters) {
+  return repository.getAllFertilizations(filters);
+}
+
+async function getAllEmbryos(filters) {
+  return repository.getAllEmbryos(filters);
+}
+
+async function getAllTransfers(filters) {
+  return repository.getAllTransfers(filters);
+}
+
 module.exports = {
+  getAllOpus,
+  getAllFertilizations,
+  getAllEmbryos,
+  getAllTransfers,
   createCycle,
   getCycles,
   getCycleById,

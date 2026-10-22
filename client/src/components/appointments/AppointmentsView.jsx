@@ -11,6 +11,7 @@ import { BillingView } from '../billing/BillingView';
 import { DayCareView } from '../daycare/DayCareView';
 import { DietView } from '../diet/DietView';
 import { EmrView } from '../emr/EmrView';
+import { EmbryologyView } from '../embryology/EmbryologyView';
 import { SubmodulesView } from './SubmodulesView';
 import { MODULE_GROUPS, SUBMODULES } from './submoduleRegistry';
 
@@ -137,6 +138,15 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
         if (activeSubmodule.id.startsWith('9.')) {
           return (
             <DietView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 10 Embryology submodules
+        if (activeSubmodule.id.startsWith('10.')) {
+          return (
+            <EmbryologyView
               initialSubtab={activeSubmodule.id}
               onNavigate={handleSelectSubmodule}
             />
