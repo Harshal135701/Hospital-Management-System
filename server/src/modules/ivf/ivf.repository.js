@@ -229,7 +229,7 @@ async function updateEmbryo(id, data) {
   const { status, gardner_grade, notes, biopsy_taken } = data;
   const result = await pool.query(
     `UPDATE ivf_embryos
-     SET 
+     SET
        status = COALESCE($2, status),
        gardner_grade = COALESCE($3, gardner_grade),
        notes = COALESCE($4, notes),
@@ -381,7 +381,7 @@ async function getCryostorage(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       ic.*,
       ie.embryo_code,
       ie.gardner_grade,
@@ -403,7 +403,7 @@ async function updateCryostorageDisposition(id, data) {
   const { disposition, thaw_date, notes } = data;
   const result = await pool.query(
     `UPDATE ivf_cryostorages
-     SET 
+     SET
        disposition = $2,
        thaw_date = CASE WHEN $2 = 'thawed' THEN COALESCE($3, CURRENT_DATE) ELSE thaw_date END,
        notes = COALESCE($4, notes)

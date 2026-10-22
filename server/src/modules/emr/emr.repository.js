@@ -101,7 +101,7 @@ async function getPrescriptions(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       ep.*,
       p.full_name AS patient_name,
       p.uhid AS patient_uhid,
@@ -124,7 +124,7 @@ async function getPrescriptions(filters = {}) {
 
 async function getPrescriptionById(id) {
   const query = `
-    SELECT 
+    SELECT
       ep.*,
       p.full_name AS patient_name,
       p.uhid AS patient_uhid,

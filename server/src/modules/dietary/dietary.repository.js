@@ -275,7 +275,7 @@ async function getDeliveries(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       dmd.*,
       dmo.order_number,
       dmo.meal_type,
@@ -296,7 +296,7 @@ async function updateDelivery(id, data) {
   const { delivery_status, received_by, remarks, meal_temperature_c } = data;
   const result = await pool.query(
     `UPDATE dietary_meal_deliveries
-     SET 
+     SET
        delivery_status = COALESCE($2, delivery_status),
        received_by = COALESCE($3, received_by),
        remarks = COALESCE($4, remarks),

@@ -109,7 +109,7 @@ async function getJournalEntries(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       fje.*,
       COALESCE(
         json_agg(
@@ -391,7 +391,7 @@ async function updateBankReconciliationStatus(id, status, reconciled_by) {
 // 13.5 Profit & Loss / Balance Sheet Reporting
 async function getProfitAndLoss(startDate, endDate) {
   const query = `
-    SELECT 
+    SELECT
       fca.account_type,
       fca.account_code,
       fca.account_name,
@@ -424,11 +424,11 @@ async function getProfitAndLoss(startDate, endDate) {
 
 async function getBalanceSheet() {
   const query = `
-    SELECT 
+    SELECT
       fca.account_type,
       fca.account_code,
       fca.account_name,
-      CASE 
+      CASE
         WHEN fca.account_type = 'Asset' THEN COALESCE(SUM(fjl.debit) - SUM(fjl.credit), 0)
         ELSE COALESCE(SUM(fjl.credit) - SUM(fjl.debit), 0)
       END AS balance

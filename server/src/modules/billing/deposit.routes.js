@@ -1,11 +1,17 @@
 
 const express = require("express");
 const controller = require("./deposit.controller");
+const {
+  authenticateToken,
+  requireRoles,
+} = require("../../middleware/auth.middleware");
 
 const router = express.Router();
 
-router.post("/", controller.collectDeposit);
-router.get("/admission/:admissionId", controller.getDepositsByAdmission);
-router.get("/:depositId", controller.getDepositById);
+router.use(authenticateToken);
+
+router.post("/", requireRoles("receptionist", "super_admin"), controller.collectDeposit);
+router.get("/admission/:admissionId", requireRoles("receptionist", "staff_nurse", "super_admin"), controller.getDepositsByAdmission);
+router.get("/:depositId", requireRoles("receptionist", "staff_nurse", "super_admin"), controller.getDepositById);
 
 module.exports = router;

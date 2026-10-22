@@ -41,6 +41,14 @@ async function validateEncounterAccess(
     );
   }
 
+  if (requireActive && currentUser.role === "clinician_doctor") {
+    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden(
+        "You are not authorized to modify another clinician's consultation history"
+      );
+    }
+  }
+
   return encounter;
 }
 

@@ -73,7 +73,7 @@ async function getTriageList(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       et.*,
       p.full_name AS patient_name,
       p.uhid AS patient_uhid,
@@ -97,7 +97,7 @@ async function getTriageList(filters = {}) {
 
 async function getTriageById(id) {
   const query = `
-    SELECT 
+    SELECT
       et.*,
       p.full_name AS patient_name,
       p.uhid AS patient_uhid,

@@ -213,7 +213,7 @@ async function updatePmSchedule(id, data) {
   const { status, completion_notes, next_due_date } = data;
   const result = await pool.query(
     `UPDATE asset_preventive_maintenances
-     SET 
+     SET
        status = COALESCE($2, status),
        completion_notes = COALESCE($3, completion_notes),
        last_completed_date = CASE WHEN $2 = 'completed' THEN CURRENT_DATE ELSE last_completed_date END,
@@ -299,7 +299,7 @@ async function updateBreakdownTicket(id, data) {
 
     const ticketRes = await client.query(
       `UPDATE asset_breakdown_tickets
-       SET 
+       SET
          status = COALESCE($2, status),
          root_cause = COALESCE($3, root_cause),
          action_taken = COALESCE($4, action_taken),

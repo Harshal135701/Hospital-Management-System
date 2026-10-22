@@ -71,7 +71,7 @@ async function getAdmissions(filters = {}) {
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const query = `
-    SELECT 
+    SELECT
       da.*,
       p.full_name AS patient_name,
       p.uhid AS patient_uhid,
@@ -93,7 +93,7 @@ async function getAdmissions(filters = {}) {
 
 async function getAdmissionById(id) {
   const query = `
-    SELECT 
+    SELECT
       da.*,
       p.full_name AS patient_name,
       p.uhid AS patient_uhid,
@@ -116,7 +116,7 @@ async function getAdmissionById(id) {
 async function updateAdmissionStatus(id, status) {
   const query = `
     UPDATE daycare_admissions
-    SET 
+    SET
       status = $2,
       admitted_at = CASE WHEN $2 = 'admitted' AND admitted_at IS NULL THEN NOW() ELSE admitted_at END,
       discharged_at = CASE WHEN $2 = 'discharged' THEN NOW() ELSE discharged_at END,

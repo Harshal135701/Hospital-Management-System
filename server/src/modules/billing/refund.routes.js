@@ -1,12 +1,18 @@
 
 const express = require("express");
 const controller = require("./refund.controller");
+const {
+  authenticateToken,
+  requireRoles,
+} = require("../../middleware/auth.middleware");
 
 const router = express.Router();
 
-router.post("/", controller.requestRefund);
-router.get("/", controller.listRefunds);
-router.get("/:refundId", controller.getRefundById);
-router.patch("/:refundId/status", controller.updateRefundStatus);
+router.use(authenticateToken);
+
+router.post("/", requireRoles("receptionist", "super_admin"), controller.requestRefund);
+router.get("/", requireRoles("receptionist", "super_admin"), controller.listRefunds);
+router.get("/:refundId", requireRoles("receptionist", "super_admin"), controller.getRefundById);
+router.patch("/:refundId/status", requireRoles("super_admin"), controller.updateRefundStatus);
 
 module.exports = router;

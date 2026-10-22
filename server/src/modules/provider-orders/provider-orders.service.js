@@ -79,10 +79,15 @@ async function createOrder(data, currentUser = {}) {
   const encounterId = data.encounter_id || data.encounterId;
   const encounter = await validateEncounter(encounterId);
 
-  const orderedBy =
-    currentUser.role === "clinician_doctor"
-      ? (currentUser.doctor_id || encounter.doctor_id)
-      : encounter.doctor_id;
+  let orderedBy;
+  if (currentUser.role === "clinician_doctor") {
+    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden("You are not authorized to create orders for another doctor's encounter");
+    }
+    orderedBy = currentUser.doctor_id;
+  } else {
+    orderedBy = encounter.doctor_id;
+  }
 
   const orderType = data.order_type && ORDER_TYPES.includes(data.order_type)
     ? data.order_type
@@ -121,10 +126,15 @@ async function createOrdersBatch(data, currentUser = {}) {
   const encounterId = data.encounter_id || data.encounterId;
   const encounter = await validateEncounter(encounterId);
 
-  const orderedBy =
-    currentUser.role === "clinician_doctor"
-      ? (currentUser.doctor_id || encounter.doctor_id)
-      : encounter.doctor_id;
+  let orderedBy;
+  if (currentUser.role === "clinician_doctor") {
+    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden("You are not authorized to create orders for another doctor's encounter");
+    }
+    orderedBy = currentUser.doctor_id;
+  } else {
+    orderedBy = encounter.doctor_id;
+  }
 
   const batchPriority = normalizePriority(data.priority);
   const commonInstructions = [data.indication, data.instructions].filter(Boolean).join('; ');
@@ -133,7 +143,6 @@ async function createOrdersBatch(data, currentUser = {}) {
   if (items.length === 0) {
     throw ApiError.badRequest("At least one test order is required");
   }
-
   const client = await repository.pool.connect();
   try {
     await client.query('BEGIN');

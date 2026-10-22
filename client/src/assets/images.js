@@ -33,6 +33,10 @@ import bloodCentrifugeLocal from './images/blood-centrifuge.jpg';
 import ambulanceLocal from './images/ambulance.jpg';
 import familyCareLocal from './images/family-care.jpg';
 
+import dayCareWardLocal from './images/daycare-ward.png';
+import dietKitchenLocal from './images/diet-kitchen.jpg';
+import emrRecordsLocal from './images/emr-records.jpg';
+
 // Elegant SVG fallback placeholder (prevents browser broken-image icons or ugly alt text blowups)
 export const CLINICAL_FALLBACK_SVG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23EAF8F7'/%3E%3Cpath d='M200 120v60m-30-30h60' stroke='%23087F8C' stroke-width='6' stroke-linecap='round'/%3E%3Ctext x='200' y='210' font-family='sans-serif' font-size='13' font-weight='600' fill='%23087F8C' text-anchor='middle'%3EMedicsPrime Clinical Context%3C/text%3E%3C/svg%3E";
 
@@ -68,7 +72,12 @@ export const HEALTHCARE_IMAGES = {
   modernClinic: modernClinicLocal,
   hospitalReception: hospitalReceptionLocal,
   inpatientWardBed: hospitalWardBedLocal,
-  hospitalRoomPrivate: hospitalRoomPrivateLocal
+  hospitalRoomPrivate: hospitalRoomPrivateLocal,
+
+  // Category G: Day Care, Diet & Clinical Records
+  dayCareWard: dayCareWardLocal,
+  dietKitchen: dietKitchenLocal,
+  emrRecords: emrRecordsLocal
 };
 
 /**

@@ -110,6 +110,7 @@ export const AppShell = ({
             { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
             { id: 'clinical:orders', label: 'Orders (CPOE)' },
             { id: 'clinical:notes', label: 'Clinical Progress Notes' }
+
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },

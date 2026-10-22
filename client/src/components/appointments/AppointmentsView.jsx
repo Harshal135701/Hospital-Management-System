@@ -8,6 +8,9 @@ import { DoctorRosterView } from './DoctorRosterView';
 import { TokenQueueDisplayView } from './TokenQueueDisplayView';
 import { RemindersAlertsView } from './RemindersAlertsView';
 import { BillingView } from '../billing/BillingView';
+import { DayCareView } from '../daycare/DayCareView';
+import { DietView } from '../diet/DietView';
+import { EmrView } from '../emr/EmrView';
 import { SubmodulesView } from './SubmodulesView';
 import { MODULE_GROUPS, SUBMODULES } from './submoduleRegistry';
 
@@ -116,6 +119,33 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
         if (activeSubmodule.id.startsWith('4.')) {
           return (
             <BillingView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 8 Day Care submodules
+        if (activeSubmodule.id.startsWith('8.')) {
+          return (
+            <DayCareView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 9 Diet & Nutrition submodules
+        if (activeSubmodule.id.startsWith('9.')) {
+          return (
+            <DietView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 12 EMR Records submodules
+        if (activeSubmodule.id.startsWith('12.')) {
+          return (
+            <EmrView
               initialSubtab={activeSubmodule.id}
               onNavigate={handleSelectSubmodule}
             />

@@ -37,22 +37,13 @@ async function createEncounter(data, currentUser = {}) {
   // 4. Record-level doctor assignment
   let doctorId;
   if (currentUser.role === 'clinician_doctor') {
-    if (currentUser.doctor_id) {
-      if (appointment.doctor_id && String(appointment.doctor_id) !== String(currentUser.doctor_id)) {
-        // If doctor starts an encounter assigned to them or unassigned
-        // Allow if super_admin or matches appointment doctor
-        if (currentUser.role !== 'super_admin') {
-          // Verify doctor is authorized for this department or appointment
-          doctorId = appointment.doctor_id;
-        } else {
-          doctorId = appointment.doctor_id || currentUser.doctor_id;
-        }
-      } else {
-        doctorId = currentUser.doctor_id;
-      }
-    } else {
-      doctorId = appointment.doctor_id;
+    if (!currentUser.doctor_id) {
+      throw ApiError.forbidden('Clinician account is not linked to an active doctor profile');
     }
+    if (appointment.doctor_id && String(appointment.doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden('You are not authorized to start a consultation for another doctor\'s appointment');
+    }
+    doctorId = currentUser.doctor_id;
   } else {
     doctorId = appointment.doctor_id;
   }
@@ -166,6 +157,11 @@ async function updateEncounter(id, data = {}, currentUser = {}) {
     throw ApiError.notFound('Consultation encounter not found');
   }
 
+  if (currentUser.role === 'clinician_doctor') {
+    if (!currentUser.doctor_id || String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden('You are not authorized to update another clinician\'s consultation encounter');
+    }
+  }
   if (encounter.status === 'completed' && data.status !== 'completed') {
     throw ApiError.conflict('Completed consultations cannot be modified directly');
   }

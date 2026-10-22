@@ -1581,6 +1581,3 @@ export const ClinicalService = {
     }
   },
 };
-
-
-

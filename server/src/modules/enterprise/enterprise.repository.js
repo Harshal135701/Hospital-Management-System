@@ -42,7 +42,7 @@ async function createHospital(data) {
 
 async function getHospitals() {
   const query = `
-    SELECT 
+    SELECT
       eh.*,
       COALESCE(
         json_agg(eb.*) FILTER (WHERE eb.id IS NOT NULL),
@@ -159,7 +159,7 @@ async function getClinics(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       ec.*,
       dep.name AS department_name,
       eb.branch_name,
@@ -245,7 +245,7 @@ async function updateDoctor(id, data) {
   const { full_name, mobile, department_id, room_id, is_active } = data;
   const result = await pool.query(
     `UPDATE doctors
-     SET 
+     SET
        full_name = COALESCE($2, full_name),
        mobile = COALESCE($3, mobile),
        department_id = COALESCE($4, department_id),
@@ -308,7 +308,7 @@ async function updateService(id, data) {
   const { service_name, category, standard_rate, tax_percent, is_active } = data;
   const result = await pool.query(
     `UPDATE enterprise_services
-     SET 
+     SET
        service_name = COALESCE($2, service_name),
        category = COALESCE($3, category),
        standard_rate = COALESCE($4, standard_rate),
@@ -369,7 +369,7 @@ async function getCorporateTariffs(filters = {}) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const query = `
-    SELECT 
+    SELECT
       ect.*,
       es.service_name,
       es.service_code,
@@ -387,7 +387,7 @@ async function updateCorporateTariff(id, data) {
   const { agreed_rate, discount_percent, end_date, is_active } = data;
   const result = await pool.query(
     `UPDATE enterprise_corporate_tariffs
-     SET 
+     SET
        agreed_rate = COALESCE($2, agreed_rate),
        discount_percent = COALESCE($3, discount_percent),
        end_date = COALESCE($4, end_date),

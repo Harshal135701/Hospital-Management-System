@@ -1,11 +1,32 @@
 const repository = require("./emr.repository");
 const ApiError = require("../../utils/ApiError");
 
-async function createPrescription(data) {
+async function createPrescription(data, currentUser = {}) {
   if (!data.patient_id) throw ApiError.badRequest("patient_id is required");
   if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
     throw ApiError.badRequest("At least one prescription medication item is required");
   }
+
+  let doctorId;
+  if (currentUser.role === "clinician_doctor") {
+    if (!currentUser.doctor_id) {
+      throw ApiError.forbidden("Clinician account is not linked to an active doctor profile");
+    }
+    if (data.doctor_id && String(data.doctor_id) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden("Clinician doctors may only issue prescriptions under their own doctor identity");
+    }
+    if (data.prescribed_by && String(data.prescribed_by) !== String(currentUser.doctor_id)) {
+      throw ApiError.forbidden("Clinician doctors may only issue prescriptions under their own doctor identity");
+    }
+    doctorId = currentUser.doctor_id;
+  } else if (currentUser.role === "super_admin") {
+    doctorId = data.doctor_id || data.prescribed_by || currentUser.doctor_id || null;
+  } else {
+    throw ApiError.forbidden("Only clinician doctors and administrators may issue prescriptions");
+  }
+
+  data.doctor_id = doctorId;
+  data.prescribed_by = doctorId;
 
   if (!data.rx_number) {
     data.rx_number = `RX-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
