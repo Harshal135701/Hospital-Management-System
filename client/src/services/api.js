@@ -1581,3 +1581,182 @@ export const ClinicalService = {
     }
   },
 };
+
+
+// Module 7 — Credit Billing / Insurance & TPA Services
+export const InsuranceTpaService = {
+  // 7.1 Pre-Authorizations
+  async getPreauthorizations(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/preauthorizations${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getPreauthorizations fallback:', err.message);
+      return [];
+    }
+  },
+  async getPreauthorizationById(id) {
+    const res = await apiFetch(`/insurance/preauthorizations/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createPreauthorization(data) {
+    const res = await apiFetch('/insurance/preauthorizations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async submitPreauthorization(id) {
+    const res = await apiFetch(`/insurance/preauthorizations/${encodeURIComponent(id)}/submit`, {
+      method: 'PATCH'
+    });
+    return res?.data;
+  },
+  async recordPreauthDecision(id, data) {
+    const res = await apiFetch(`/insurance/preauthorizations/${encodeURIComponent(id)}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.2 Enhancement Requests
+  async getEnhancements(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/enhancements${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getEnhancements fallback:', err.message);
+      return [];
+    }
+  },
+  async getEnhancementById(id) {
+    const res = await apiFetch(`/insurance/enhancements/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createEnhancement(data) {
+    const res = await apiFetch('/insurance/enhancements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async submitEnhancement(id) {
+    const res = await apiFetch(`/insurance/enhancements/${encodeURIComponent(id)}/submit`, {
+      method: 'PATCH'
+    });
+    return res?.data;
+  },
+  async recordEnhancementDecision(id, data) {
+    const res = await apiFetch(`/insurance/enhancements/${encodeURIComponent(id)}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.3 Claim Dossiers
+  async getClaimDossiers(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/claims${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getClaimDossiers fallback:', err.message);
+      return [];
+    }
+  },
+  async getClaimDossierById(id) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createClaimDossier(data) {
+    const res = await apiFetch('/insurance/claims', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async compileClaimDossier(id) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}/compile`, {
+      method: 'PATCH'
+    });
+    return res?.data;
+  },
+  async submitClaimDossier(id, data = {}) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}/submit`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async recordClaimDecision(id, data) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.4 Patient Responsibilities (Co-Payments & Deductibles)
+  async getResponsibilities(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/responsibilities${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getResponsibilities fallback:', err.message);
+      return [];
+    }
+  },
+  async getResponsibilityById(id) {
+    const res = await apiFetch(`/insurance/responsibilities/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createResponsibility(data) {
+    const res = await apiFetch('/insurance/responsibilities', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async collectResponsibilityPayment(id, data) {
+    const res = await apiFetch(`/insurance/responsibilities/${encodeURIComponent(id)}/collect`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.5 TPA Reconciliations & Remittance Posting
+  async getReconciliations(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/reconciliations${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getReconciliations fallback:', err.message);
+      return [];
+    }
+  },
+  async getReconciliationById(id) {
+    const res = await apiFetch(`/insurance/reconciliations/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createReconciliation(data) {
+    const res = await apiFetch('/insurance/reconciliations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async postReconciliationPayment(id, data) {
+    const res = await apiFetch(`/insurance/reconciliations/${encodeURIComponent(id)}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  }
+};

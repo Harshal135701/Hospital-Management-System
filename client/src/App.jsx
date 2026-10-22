@@ -7,6 +7,7 @@ import { PatientsView } from './components/patients/PatientsView';
 import { AppointmentsView } from './components/appointments/AppointmentsView';
 import { ClinicalsView } from './components/clinicals/ClinicalsView';
 import { BillingView } from './components/billing/BillingView';
+import { CreditBillingView } from './components/credit-billing/CreditBillingView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { WardsView } from './components/wards/WardsView';
@@ -45,6 +46,10 @@ export function App() {
       case 'billing':
         return <BillingView initialSubtab={routeSubtab || '4.1'} onNavigate={setCurrentRoute} />;
 
+      case 'credit-billing':
+      case 'insurance':
+        return <CreditBillingView initialSubtab={routeSubtab || '7.1'} onNavigate={setCurrentRoute} />;
+
       case 'clinical':
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
@@ -64,6 +69,9 @@ export function App() {
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('7.')) {
+          return <CreditBillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('8.')) {
           return <DayCareView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

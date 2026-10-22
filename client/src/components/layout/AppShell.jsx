@@ -75,6 +75,13 @@ export const AppShell = ({
     }
   }, [currentRoute]);
 
+  // Auto-expand Credit Billing when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'credit-billing' || currentRoute.startsWith('credit-billing:'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, 'credit-billing': true }));
+    }
+  }, [currentRoute]);
+
   // Auto-expand active group in Appointment hierarchy when currentRoute changes
   useEffect(() => {
     if (typeof currentRoute === 'string' && currentRoute.startsWith('appointments:')) {
@@ -128,6 +135,19 @@ export const AppShell = ({
           icon: Receipt,
           badge: '16 Modules',
           isBillingHierarchy: true
+        },
+        {
+          id: 'credit-billing',
+          label: 'Credit Billing',
+          icon: ShieldCheck,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'credit-billing:7.1', label: '7.1 TPA Pre-Authorization' },
+            { id: 'credit-billing:7.2', label: '7.2 Enhancement Requests' },
+            { id: 'credit-billing:7.3', label: '7.3 Claim Dossiers' },
+            { id: 'credit-billing:7.4', label: '7.4 Co-Pay & Deductibles' },
+            { id: 'credit-billing:7.5', label: '7.5 TPA Reconciliation' }
+          ]
         },
         {
           id: 'clinical',
@@ -941,7 +961,8 @@ export const AppShell = ({
                           {item.subItems.map((sub) => {
                             const isSubActive =
                               currentRoute === sub.id ||
-                              (sub.id === 'clinical:consultation' && currentRoute === 'clinical');
+                              (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
+                              (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing');
                             return (
                               <button
                                 type="button"
