@@ -14,6 +14,7 @@ const patientRoutes = require("./modules/patients/patient.routes");
 const bloodBankRoutes = require("./modules/bloodbank/bloodbank.routes");
 const doctorRoutes = require("./modules/doctors/doctor.routes");
 const departmentRoutes = require("./modules/departments/department.routes");
+const roomRoutes = require("./modules/rooms/room.routes");
 
 // Appointments, blood requests, rosters, queue & notifications
 const appointmentRoutes = require("./modules/appointments/appointment.routes");
@@ -30,6 +31,7 @@ const dischargeBillingRoutes = require("./modules/billing/discharge-billing.rout
 const depositRoutes = require("./modules/billing/deposit.routes");
 const refundRoutes = require("./modules/billing/refund.routes");
 const settlementRoutes = require("./modules/billing/settlement.routes");
+const donorCompensationRoutes = require("./modules/billing/donor-compensation.routes");
 
 // Clinical consultation suite
 const consultationRoutes = require("./modules/consultations/consultation.routes");
@@ -84,13 +86,13 @@ app.get(
           "SELECT id, name, code, description FROM departments WHERE is_active = true ORDER BY name"
         ),
         pool.query(
-          "SELECT d.id, d.full_name, d.employee_code, d.department_id, dep.name AS department_name, d.room_id FROM doctors d JOIN departments dep ON dep.id = d.department_id WHERE d.is_active = true ORDER BY d.full_name"
+          "SELECT d.id, d.full_name, d.employee_code, d.department_id, dep.name AS department_name, d.room_id, d.specialty, d.consultation_fee FROM doctors d JOIN departments dep ON dep.id = d.department_id WHERE d.is_active = true ORDER BY d.full_name"
         ),
         pool.query(
           "SELECT id, uhid, full_name, gender FROM patients ORDER BY full_name"
         ),
         pool.query(
-          "SELECT id, room_number, name, floor FROM rooms WHERE is_active = true ORDER BY room_number"
+          "SELECT id, room_number, name, floor, room_type, capacity, daily_tariff FROM rooms WHERE is_active = true ORDER BY room_number"
         ),
       ]);
 
@@ -115,6 +117,7 @@ app.use("/api/patients", patientRoutes);
 app.use("/api/blood-bank", bloodBankRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/rooms", roomRoutes);
 
 // Appointments & Queue Management
 app.use("/api/appointments", appointmentRoutes);
@@ -130,6 +133,7 @@ app.use("/api/billing/ipd", dischargeBillingRoutes);
 app.use("/api/billing/deposits", depositRoutes);
 app.use("/api/billing/refunds", refundRoutes);
 app.use("/api/billing/settlement", settlementRoutes);
+app.use("/api/billing/donor-compensations", donorCompensationRoutes);
 
 // Clinical Consultation Desk Suite
 app.use("/api/consultations", consultationRoutes);

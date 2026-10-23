@@ -17,6 +17,8 @@ import {
 import { Card, Button, Badge, Modal, Input, Select } from '../../common/UIPrimitives';
 import { BillingOpsService } from '../../../services/api';
 import { formatINR, formatDateIN, formatDateTimeIN } from '../../../utils/formatters';
+import { calculateDepositAvailableBalance, isDuplicateTransaction } from '../../../utils/billingCalculations';
+import { useHospitalState } from '../../../context/HospitalStateContext';
 
 const DEFAULT_DEPOSITS = [
   {
@@ -26,6 +28,7 @@ const DEFAULT_DEPOSITS = [
     patient_uhid: 'UHID-2026-1180',
     admission_number: 'ADM-2026-0048',
     amount: 25000,
+    allocated_amount: 25000,
     deposit_type: 'Planned Surgery Advance',
     payment_mode: 'Credit Card',
     txn_ref: 'CC-TXN-9014',
@@ -41,6 +44,7 @@ const DEFAULT_DEPOSITS = [
     patient_uhid: 'UHID-2026-0902',
     admission_number: 'ADM-2026-0049',
     amount: 50000,
+    allocated_amount: 50000,
     deposit_type: 'ICU High-Dependency Reserve',
     payment_mode: 'NEFT Bank Transfer',
     txn_ref: 'NEFT-AXIS-8812',
@@ -56,6 +60,7 @@ const DEFAULT_DEPOSITS = [
     patient_uhid: 'UHID-2026-0814',
     admission_number: 'ADM-2026-0052',
     amount: 30000,
+    allocated_amount: 0,
     deposit_type: 'IVF Cycle OPU/ICSI Advance',
     payment_mode: 'UPI QR',
     txn_ref: 'UPI-HDFC-9912',
@@ -74,17 +79,21 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [successBanner, setSuccessBanner] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
 
-  // Deposit Form State
+  const hospitalState = useHospitalState();
+  const inpatientAdmissions = hospitalState?.inpatientAdmissions || [];
+
+  // Deposit Form State (Clean empty defaults with guided placeholders)
   const [form, setForm] = useState({
-    patientName: 'Devika Sengupta',
-    patientUhid: 'UHID-2026-0814',
-    admissionRef: 'ADM-2026-0052',
-    amount: '20000',
+    patientName: '',
+    patientUhid: '',
+    admissionRef: '',
+    amount: '',
     depositType: 'Surgery / Procedure Advance',
     paymentMode: 'upi',
-    txnRef: 'UPI-TXN-2026-8812',
-    remarks: 'Advance deposit towards inpatient clinical bed allocation'
+    txnRef: '',
+    remarks: ''
   });
 
   const filteredDeposits = useMemo(() => {
@@ -99,15 +108,30 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
     });
   }, [deposits, searchFilter]);
 
-  // Overall Statistics
+  // Overall Statistics & Dynamic Trust Balance
   const totalDepositsCollected = useMemo(() => {
     return deposits.reduce((acc, d) => acc + (d.amount || 0), 0);
   }, [deposits]);
 
+  const totalAllocated = useMemo(() => {
+    return deposits.reduce((acc, d) => acc + (d.allocated_amount || 0), 0);
+  }, [deposits]);
+
+  const totalAvailableBalance = useMemo(() => {
+    return deposits.reduce((acc, d) => acc + calculateDepositAvailableBalance(d), 0);
+  }, [deposits]);
+
   const handleDepositSubmit = async (e) => {
     e.preventDefault();
+    setFormError(null);
     const amt = parseFloat(form.amount) || 0;
     if (amt <= 0) return;
+
+    // Check for duplicate transaction reference
+    if (form.txnRef && isDuplicateTransaction(deposits, { txn_ref: form.txnRef })) {
+      setFormError(`Transaction reference "${form.txnRef}" has already been recorded in this ledger.`);
+      return;
+    }
 
     setIsSubmitting(true);
     const newDep = {
@@ -117,6 +141,7 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
       patient_uhid: form.patientUhid,
       admission_number: form.admissionRef,
       amount: amt,
+      allocated_amount: 0,
       deposit_type: form.depositType,
       payment_mode: form.paymentMode.toUpperCase(),
       txn_ref: form.txnRef,
@@ -192,7 +217,7 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
           variant="primary"
           size="sm"
           icon={Plus}
-          onClick={() => setIsDepositModalOpen(true)}
+          onClick={() => { setFormError(null); setIsDepositModalOpen(true); }}
         >
           Collect Advance Deposit
         </Button>
@@ -236,7 +261,7 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
             Allocated to Inpatient Bills
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success)', marginTop: '4px' }}>
-            {formatINR(75000)}
+            {formatINR(totalAllocated)}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
             Offsets against running bed tariffs
@@ -248,7 +273,7 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
             Unutilized Advance Credit
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0369A1', marginTop: '4px' }}>
-            {formatINR(30000)}
+            {formatINR(totalAvailableBalance)}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
             Available for discharge adjustments
@@ -286,7 +311,14 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
               </tr>
             </thead>
             <tbody>
-              {filteredDeposits.map((dep) => (
+              {filteredDeposits.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--color-text-muted)' }}>
+                    No advance deposit records found matching "{searchFilter}".
+                  </td>
+                </tr>
+              ) : (
+                filteredDeposits.map((dep) => (
                 <tr key={dep.id} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
                   <td style={{ padding: '10px', fontWeight: '700', color: 'var(--color-primary-teal)' }}>
                     {dep.receipt_number}
@@ -323,7 +355,7 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
                     </Button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
@@ -337,21 +369,55 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
         size="md"
       >
         <form onSubmit={handleDepositSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {formError && (
+            <div style={{ padding: '8px 12px', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 'var(--radius-md)', color: '#DC2626', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={15} />
+              <span>{formError}</span>
+            </div>
+          )}
+          {inpatientAdmissions.length > 0 && (
+            <Select
+              label="Quick-Select Active Admission (Autofills Patient)"
+              value={form.admissionRef}
+              onChange={(e) => {
+                const adm = inpatientAdmissions.find(a => a.admission_number === e.target.value);
+                if (adm) {
+                  setForm(prev => ({
+                    ...prev,
+                    admissionRef: adm.admission_number,
+                    patientName: adm.patient_name,
+                    patientUhid: adm.patient_uhid
+                  }));
+                }
+              }}
+              options={[
+                { value: '', label: '-- Select Inpatient Admission or Enter Below --' },
+                ...inpatientAdmissions.map(a => ({
+                  value: a.admission_number,
+                  label: `${a.admission_number} — ${a.patient_name} (${a.patient_uhid})`
+                }))
+              ]}
+            />
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             <Input
               label="Patient Name"
+              placeholder="e.g. Devika Sengupta"
               value={form.patientName}
               onChange={(e) => setForm({ ...form, patientName: e.target.value })}
               required
             />
             <Input
               label="Patient UHID"
+              placeholder="e.g. UHID-2026-0814"
               value={form.patientUhid}
               onChange={(e) => setForm({ ...form, patientUhid: e.target.value })}
               required
             />
             <Input
               label="Admission Reference #"
+              placeholder="e.g. ADM-2026-0052"
               value={form.admissionRef}
               onChange={(e) => setForm({ ...form, admissionRef: e.target.value })}
               required
@@ -360,27 +426,25 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
               label="Advance Amount (₹)"
               type="number"
               min="100"
+              placeholder="e.g. 25000"
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               required
             />
-            <div>
-              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
-                Payment Method
-              </label>
-              <select
-                value={form.paymentMode}
-                onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontSize: 'var(--font-size-sm)' }}
-              >
-                <option value="upi">UPI Dynamic QR</option>
-                <option value="card">Credit / Debit Card</option>
-                <option value="cash">Cash Counter</option>
-                <option value="neft">NEFT / RTGS Wire</option>
-              </select>
-            </div>
+            <Select
+              label="Payment Method"
+              value={form.paymentMode}
+              onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}
+              options={[
+                { value: 'upi', label: 'UPI Dynamic QR' },
+                { value: 'card', label: 'Credit / Debit Card' },
+                { value: 'cash', label: 'Cash Counter' },
+                { value: 'neft', label: 'NEFT / RTGS Wire' }
+              ]}
+            />
             <Input
               label="Transaction / Bank Reference ID"
+              placeholder="e.g. UPI-TXN-2026-8812"
               value={form.txnRef}
               onChange={(e) => setForm({ ...form, txnRef: e.target.value })}
               required
@@ -402,6 +466,68 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
             </Button>
           </div>
         </form>
+      </Modal>
+      {/* Printable Advance Money Receipt Modal */}
+      <Modal
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
+        title="Advance Deposit Money Receipt"
+        size="md"
+      >
+        {selectedReceipt && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.82rem',
+                lineHeight: 1.5
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #087F8C', paddingBottom: '10px', marginBottom: '12px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#087F8C', fontWeight: '800', fontSize: '1.1rem' }}>APEX CENTRAL HOSPITAL</h3>
+                  <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>Advance Cashier & Trust Collections Desk</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: '700', color: '#087F8C' }}>{selectedReceipt.receipt_number}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6B7280' }}>Date: {formatDateTimeIN(selectedReceipt.date)}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px', backgroundColor: '#F9FAFB', padding: '10px', borderRadius: '4px' }}>
+                <div><strong>Patient Name:</strong> {selectedReceipt.patient_name}</div>
+                <div><strong>UHID:</strong> {selectedReceipt.patient_uhid}</div>
+                <div><strong>Admission Ref:</strong> {selectedReceipt.admission_number}</div>
+                <div><strong>Payment Mode:</strong> {selectedReceipt.payment_mode}</div>
+                {selectedReceipt.txn_ref && <div><strong>Txn Ref:</strong> {selectedReceipt.txn_ref}</div>}
+                <div><strong>Received By:</strong> {selectedReceipt.received_by}</div>
+              </div>
+
+              <div style={{ borderTop: '1px dashed #D1D5DB', borderBottom: '1.5px solid #111827', padding: '10px 0', margin: '8px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: '700' }}>DEPOSIT AMOUNT RECEIVED:</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#087F8C' }}>{formatINR(selectedReceipt.amount)}</span>
+              </div>
+
+              {selectedReceipt.notes && (
+                <div style={{ fontSize: '0.75rem', color: '#4B5563', fontStyle: 'italic', marginTop: '6px' }}>
+                  Notes: {selectedReceipt.notes}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <Button variant="outline" size="sm" onClick={() => setIsReceiptModalOpen(false)}>
+                Close
+              </Button>
+              <Button variant="primary" size="sm" icon={Printer} onClick={() => window.print()}>
+                Print Money Receipt
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

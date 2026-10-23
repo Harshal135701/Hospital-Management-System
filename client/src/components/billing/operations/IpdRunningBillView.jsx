@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge, Modal, Input, Select } from '../../common/UIPrimitives';
 import { formatINR, formatDateIN, formatDateTimeIN } from '../../../utils/formatters';
+import { useHospitalState } from '../../../context/HospitalStateContext';
+import { calculateIpdRoomStayBilling } from '../../../utils/ipdRoomBilling';
+import { calculateBillFinancials, isDuplicateTransaction } from '../../../utils/billingCalculations';
 
 const DEFAULT_IPD_RUNNING = [
   {
@@ -25,19 +28,37 @@ const DEFAULT_IPD_RUNNING = [
     patient_name: 'Aniruddha Sen',
     patient_uhid: 'UHID-2026-0640',
     admission_number: 'ADM-2026-0048',
-    admission_date: '2026-10-18',
-    ward_bed: 'ICU Bed 02',
-    ward_type: 'Intensive Care Unit (ICU)',
-    days_stay: 4,
+    admission_date: '2026-10-15',
+    ward_bed: 'General Ward Bed 08',
+    ward_type: 'General Ward (Transferred from ICU Bed 02)',
+    days_stay: 8,
     attending_doc: 'Dr. Arindam Mitra (Cardiothoracic)',
-    room_charges: 24000,
+    room_charges: 25000,
     pharmacy_charges: 18400,
     procedure_charges: 35000,
     lab_charges: 12500,
     nursing_charges: 6000,
     advance_paid: 50000,
     interim_payments: 15000,
-    status: 'active'
+    status: 'active',
+    stays: [
+      {
+        id: 'stay-01',
+        ward_code: 'ICU',
+        ward_name: 'Intensive Care Unit (ICU Bed 02)',
+        daily_rate: 5000,
+        start_time: '2026-10-15T10:15:00',
+        end_time: '2026-10-18T14:30:00'
+      },
+      {
+        id: 'stay-02',
+        ward_code: 'GEN',
+        ward_name: 'General Ward Bed 08',
+        daily_rate: 2000,
+        start_time: '2026-10-18T14:30:00',
+        end_time: '2026-10-22T23:59:59'
+      }
+    ]
   },
   {
     id: 'ipd-02',
@@ -57,7 +78,17 @@ const DEFAULT_IPD_RUNNING = [
     nursing_charges: 3000,
     advance_paid: 75000,
     interim_payments: 0,
-    status: 'active'
+    status: 'active',
+    stays: [
+      {
+        id: 'stay-02-01',
+        ward_code: 'DLX',
+        ward_name: 'Private Deluxe Ward (CT Post-Op 201)',
+        daily_rate: 4500,
+        start_time: '2026-10-20T11:00:00',
+        end_time: '2026-10-22T23:59:59'
+      }
+    ]
   },
   {
     id: 'ipd-03',
@@ -77,23 +108,60 @@ const DEFAULT_IPD_RUNNING = [
     nursing_charges: 1500,
     advance_paid: 25000,
     interim_payments: 0,
-    status: 'active'
+    status: 'active',
+    stays: [
+      {
+        id: 'stay-03-01',
+        ward_code: 'SEMI',
+        ward_name: 'Semi-Private Sharing (Orthopedic Bed 08)',
+        daily_rate: 3500,
+        start_time: '2026-10-21T09:30:00',
+        end_time: '2026-10-22T23:59:59'
+      }
+    ]
   }
 ];
 
 export function IpdRunningBillView({ onOpenReceiptModal }) {
+  const hospitalState = useHospitalState();
+  const roomBillingPolicy = hospitalState?.roomBillingPolicy || { transfer_day_rule: 'MIDNIGHT_LOCATION' };
+  const payments = hospitalState?.payments || [];
+  const updatePayments = hospitalState?.updatePayments;
+
   const [inpatientBills, setInpatientBills] = useState(DEFAULT_IPD_RUNNING);
   const [selectedPatient, setSelectedPatient] = useState(DEFAULT_IPD_RUNNING[0]);
+
+  // Dynamic Room Stay Calculation with Transfer-Day Deduplication
+  const roomCalculation = useMemo(() => {
+    if (!selectedPatient?.stays || selectedPatient.stays.length === 0) {
+      return { totalDays: selectedPatient?.days_stay || 1, totalRoomCharges: selectedPatient?.room_charges || 0, staysBreakdown: [], dailyAuditTrail: [] };
+    }
+    return calculateIpdRoomStayBilling(selectedPatient.stays, roomBillingPolicy, '2026-10-22T23:59:59');
+  }, [selectedPatient, roomBillingPolicy]);
   const [searchFilter, setSearchFilter] = useState('');
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Add Special Service State
+  const [isSpecialServiceModalOpen, setIsSpecialServiceModalOpen] = useState(false);
+  const [specialServiceForm, setSpecialServiceForm] = useState({
+    name: 'ABCD - Bedside Special Clinical Care',
+    rate: 400,
+    qty: 1,
+    notes: 'Prescribed attending specialist monitoring'
+  });
   const [paymentAmount, setPaymentAmount] = useState('10000');
   const [paymentMode, setPaymentMode] = useState('card');
   const [successBanner, setSuccessBanner] = useState(null);
 
   const calculateTotalCharges = (item) => {
+    let roomCost = item.room_charges || 0;
+    if (item.stays && item.stays.length > 0) {
+      const calc = calculateIpdRoomStayBilling(item.stays, roomBillingPolicy, '2026-10-22T23:59:59');
+      if (calc.totalRoomCharges > 0) roomCost = calc.totalRoomCharges;
+    }
     return (
-      (item.room_charges || 0) +
+      roomCost +
       (item.pharmacy_charges || 0) +
       (item.procedure_charges || 0) +
       (item.lab_charges || 0) +
@@ -119,11 +187,69 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
     });
   }, [inpatientBills, searchFilter]);
 
+  const handleAddSpecialService = (e) => {
+    e.preventDefault();
+    if (!selectedPatient) return;
+    const rate = parseFloat(specialServiceForm.rate) || 0;
+    const qty = parseInt(specialServiceForm.qty) || 1;
+    const totalAdded = rate * qty;
+    if (totalAdded <= 0) return;
+
+    setInpatientBills(prev =>
+      prev.map(p =>
+        p.id === selectedPatient.id
+          ? {
+              ...p,
+              procedure_charges: (p.procedure_charges || 0) + totalAdded,
+              special_services: [
+                ...(p.special_services || []),
+                { name: specialServiceForm.name, rate, qty, total: totalAdded, date: new Date().toISOString() }
+              ]
+            }
+          : p
+      )
+    );
+
+    setSelectedPatient(prev => ({
+      ...prev,
+      procedure_charges: (prev.procedure_charges || 0) + totalAdded,
+      special_services: [
+        ...(prev.special_services || []),
+        { name: specialServiceForm.name, rate, qty, total: totalAdded, date: new Date().toISOString() }
+      ]
+    }));
+
+    setIsSpecialServiceModalOpen(false);
+    setSuccessBanner(`Special service '${specialServiceForm.name}' of ${formatINR(totalAdded)} billed to ${selectedPatient.patient_name}.`);
+    setTimeout(() => setSuccessBanner(null), 4000);
+  };
+
   const handleRecordPayment = (e) => {
     e.preventDefault();
     if (!selectedPatient) return;
     const amt = parseFloat(paymentAmount) || 0;
     if (amt <= 0) return;
+
+    const receiptNo = `RCP-IPD-${Date.now().toString().slice(-6)}`;
+    const newPaymentRecord = {
+      id: `pay-${Date.now()}`,
+      receipt_number: receiptNo,
+      bill_number: selectedPatient.bill_number,
+      admission_number: selectedPatient.admission_number,
+      patient_id: selectedPatient.patient_uhid,
+      patient_name: selectedPatient.patient_name,
+      patient_uhid: selectedPatient.patient_uhid,
+      amount: amt,
+      payment_mode: paymentMode.toUpperCase(),
+      timestamp: new Date().toISOString(),
+      cashier_id: 'CSH-01',
+      status: 'valid'
+    };
+
+    // Save to shared context payments ledger without overwriting history
+    if (typeof updatePayments === 'function') {
+      updatePayments(prev => [newPaymentRecord, ...(prev || [])]);
+    }
 
     setInpatientBills(prev =>
       prev.map(p =>
@@ -139,8 +265,17 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
     }));
 
     setIsPaymentModalOpen(false);
-    setSuccessBanner(`Interim payment of ${formatINR(amt)} credited to ${selectedPatient.patient_name}.`);
+    setSuccessBanner(`Interim payment receipt ${receiptNo} for ${formatINR(amt)} issued to ${selectedPatient.patient_name}.`);
     setTimeout(() => setSuccessBanner(null), 4000);
+
+    if (onOpenReceiptModal) {
+      onOpenReceiptModal({
+        ...newPaymentRecord,
+        title: 'Inpatient Interim Payment Receipt',
+        total_amount: amt,
+        paid_amount: amt
+      });
+    }
   };
 
   return (
@@ -271,9 +406,27 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <Card title={`Itemized Breakdown: ${selectedPatient.patient_name}`}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.82rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
-                <span>Room & Bed Charges ({selectedPatient.days_stay} Days):</span>
-                <span style={{ fontWeight: '600' }}>{formatINR(selectedPatient.room_charges)}</span>
+              <div style={{ padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Room & Bed Tariff ({roomCalculation.totalDays} Days Accrued):</span>
+                  <span style={{ fontWeight: '700' }}>{formatINR(roomCalculation.totalRoomCharges)}</span>
+                </div>
+                {roomCalculation.staysBreakdown.length > 1 && (
+                  <div style={{ marginTop: '6px', padding: '8px', backgroundColor: '#F8FAFC', borderRadius: '4px', fontSize: '0.74rem' }}>
+                    <div style={{ fontWeight: '600', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
+                      Ward Transfer Stay Segments:
+                    </div>
+                    {roomCalculation.staysBreakdown.map(s => (
+                      <div key={s.wardCode} style={{ display: 'flex', justifyContent: 'space-between', color: '#4B5563', padding: '2px 0' }}>
+                        <span>• {s.wardName} ({s.daysCharged}d @ {formatINR(s.dailyRate)}):</span>
+                        <span>{formatINR(s.totalCharge)}</span>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '4px', fontStyle: 'italic' }}>
+                      Transfer Day (18 Oct 2026): Billed once at midnight census location ({roomCalculation.staysBreakdown[1]?.wardName || 'General Ward'})
+                    </div>
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
                 <span>Physician & Specialist Rounds:</span>
@@ -323,7 +476,7 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1.2fr', gap: '8px', marginTop: '16px' }}>
               <Button
                 variant="outline"
                 size="sm"
@@ -331,6 +484,14 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
                 onClick={() => setIsStatementModalOpen(true)}
               >
                 Statement
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Plus}
+                onClick={() => setIsSpecialServiceModalOpen(true)}
+              >
+                + Special Service
               </Button>
               <Button
                 variant="primary"
@@ -444,8 +605,17 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
               </thead>
               <tbody>
                 <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
-                  <td style={{ padding: '6px' }}>Room & Nursing Bed Tariff ({selectedPatient.days_stay} Days)</td>
-                  <td style={{ textAlign: 'right', padding: '6px' }}>{formatINR(selectedPatient.room_charges)}</td>
+                  <td style={{ padding: '6px' }}>
+                    <div>Room & Nursing Bed Tariff ({roomCalculation.totalDays} Days)</div>
+                    {roomCalculation.staysBreakdown.length > 1 && (
+                      <div style={{ fontSize: '0.7rem', color: '#6B7280', marginTop: '2px' }}>
+                        {roomCalculation.staysBreakdown.map(s => `${s.wardName}: ${s.daysCharged} days @ ${formatINR(s.dailyRate)}`).join(' | ')}
+                        <br/>
+                        <em>Transfer date (18 Oct 2026): Charged once at midnight census location tariff without duplicate charge</em>
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ textAlign: 'right', padding: '6px', fontWeight: '600' }}>{formatINR(roomCalculation.totalRoomCharges)}</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
                   <td style={{ padding: '6px' }}>Consultant & Medical Officer Daily Visits</td>
@@ -494,6 +664,69 @@ export function IpdRunningBillView({ onOpenReceiptModal }) {
           </div>
         </div>
       </Modal>
+
+      {/* Add Special Service Modal */}
+      {isSpecialServiceModalOpen && (
+        <Modal
+          isOpen={isSpecialServiceModalOpen}
+          onClose={() => setIsSpecialServiceModalOpen(false)}
+          title="Add Special Clinical Service to Running Bill"
+          subtitle={`Billing service to ${selectedPatient.patient_name} (${selectedPatient.ward_bed})`}
+          maxWidth="500px"
+        >
+          <form onSubmit={handleAddSpecialService} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <Input
+              label="Service Description"
+              required
+              value={specialServiceForm.name}
+              onChange={(e) => setSpecialServiceForm({ ...specialServiceForm, name: e.target.value })}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="Tariff / Unit Rate (₹)"
+                type="number"
+                min="1"
+                required
+                value={specialServiceForm.rate}
+                onChange={(e) => setSpecialServiceForm({ ...specialServiceForm, rate: e.target.value })}
+              />
+
+              <Input
+                label="Quantity / Units"
+                type="number"
+                min="1"
+                required
+                value={specialServiceForm.qty}
+                onChange={(e) => setSpecialServiceForm({ ...specialServiceForm, qty: e.target.value })}
+              />
+            </div>
+
+            <Input
+              label="Clinical Remarks / Prescribing Doctor"
+              value={specialServiceForm.notes}
+              onChange={(e) => setSpecialServiceForm({ ...specialServiceForm, notes: e.target.value })}
+            />
+
+            <div style={{ padding: '10px 14px', backgroundColor: '#F8FBFB', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>Net Accrued Charge:</span>
+              <span style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--color-primary-teal)' }}>
+                {formatINR((parseFloat(specialServiceForm.rate) || 0) * (parseInt(specialServiceForm.qty) || 1))}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <Button type="button" variant="ghost" onClick={() => setIsSpecialServiceModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" icon={CheckCircle2}>
+                Add to Running Bill
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
     </div>
   );
 }

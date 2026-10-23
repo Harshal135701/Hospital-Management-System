@@ -27,9 +27,15 @@ import {
   Receipt,
   Layers,
   Egg,
-  Siren
+  Siren,
+  RotateCcw,
+  AlertTriangle,
+  Database,
+  Check,
+  Copy
 } from 'lucide-react';
-import { Button } from '../common/UIPrimitives';
+import { Button, Modal, Badge } from '../common/UIPrimitives';
+import { useHospitalState } from '../../context/HospitalStateContext';
 import { useAuth } from '../../context/AuthContext';
 import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
 import { BILLING_GROUPS } from '../billing/billingConstants';
@@ -40,6 +46,56 @@ export const AppShell = ({
   children
 }) => {
   const { user, isAuthenticated, logout, openLoginModal } = useAuth();
+  const { storageWarning, quarantineData, resetDemoData, dismissStorageWarning, retryPersistence } = useHospitalState();
+  const [isResetConfirmModalOpen, setIsResetConfirmModalOpen] = useState(false);
+  const [isQuarantineInspectModalOpen, setIsQuarantineInspectModalOpen] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState({});
+
+  const handleCopyRawPayload = async (incidentId, rawText) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard || !navigator.clipboard.writeText) {
+      setCopyFeedback(prev => ({
+        ...prev,
+        [incidentId]: { status: 'error', message: 'Clipboard API not supported' }
+      }));
+      setTimeout(() => {
+        setCopyFeedback(prev => {
+          const next = { ...prev };
+          delete next[incidentId];
+          return next;
+        });
+      }, 3000);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(rawText || '');
+      setCopyFeedback(prev => ({
+        ...prev,
+        [incidentId]: { status: 'success', message: 'Copied!' }
+      }));
+      setTimeout(() => {
+        setCopyFeedback(prev => {
+          const next = { ...prev };
+          delete next[incidentId];
+          return next;
+        });
+      }, 2000);
+    } catch (err) {
+      console.warn('[AppShell] Clipboard copy failed:', err);
+      setCopyFeedback(prev => ({
+        ...prev,
+        [incidentId]: { status: 'error', message: 'Copy denied by browser' }
+      }));
+      setTimeout(() => {
+        setCopyFeedback(prev => {
+          const next = { ...prev };
+          delete next[incidentId];
+          return next;
+        });
+      }, 3000);
+    }
+  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -47,19 +103,9 @@ export const AppShell = ({
     }
     return false;
   });
-  const [expandedSectionsManual, setExpandedSectionsManual] = useState({
-    appointments: true,
-    clinical: false,
-  });
-  const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({
-    '3': true,
-  });
-  const [expandedBillingGroups, setExpandedBillingGroups] = useState({
-    '1': true,
-    '2': false,
-    '3': false,
-    '4': true,
-  });
+  const [expandedSectionsManual, setExpandedSectionsManual] = useState({});
+  const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({});
+  const [expandedBillingGroups, setExpandedBillingGroups] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
   // Auto-expand active group in Billing hierarchy when currentRoute changes
@@ -100,20 +146,25 @@ export const AppShell = ({
 
   // Auto-expand active group in Appointment hierarchy when currentRoute changes
   useEffect(() => {
-    if (typeof currentRoute === 'string' && currentRoute.startsWith('appointments:')) {
-      const parts = currentRoute.split(':');
-      if (parts[1] === 'group') {
-        const gId = parts[2];
-        if (gId) {
-          setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
+    if (typeof currentRoute === 'string' && (currentRoute === 'appointments' || currentRoute.startsWith('appointments:'))) {
+      if (currentRoute.startsWith('appointments:')) {
+        const parts = currentRoute.split(':');
+        if (parts[1] === 'group') {
+          const gId = parts[2];
+          if (gId) {
+            setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
+          }
+        } else {
+          const subId = parts[1]?.replace('submodule:', '');
+          const found = SUBMODULES.find(s => s.id === subId);
+          if (found) {
+            setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
+          }
         }
       } else {
-        const subId = parts[1]?.replace('submodule:', '');
-        const found = SUBMODULES.find(s => s.id === subId);
-        if (found) {
-          setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
-        }
+        setExpandedAppointmentGroups(prev => ({ ...prev, '3': true }));
       }
+      setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
     }
   }, [currentRoute]);
 
@@ -530,11 +581,12 @@ export const AppShell = ({
 
                     if (item.isAppointmentHierarchy) {
                       if (effectiveCollapsed) {
-                        handleSelectNav('appointments');
+                        handleSelectNav('appointments:3.1');
                       } else {
                         if (currentRoute !== 'appointments' && !currentRoute.startsWith('appointments:')) {
-                          handleSelectNav('appointments');
+                          handleSelectNav('appointments:3.1');
                           setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
+                          setExpandedAppointmentGroups(prev => ({ ...prev, '3': true }));
                         } else {
                           setExpandedSectionsManual(prev => ({ ...prev, appointments: !isExpanded }));
                         }
@@ -1420,6 +1472,53 @@ export const AppShell = ({
               />
             </button>
 
+            {/* Demo Storage Mode Indicator & Reset Trigger */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--color-bg-pale-aqua)',
+                  border: '1px solid rgba(8, 127, 140, 0.25)',
+                  color: 'var(--color-primary-teal)',
+                  fontSize: '0.72rem',
+                  fontWeight: '600'
+                }}
+                title="Prototype running in isolated localStorage mode (v1 schema)"
+              >
+                <Database size={13} />
+                <span>Demo v1</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: '#FFFFFF',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                className="desktop-collapse-btn"
+                title="Reset demo data to clean seed state"
+                aria-label="Reset Demo Data"
+              >
+                <RotateCcw size={13} />
+                <span>Reset Demo</span>
+              </button>
+            </div>
+
             {/* Department Quick Switcher */}
             <div
               style={{
@@ -1475,11 +1574,350 @@ export const AppShell = ({
           </div>
         </header>
 
+        {/* Storage Recovery Warning Banner */}
+        {storageWarning && (
+          <div
+            style={{
+              backgroundColor: '#FFFBEB',
+              borderBottom: '1px solid #FDE68A',
+              padding: '12px 32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              zIndex: 40
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: '#FEF3C7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#D97706',
+                  flexShrink: 0
+                }}
+              >
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: '#92400E' }}>
+                  {storageWarning.type === 'PERSISTENCE_FAILED'
+                    ? 'Storage Write Warning: Persistence Paused'
+                    : storageWarning.type === 'STORAGE_UNAVAILABLE'
+                    ? 'Local Storage Unavailable: Memory-Only Mode'
+                    : 'Storage Recovery Activated: Clean Demo State Loaded'}
+                </div>
+                <div style={{ fontSize: 'var(--font-size-xs)', color: '#B45309', marginTop: '1px' }}>
+                  {storageWarning.message}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {storageWarning.type === 'PERSISTENCE_FAILED' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof retryPersistence === 'function') {
+                      retryPersistence();
+                    }
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    color: '#FFFFFF',
+                    backgroundColor: 'var(--color-primary-teal)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Retry Save
+                </button>
+              )}
+              {quarantineData && quarantineData.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsQuarantineInspectModalOpen(true)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '600',
+                  color: '#92400E',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #FCD34D',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer'
+                }}
+              >
+                Inspect Quarantined Data
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmModalOpen(true)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '600',
+                  color: '#FFFFFF',
+                  backgroundColor: '#D97706',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer'
+                }}
+              >
+                Reset Demo Data
+              </button>
+              <button
+                type="button"
+                onClick={dismissStorageWarning}
+                style={{
+                  padding: '6px 8px',
+                  color: '#B45309',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  lineHeight: 1
+                }}
+                title="Dismiss notice"
+                aria-label="Dismiss notice"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Content Workspace */}
         <main style={{ flex: 1, padding: '32px', backgroundColor: 'var(--color-bg-main)' }}>
           {children}
         </main>
       </div>
+
+      {/* Reset Demo Data Confirmation Modal */}
+      <Modal
+        isOpen={isResetConfirmModalOpen}
+        onClose={() => {
+          setIsResetConfirmModalOpen(false);
+          setResetFeedback(null);
+        }}
+        title="Reset Hospital Demo Data"
+        subtitle="Restore clean seed dataset for prototype testing"
+        maxWidth="540px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            style={{
+              padding: '14px 16px',
+              backgroundColor: 'var(--color-bg-pale-aqua)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(8, 127, 140, 0.2)',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-primary)',
+              lineHeight: 1.5
+            }}
+          >
+            <strong>Scoped Demo Reset Policy:</strong>
+            <p style={{ margin: '6px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+              This operation strictly purges <code>medicsprime_hms_demo_v1</code> and <code>medicsprime_hms_demo_v1_quarantine</code> from your browser&apos;s localStorage. It resets all patients, appointment queue tokens, IPD admissions, billing ledgers, and lab data back to the clean factory demo state.
+            </p>
+            <p style={{ margin: '6px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+              Your UI preferences (such as collapsed sidebar) and active staff session remain completely unaffected.
+            </p>
+          </div>
+
+          {resetFeedback && (
+            <div
+              style={{
+                padding: '10px 14px',
+                backgroundColor: resetFeedback.type === 'success' ? '#ECFDF5' : '#FEF2F2',
+                border: `1px solid ${resetFeedback.type === 'success' ? '#A7F3D0' : '#FECACA'}`,
+                borderRadius: 'var(--radius-md)',
+                color: resetFeedback.type === 'success' ? '#065F46' : '#991B1B',
+                fontSize: 'var(--font-size-xs)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {resetFeedback.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
+              <span>{resetFeedback.message}</span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsResetConfirmModalOpen(false);
+                setResetFeedback(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              icon={RotateCcw}
+              onClick={() => {
+                const res = resetDemoData();
+                if (res && res.success) {
+                  setResetFeedback({
+                    type: 'success',
+                    message: 'Demo data successfully reset to clean factory seed!'
+                  });
+                  setTimeout(() => {
+                    setResetFeedback(null);
+                    setIsResetConfirmModalOpen(false);
+                  }, 1000);
+                } else {
+                  setResetFeedback({
+                    type: 'error',
+                    message: `Reset failed: ${res?.error || 'Storage write failed'}. Demo data was not cleared.`
+                  });
+                }
+              }}
+              style={{ backgroundColor: '#DC2626', borderColor: '#DC2626' }}
+            >
+              Confirm Reset
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Quarantined Data Inspector Modal */}
+      <Modal
+        isOpen={isQuarantineInspectModalOpen}
+        onClose={() => setIsQuarantineInspectModalOpen(false)}
+        title="Quarantined Storage Records"
+        subtitle="Preserved corrupted or incompatible payloads (non-destructive recovery)"
+        maxWidth="750px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+            When corrupted JSON or incompatible schema versions are encountered, MedicsPrime safely moves the raw unparsed payload into quarantine storage (<code>medicsprime_hms_demo_v1_quarantine</code>) without overwriting or deleting it.
+          </div>
+
+          {quarantineData && quarantineData.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto' }}>
+              {quarantineData.map((item, idx) => (
+                <div
+                  key={item.incidentId || idx}
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '14px',
+                    backgroundColor: '#F8FAFC'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Badge variant="warning">{item.errorType || 'CORRUPT_PAYLOAD'}</Badge>
+                      <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                        {item.incidentId}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                      {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recent'}
+                    </span>
+                  </div>
+
+                  {item.parseError && (
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-error)', marginBottom: '8px' }}>
+                      <strong>Parse Error:</strong> {item.parseError}
+                    </div>
+                  )}
+
+                  {item.versionFound !== undefined && (
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: '#92400E', marginBottom: '8px' }}>
+                      <strong>Schema Version Detected:</strong> {item.versionFound} (Supported: v1)
+                    </div>
+                  )}
+
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
+                        Preserved Raw Payload
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyRawPayload(item.incidentId, item.rawPayload)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'none',
+                          border: 'none',
+                          color: copyFeedback[item.incidentId]?.status === 'error' ? 'var(--color-error)' : 'var(--color-primary-teal)',
+                          fontSize: '0.72rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {copyFeedback[item.incidentId]?.status === 'success' ? (
+                          <>
+                            <Check size={12} /> Copied!
+                          </>
+                        ) : copyFeedback[item.incidentId]?.status === 'error' ? (
+                          <>
+                            <AlertTriangle size={12} /> {copyFeedback[item.incidentId].message}
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={12} /> Copy Raw Text
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre
+                      style={{
+                        margin: 0,
+                        padding: '10px',
+                        backgroundColor: '#1E293B',
+                        color: '#F1F5F9',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        maxHeight: '140px',
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all'
+                      }}
+                    >
+                      {item.rawPayload || '(empty)'}
+                    </pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#F8FAFC',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-sm)'
+              }}
+            >
+              No active quarantine records found. Storage is healthy.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+            <Button variant="outline" onClick={() => setIsQuarantineInspectModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <style>{`
         @keyframes pulse {

@@ -11,4 +11,22 @@ router.get(
   controller.getDoctors
 );
 
+router.get(
+  "/:id",
+  requireRoles("receptionist", "clinician_doctor", "staff_nurse", "blood_bank_officer", "super_admin"),
+  controller.getDoctorById
+);
+
+router.post(
+  "/",
+  requireRoles("super_admin", "receptionist"),
+  controller.createDoctor
+);
+
+router.put(
+  "/:id",
+  requireRoles("super_admin", "receptionist"),
+  controller.updateDoctor
+);
+
 module.exports = router;

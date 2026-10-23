@@ -163,6 +163,21 @@ const createAppointment = async (data) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
+    const patientDoubleBooked = await repo.isPatientDoubleBooked(
+      data.patientId,
+      data.doctorId,
+      data.appointmentDate,
+      data.startTime,
+      null,
+      client
+    );
+
+    if (patientDoubleBooked) {
+      throw ApiError.conflict(
+        "Patient already has an active appointment with this doctor on this date and time slot"
+      );
+    }
+
     const slotTaken = await repo.isSlotBooked(
       data.doctorId,
       data.appointmentDate,
@@ -191,6 +206,7 @@ const createAppointment = async (data) => {
         tokenNumber,
         rosterId,
         roomId,
+        consultationFee: data.consultationFee !== undefined && data.consultationFee !== null ? Number(data.consultationFee) : (doctor.consultation_fee !== null && doctor.consultation_fee !== undefined ? Number(doctor.consultation_fee) : 500.00),
       },
       client
     );
@@ -546,7 +562,7 @@ const APPOINTMENT_TRANSITIONS = {
   in_consultation: ["completed", "waiting"],
   completed: [],
   cancelled: [],
-  no_show: [],
+  no_show: ["arrived", "waiting", "cancelled"],
 };
 
 const ROLE_ALLOWED_TARGET_STATUSES = {

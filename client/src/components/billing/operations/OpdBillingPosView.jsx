@@ -17,7 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Card, Button, Badge, Modal, Input, Select } from '../../common/UIPrimitives';
-import { BillingOpsService } from '../../../services/api';
+import { BillingOpsService, PatientService, ClinicalStaffService, OperationsQueueService } from '../../../services/api';
 import { INITIAL_SERVICES_CATALOGUE } from '../common/billingMockData';
 import { formatINR, formatDateTimeIN } from '../../../utils/formatters';
 
@@ -37,6 +37,15 @@ export function OpdBillingPosView({ onOpenReceiptModal }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Active POS Cart
+  // Patient Search State
+  const [patientQuery, setPatientQuery] = useState('');
+  const [patientResults, setPatientResults] = useState([]);
+  const [isSearchingPatient, setIsSearchingPatient] = useState(false);
+
+  // Doctors State
+  const [doctorsList, setDoctorsList] = useState([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState('');
+
   const [patientData, setPatientData] = useState({
     name: 'Devika Sengupta',
     uhid: 'UHID-2026-0814',
@@ -55,6 +64,80 @@ export function OpdBillingPosView({ onOpenReceiptModal }) {
   const [paymentMode, setPaymentMode] = useState('upi');
   const [txnRef, setTxnRef] = useState('UPI-REF-2026-9041');
   const [discountTotal, setDiscountTotal] = useState(150);
+
+  // Load doctors for consultation fee selection
+  useEffect(() => {
+    async function loadDoctors() {
+      try {
+        const res = await ClinicalStaffService.getStaff();
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        setDoctorsList(list);
+        if (list.length > 0) setSelectedDoctorId(list[0].id);
+      } catch {
+        //
+      }
+    }
+    loadDoctors();
+  }, []);
+
+  // Debounced Patient Search
+  useEffect(() => {
+    if (!patientQuery.trim() || patientQuery.trim().length < 2) {
+      setPatientResults([]);
+      setIsSearchingPatient(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingPatient(true);
+      try {
+        const results = await PatientService.searchPatients(patientQuery.trim());
+        setPatientResults(Array.isArray(results) ? results : []);
+      } catch {
+        setPatientResults([]);
+      } finally {
+        setIsSearchingPatient(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientQuery]);
+
+  const handleSelectPatient = (p) => {
+    setPatientData({
+      id: p.id,
+      name: p.full_name,
+      uhid: p.uhid,
+      phone: p.mobile || 'N/A',
+      ageGender: `${p.gender || 'General'} ${p.date_of_birth ? '• ' + String(p.date_of_birth).slice(0, 10) : ''}`,
+      category: 'General OPD',
+      doctor: patientData.doctor
+    });
+    setPatientQuery('');
+    setPatientResults([]);
+  };
+
+  const handleAddDoctorFee = (docId) => {
+    const doc = doctorsList.find(d => String(d.id) === String(docId));
+    if (!doc) return;
+    const fee = doc.consultation_fee ? Number(doc.consultation_fee) : 500;
+    const docName = doc.full_name || doc.name;
+    setPatientData(prev => ({ ...prev, doctor: `Dr. ${docName} (${doc.specialty || doc.department || 'Consultant'})` }));
+
+    setCartItems(prev => {
+      const filtered = prev.filter(i => !i.id.startsWith('srv-doc-'));
+      return [
+        {
+          id: `srv-doc-${doc.id}`,
+          name: `Consultation Fee - Dr. ${docName}`,
+          price: fee,
+          qty: 1,
+          discount: 0,
+          taxRate: 0,
+          total: fee
+        },
+        ...filtered
+      ];
+    });
+  };
 
   // Load live bills from API if present
   useEffect(() => {
@@ -149,6 +232,19 @@ export function OpdBillingPosView({ onOpenReceiptModal }) {
         investigationFee: 0,
         paymentMode
       });
+    } catch {
+      //
+    }
+
+    // Trigger post-payment SMS confirmation safely
+    try {
+      if (patientData.phone && patientData.phone !== 'N/A') {
+        OperationsQueueService.scheduleEvent(
+          newBill.id,
+          'booking_confirmation',
+          ['sms']
+        ).catch(() => {});
+      }
     } catch {
       //
     }

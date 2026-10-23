@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge, Modal, Input, Select } from '../../common/UIPrimitives';
 import { BillingOpsService } from '../../../services/api';
+import { useHospitalState } from '../../../context/HospitalStateContext';
 import { formatINR, formatDateIN, formatDateTimeIN } from '../../../utils/formatters';
+import { validateRefundEligibility } from '../../../utils/billingCalculations';
 
 const DEFAULT_REFUNDS = [
   {
@@ -78,17 +80,21 @@ export function MyRefundsView() {
   const [selectedRefundDetail, setSelectedRefundDetail] = useState(null);
   const [successBanner, setSuccessBanner] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
 
-  // New Refund Form
+  const hospitalState = useHospitalState();
+  const contextBills = hospitalState?.bills || [];
+
+  // New Refund Form (Clean empty defaults with guided placeholders)
   const [refundForm, setRefundForm] = useState({
-    billNumber: 'OPD-2026-0915',
-    patientName: 'Rajesh Narayan Verma',
-    patientUhid: 'UHID-2026-0922',
-    originalAmount: '800',
-    amount: '800',
-    reason: 'Duplicate consultation charge paid online',
+    billNumber: '',
+    patientName: '',
+    patientUhid: '',
+    originalAmount: '',
+    amount: '',
+    reason: '',
     paymentMode: 'upi',
-    notes: 'Patient requested refund to original UPI VPA'
+    notes: ''
   });
 
   // Load from API if available
@@ -116,6 +122,17 @@ export function MyRefundsView() {
     return { total, pending, approved, processed, rejected };
   }, [refunds]);
 
+  // Refund Eligibility Ceiling Calculation
+  const currentEligibility = useMemo(() => {
+    const orig = parseFloat(refundForm.originalAmount) || 0;
+    const req = parseFloat(refundForm.amount) || 0;
+    return validateRefundEligibility(
+      { bill_number: refundForm.billNumber, original_amount: orig },
+      req,
+      refunds
+    );
+  }, [refundForm.originalAmount, refundForm.amount, refundForm.billNumber, refunds]);
+
   const filteredRefunds = useMemo(() => {
     return refunds.filter(r => {
       const q = searchFilter.toLowerCase();
@@ -132,8 +149,23 @@ export function MyRefundsView() {
 
   const handleCreateRefundSubmit = async (e) => {
     e.preventDefault();
+    setFormError(null);
     const amt = parseFloat(refundForm.amount) || 0;
-    if (amt <= 0) return;
+    if (amt <= 0) {
+      setFormError('Refund amount must be greater than zero.');
+      return;
+    }
+
+    const eligibility = validateRefundEligibility(
+      { bill_number: refundForm.billNumber, original_amount: parseFloat(refundForm.originalAmount) || amt },
+      amt,
+      refunds
+    );
+
+    if (!eligibility.isValid) {
+      setFormError(eligibility.reason);
+      return;
+    }
 
     setIsSubmitting(true);
     const newRef = {
@@ -230,7 +262,7 @@ export function MyRefundsView() {
           variant="primary"
           size="sm"
           icon={Plus}
-          onClick={() => setIsNewRefundModalOpen(true)}
+          onClick={() => { setFormError(null); setIsNewRefundModalOpen(true); }}
         >
           Raise Refund Request
         </Button>
@@ -306,7 +338,7 @@ export function MyRefundsView() {
       {/* Filter Bar & Table */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {['all', 'pending', 'approved', 'processed'].map((st) => (
+          {['all', 'pending', 'approved', 'processed', 'rejected'].map((st) => (
             <button
               key={st}
               type="button"
@@ -442,14 +474,23 @@ export function MyRefundsView() {
               onChange={(e) => setRefundForm({ ...refundForm, originalAmount: e.target.value })}
               required
             />
-            <Input
-              label="Requested Refund Amount (₹)"
-              type="number"
-              max={refundForm.originalAmount}
-              value={refundForm.amount}
-              onChange={(e) => setRefundForm({ ...refundForm, amount: e.target.value })}
-              required
-            />
+            <div>
+              <Input
+                label="Requested Refund Amount (₹)"
+                type="number"
+                value={refundForm.amount}
+                onChange={(e) => {
+                  setFormError(null);
+                  setRefundForm({ ...refundForm, amount: e.target.value });
+                }}
+                required
+              />
+              <div style={{ fontSize: '0.73rem', marginTop: '4px', color: currentEligibility.isValid ? '#059669' : '#DC2626' }}>
+                {currentEligibility.isValid
+                  ? `Eligible ceiling: ${formatINR(currentEligibility.maxEligible)} (Prior: ${formatINR(currentEligibility.alreadyRefunded)})`
+                  : currentEligibility.reason}
+              </div>
+            </div>
             <div>
               <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
                 Requested Refund Method
@@ -477,7 +518,7 @@ export function MyRefundsView() {
             <Button variant="outline" size="sm" onClick={() => setIsNewRefundModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primary" size="sm" type="submit" loading={isSubmitting}>
+            <Button variant="primary" size="sm" type="submit" loading={isSubmitting} disabled={!currentEligibility.isValid}>
               Submit Refund for Review
             </Button>
           </div>

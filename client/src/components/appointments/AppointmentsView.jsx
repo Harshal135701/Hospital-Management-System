@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, Calendar } from 'lucide-react';
-import { Button } from '../common/UIPrimitives';
-import { AppointmentsLandingView } from './AppointmentsLandingView';
-import { GroupDashboardView } from './GroupDashboardView';
+import { Calendar } from 'lucide-react';
+import { Badge } from '../common/UIPrimitives';
 import { BookRescheduleView } from './BookRescheduleView';
 import { DoctorRosterView } from './DoctorRosterView';
 import { TokenQueueDisplayView } from './TokenQueueDisplayView';
 import { RemindersAlertsView } from './RemindersAlertsView';
+import { GroupDashboardView } from './GroupDashboardView';
 import { BillingView } from '../billing/BillingView';
 import { DayCareView } from '../daycare/DayCareView';
 import { DietView } from '../diet/DietView';
@@ -16,96 +15,90 @@ import { EmergencyView } from '../emergency/EmergencyView';
 import { SubmodulesView } from './SubmodulesView';
 import { MODULE_GROUPS, SUBMODULES } from './submoduleRegistry';
 
+/**
+ * Strips leading numeric indices such as "10. ", "3.1 ", "4.5 "
+ * so labels render cleanly in bullet style without visible numeric prefixes.
+ */
+export const stripNumericPrefix = (text) => {
+  if (!text) return '';
+  return text.replace(/^\d+(\.\d+)*\s*[-–.]?\s*/, '').trim();
+};
+
 export function AppointmentsView({ initialSubtab, onNavigate }) {
-  // Navigation state:
-  // level: 1 (Landing Page) | 2 (Group Dashboard) | 3 (Nested Submodule Workspace)
-  const [navState, setNavState] = useState(() => {
-    if (!initialSubtab) {
-      return { level: 1, groupId: null, submoduleId: null };
+  // If initialSubtab specifies a group dashboard view, e.g. "group:3"
+  const [activeGroupId, setActiveGroupId] = useState(() => {
+    if (initialSubtab && initialSubtab.startsWith('group:')) {
+      return initialSubtab.replace('group:', '');
     }
-    if (initialSubtab.startsWith('group:')) {
-      const gId = initialSubtab.replace('group:', '');
-      return { level: 2, groupId: gId, submoduleId: null };
-    }
-    // Submodule ID provided (e.g. '3.1', '4.2', 'submodule:3.1')
-    const cleanSubId = initialSubtab.replace('submodule:', '');
-    const found = SUBMODULES.find(s => s.id === cleanSubId);
-    if (found) {
-      return { level: 3, groupId: found.groupId, submoduleId: found.id };
-    }
-    return { level: 1, groupId: null, submoduleId: null };
+    return null;
   });
 
-  // Sync with prop updates
+  // Active submodule state
+  const [selectedSubmoduleId, setSelectedSubmoduleId] = useState(() => {
+    if (!initialSubtab) return '3.1';
+    if (initialSubtab.startsWith('group:')) {
+      const gId = initialSubtab.replace('group:', '');
+      const first = SUBMODULES.find(s => s.groupId === gId);
+      return first ? first.id : '3.1';
+    }
+    const clean = initialSubtab.replace('submodule:', '');
+    const found = SUBMODULES.find(s => s.id === clean);
+    return found ? found.id : '3.1';
+  });
+
+  // Synchronize state with initialSubtab prop changes
   useEffect(() => {
     if (!initialSubtab) {
-      setNavState({ level: 1, groupId: null, submoduleId: null });
+      setActiveGroupId(null);
+      setSelectedSubmoduleId('3.1');
       return;
     }
     if (initialSubtab.startsWith('group:')) {
       const gId = initialSubtab.replace('group:', '');
-      setNavState({ level: 2, groupId: gId, submoduleId: null });
+      setActiveGroupId(gId);
+      const first = SUBMODULES.find(s => s.groupId === gId);
+      if (first) {
+        setSelectedSubmoduleId(first.id);
+      }
       return;
     }
-    const cleanSubId = initialSubtab.replace('submodule:', '');
-    const found = SUBMODULES.find(s => s.id === cleanSubId);
+    setActiveGroupId(null);
+    const clean = initialSubtab.replace('submodule:', '');
+    const found = SUBMODULES.find(s => s.id === clean);
     if (found) {
-      setNavState({ level: 3, groupId: found.groupId, submoduleId: found.id });
+      setSelectedSubmoduleId(found.id);
     }
   }, [initialSubtab]);
 
-  // Navigate to Level 1: Landing Page
-  const handleBackToLanding = () => {
-    setNavState({ level: 1, groupId: null, submoduleId: null });
-    if (onNavigate) {
-      onNavigate('appointments');
+  // Active Submodule and Group resolution
+  const activeSubmodule = useMemo(() => {
+    return SUBMODULES.find(s => s.id === selectedSubmoduleId) || SUBMODULES[0];
+  }, [selectedSubmoduleId]);
+
+  const activeGroup = useMemo(() => {
+    return MODULE_GROUPS.find(g => g.id === activeSubmodule.groupId) || MODULE_GROUPS[0];
+  }, [activeSubmodule]);
+
+  const handleSelectSubmodule = (subId) => {
+    const cleanId = subId.replace('submodule:', '');
+    const found = SUBMODULES.find(s => s.id === cleanId);
+    if (found) {
+      setActiveGroupId(null);
+      setSelectedSubmoduleId(found.id);
+      if (onNavigate) {
+        onNavigate(`appointments:${found.id}`);
+      }
     }
   };
 
-  // Navigate to Level 2: Group Dashboard
-  const handleSelectGroup = (groupId) => {
-    setNavState({ level: 2, groupId, submoduleId: null });
+  const handleSelectGroupHeader = (groupId) => {
+    setActiveGroupId(groupId);
     if (onNavigate) {
       onNavigate(`appointments:group:${groupId}`);
     }
   };
 
-  // Navigate to Level 3: Nested Submodule Workspace
-  const handleSelectSubmodule = (submoduleId) => {
-    const cleanId = submoduleId.replace('submodule:', '');
-    const found = SUBMODULES.find(s => s.id === cleanId);
-    const groupId = found ? found.groupId : '3';
-    setNavState({ level: 3, groupId, submoduleId: cleanId });
-    if (onNavigate) {
-      onNavigate(`appointments:${cleanId}`);
-    }
-  };
-
-  // Level 1: Landing Page
-  if (navState.level === 1) {
-    return (
-      <AppointmentsLandingView
-        onSelectGroup={handleSelectGroup}
-        onSelectSubmodule={handleSelectSubmodule}
-      />
-    );
-  }
-
-  // Level 2: Functional Group Dashboard
-  if (navState.level === 2) {
-    return (
-      <GroupDashboardView
-        groupId={navState.groupId || '3'}
-        onBackToLanding={handleBackToLanding}
-        onSelectSubmodule={handleSelectSubmodule}
-      />
-    );
-  }
-
-  // Level 3: Dedicated Nested-Submodule Workspace
-  const activeSubmodule = SUBMODULES.find(s => s.id === navState.submoduleId) || SUBMODULES[0];
-  const activeGroup = MODULE_GROUPS.find(g => g.id === activeSubmodule.groupId) || MODULE_GROUPS[0];
-
+  // Render workspace content based on the active submodule
   const renderWorkspaceContent = () => {
     switch (activeSubmodule.id) {
       case '3.1':
@@ -117,7 +110,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
       case '3.4':
         return <RemindersAlertsView onNavigate={handleSelectSubmodule} />;
       default:
-        // Group 4 Billing submodules
+        // Group 4: Billing
         if (activeSubmodule.id.startsWith('4.')) {
           return (
             <BillingView
@@ -126,7 +119,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
             />
           );
         }
-        // Group 8 Day Care submodules
+        // Group 8: Day Care
         if (activeSubmodule.id.startsWith('8.')) {
           return (
             <DayCareView
@@ -135,7 +128,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
             />
           );
         }
-        // Group 9 Diet & Nutrition submodules
+        // Group 9: Diet & Nutrition
         if (activeSubmodule.id.startsWith('9.')) {
           return (
             <DietView
@@ -144,7 +137,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
             />
           );
         }
-        // Group 10 Embryology submodules
+        // Group 10: Embryology
         if (activeSubmodule.id.startsWith('10.')) {
           return (
             <EmbryologyView
@@ -153,7 +146,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
             />
           );
         }
-        // Group 11 Emergency submodules
+        // Group 11: Emergency
         if (activeSubmodule.id.startsWith('11.')) {
           return (
             <EmergencyView
@@ -162,7 +155,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
             />
           );
         }
-        // Group 12 EMR Records submodules
+        // Group 12: EMR
         if (activeSubmodule.id.startsWith('12.')) {
           return (
             <EmrView
@@ -171,20 +164,40 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
             />
           );
         }
-        // Groups 5 through 32 submodules
+        // All other module groups (1, 2, 5, 6, 7, 13–32)
         return (
           <SubmodulesView
             submodule={activeSubmodule}
-            onBack={() => handleSelectGroup(activeGroup.id)}
+            onBack={() => handleSelectGroupHeader(activeGroup.id)}
             onNavigateSubmodule={handleSelectSubmodule}
           />
         );
     }
   };
 
+  // If viewing group-level overview/dashboard
+  if (activeGroupId) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <GroupDashboardView
+          groupId={activeGroupId}
+          onBackToLanding={() => handleSelectSubmodule('3.1')}
+          onSelectSubmodule={handleSelectSubmodule}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Level 3 Breadcrumb Header */}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        width: '100%'
+      }}
+    >
+      {/* Workspace Context Navigation Banner */}
       <div
         style={{
           display: 'flex',
@@ -209,7 +222,7 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
         >
           <button
             type="button"
-            onClick={handleBackToLanding}
+            onClick={() => handleSelectSubmodule('3.1')}
             style={{
               background: 'none',
               border: 'none',
@@ -228,36 +241,37 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
           <span style={{ color: 'var(--color-text-muted)' }}>/</span>
           <button
             type="button"
-            onClick={() => handleSelectGroup(activeGroup.id)}
+            onClick={() => handleSelectGroupHeader(activeGroup.id)}
             style={{
               background: 'none',
               border: 'none',
               padding: 0,
-              color: 'var(--color-primary-teal)',
+              color: 'var(--color-text-secondary)',
               fontWeight: '600',
               cursor: 'pointer'
             }}
           >
-            {activeGroup.label}
+            {stripNumericPrefix(activeGroup.label)}
           </button>
           <span style={{ color: 'var(--color-text-muted)' }}>/</span>
-          <span style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>
-            {activeSubmodule.title}
+          <span style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>
+            {stripNumericPrefix(activeSubmodule.title)}
           </span>
+          {activeSubmodule.badge && (
+            <Badge variant="teal" size="sm">
+              {activeSubmodule.badge}
+            </Badge>
+          )}
         </nav>
 
-        <Button
-          variant="outline"
-          size="sm"
-          icon={ChevronLeft}
-          onClick={() => handleSelectGroup(activeGroup.id)}
-          style={{ borderColor: 'var(--color-border)' }}
-        >
-          Back to {activeGroup.label}
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+            Desk Ref: #{activeSubmodule.id}
+          </span>
+        </div>
       </div>
 
-      {/* Dedicated Workspace Body */}
+      {/* Dynamic Mounted Workspace */}
       {renderWorkspaceContent()}
     </div>
   );

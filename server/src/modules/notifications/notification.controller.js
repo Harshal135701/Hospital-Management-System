@@ -104,7 +104,37 @@ const cancelPending = async (req, res) => {
   }
 };
 
+
+const getAppointmentsForDate = async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ success: false, message: "date query param is required" });
+    }
+    const repo = require("./notification.repository");
+    const appointments = await repo.getAppointmentsForDate(date);
+    res.json({ success: true, data: appointments });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const sendRemindersForDate = async (req, res) => {
+  try {
+    const { date, appointmentIds } = req.body;
+    if (!date) {
+      return res.status(400).json({ success: false, message: "date is required" });
+    }
+    const data = await service.sendRemindersForDate(date, appointmentIds);
+    res.json({ success: true, message: `Batch reminders processed for ${date}`, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 module.exports = {
+  getAppointmentsForDate,
+  sendRemindersForDate,
   list,
   scheduleEvent,
   scheduleReminders,

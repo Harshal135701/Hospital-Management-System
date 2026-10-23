@@ -74,6 +74,31 @@ const isDoctorOnLeave = async (doctorId, date, client = pool) => {
   return r.rows[0] || null;
 };
 
+
+const isPatientDoubleBooked = async (
+  patientId,
+  doctorId,
+  date,
+  startTime,
+  excludeId = null,
+  client = pool
+) => {
+  const r = await client.query(
+    `SELECT id
+     FROM appointments
+     WHERE patient_id = $1
+       AND doctor_id = $2
+       AND appointment_date = $3
+       AND start_time = $4
+       AND status NOT IN ('cancelled')
+       AND ($5::uuid IS NULL OR id <> $5::uuid)
+     LIMIT 1`,
+    [patientId, doctorId, date, startTime, excludeId]
+  );
+
+  return r.rows.length > 0;
+};
+
 const isSlotBooked = async (
   doctorId,
   date,
@@ -195,11 +220,12 @@ const createAppointmentWithClient = async (data, client) => {
        token_number,
        status,
        notes,
-       is_priority
+       is_priority,
+       consultation_fee
      )
      VALUES (
        $1, $2, $3, $4, $5, $6, $7,
-       $8, $9, $10, $11, 'booked', $12, $13
+       $8, $9, $10, $11, 'booked', $12, $13, $14
      )
      RETURNING *`,
     [
@@ -216,6 +242,7 @@ const createAppointmentWithClient = async (data, client) => {
       data.tokenNumber,
       data.notes || null,
       data.isPriority || false,
+      data.consultationFee !== undefined && data.consultationFee !== null ? Number(data.consultationFee) : 500.00,
     ]
   );
 
@@ -457,6 +484,7 @@ module.exports = {
   findAppointmentById,
   isDoctorOnLeave,
   isSlotBooked,
+  isPatientDoubleBooked,
   getNextTokenNumber,
   generateAppointmentNumber,
   getPublishedRoster,

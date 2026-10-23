@@ -191,6 +191,48 @@ export const PatientService = {
     // Strict contract: GET /api/patients?search=...
     const res = await apiFetch(`/patients?search=${encodeURIComponent(query.trim())}`);
     return res?.data || res || [];
+  },
+
+  async createPatient(data) {
+    if (TokenManager.getToken()) {
+      // Authenticated production mode: POST to backend API
+      const payload = {
+        full_name: data.full_name ? String(data.full_name).trim() : '',
+        mobile: data.mobile ? String(data.mobile).trim() : '',
+        ...(data.date_of_birth ? { date_of_birth: data.date_of_birth } : {}),
+        ...(data.gender ? { gender: data.gender } : {}),
+        ...(data.uhid ? { uhid: String(data.uhid).trim() } : {})
+      };
+      const res = await apiFetch('/patients', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      return res?.data || res;
+    }
+
+    // In unauthenticated / demo mode, callers manage HospitalStateContext persistence.
+    // Provide a safe mock response if called directly without an active token:
+    const mockPatient = {
+      id: `p-${Date.now()}`,
+      uhid: `UHID-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      full_name: data.full_name ? String(data.full_name).trim() : '',
+      mobile: data.mobile ? String(data.mobile).trim() : '',
+      date_of_birth: data.date_of_birth || null,
+      gender: data.gender || 'other',
+      created_at: new Date().toISOString()
+    };
+    return { data: mockPatient, isMock: true };
+  },
+
+  async updatePatient(id, data) {
+    if (TokenManager.getToken()) {
+      const res = await apiFetch('/patients/' + encodeURIComponent(id), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return res?.data || res;
+    }
+    return { data, isMock: true };
   }
 };
 
@@ -327,6 +369,55 @@ export const DepartmentService = {
     }
     const res = await apiFetch('/departments');
     return res?.data || res || [];
+  },
+  async createDepartment(data) {
+    const res = await apiFetch('/departments', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async updateDepartment(id, data) {
+    const res = await apiFetch(`/departments/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async toggleStatus(id, isActive) {
+    const res = await apiFetch(`/departments/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_active: isActive })
+    });
+    return res?.data || res;
+  }
+};
+
+export const RoomService = {
+  async getRooms(departmentId = null) {
+    if (!TokenManager.getToken()) return [];
+    const qs = departmentId ? `?department_id=${encodeURIComponent(departmentId)}` : '';
+    const res = await apiFetch(`/rooms${qs}`);
+    return res?.data || [];
+  },
+  async createRoom(data) {
+    const res = await apiFetch('/rooms', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async updateRoom(id, data) {
+    const res = await apiFetch(`/rooms/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res?.data || res;
+  }
+};
+
+export const DoctorAdminService = {
+  async getDoctors(departmentId = null) {
+    if (!TokenManager.getToken()) return [];
+    const qs = departmentId ? `?department_id=${encodeURIComponent(departmentId)}` : '';
+    const res = await apiFetch(`/doctors${qs}`);
+    return res?.data || [];
+  },
+  async createDoctor(data) {
+    const res = await apiFetch('/doctors', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async updateDoctor(id, data) {
+    const res = await apiFetch(`/doctors/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res?.data || res;
   }
 };
 
