@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { HospitalStateProvider } from './context/HospitalStateContext';
 import { LoginModal } from './components/auth/LoginModal';
+import { LoginPage } from './components/auth/LoginPage';
 import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { PatientsView } from './components/patients/PatientsView';
@@ -61,7 +62,8 @@ const VALID_ROUTE_BASES = new Set([
   'rooms',
   'lab',
   'reports',
-  'settings'
+  'settings',
+  'login'
 ]);
 
 const DEFAULT_ROUTE = 'dashboard';
@@ -256,6 +258,9 @@ export function App() {
           />
         );
 
+      case 'login':
+        return <LoginPage onLoginSuccess={() => setCurrentRoute('dashboard')} />;
+
       default:
         return <DashboardView onNavigate={setCurrentRoute} />;
     }
@@ -264,14 +269,18 @@ export function App() {
   return (
     <AuthProvider>
       <HospitalStateProvider>
-      <AppShell
-        currentRoute={currentRoute}
-        onNavigate={setCurrentRoute}
-      >
-        {renderCurrentView()}
-      </AppShell>
+        {currentRoute === 'login' ? (
+          <LoginPage onLoginSuccess={() => setCurrentRoute('dashboard')} />
+        ) : (
+          <AppShell
+            currentRoute={currentRoute}
+            onNavigate={setCurrentRoute}
+          >
+            {renderCurrentView()}
+          </AppShell>
+        )}
 
-      <LoginModal />
+        <LoginModal />
       </HospitalStateProvider>
     </AuthProvider>
   );

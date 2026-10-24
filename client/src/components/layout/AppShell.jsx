@@ -579,7 +579,8 @@ export const AppShell = ({
       title: 'Administration',
       items: [
         { id: 'reports', label: 'Reports & Audit Logs', icon: FileText },
-        { id: 'settings', label: 'System Settings', icon: Settings }
+        { id: 'settings', label: 'System Settings', icon: Settings },
+        { id: 'login', label: 'Login Portal', icon: LogIn }
       ]
     }
   ];
@@ -2036,38 +2037,68 @@ export const AppShell = ({
               <ChevronDown size={14} color="var(--color-text-muted)" />
             </div>
 
-            {/* Staff Role Badge or Sign In Button */}
+            {/* Staff Role Badge or Sign In / Out */}
             {isAuthenticated && user ? (
-              <button
-                type="button"
-                onClick={() => openLoginModal()}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: 'var(--color-bg-pale-aqua)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(73, 118, 159, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: '600',
-                  color: 'var(--color-primary-teal)',
-                  cursor: 'pointer'
-                }}
-                title="Click to switch staff role"
-              >
-                <ShieldCheck size={14} />
-                <span>{user.role ? user.role.replace(/_/g, ' ').toUpperCase() : 'STAFF'}</span>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => openLoginModal()}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: 'var(--color-bg-pale-aqua)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid rgba(73, 118, 159, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    color: 'var(--color-primary-teal)',
+                    cursor: 'pointer'
+                  }}
+                  title="Click to switch staff role"
+                >
+                  <ShieldCheck size={14} />
+                  <span>{user.role ? user.role.replace(/_/g, ' ').toUpperCase() : 'STAFF'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    onNavigate('login');
+                  }}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: '#FFFFFF',
+                    color: '#DC2626',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Sign out and return to Login Portal"
+                >
+                  <LogOut size={13} color="#DC2626" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={LogIn}
-                onClick={() => openLoginModal()}
-              >
-                Sign In
-              </Button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={LogIn}
+                  onClick={() => onNavigate('login')}
+                >
+                  Login Portal
+                </Button>
+              </div>
             )}
           </div>
         </header>
