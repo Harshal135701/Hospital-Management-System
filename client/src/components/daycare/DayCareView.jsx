@@ -19,7 +19,6 @@ import { ProcedureMonitoring } from './ProcedureMonitoring';
 import { DischargeSummary } from './DischargeSummary';
 import { INITIAL_ADMISSIONS, INITIAL_CHAIRS } from './daycareDemoData';
 import { DayCareService, PatientService, ClinicalStaffService } from '../../services/api';
-import { HEALTHCARE_IMAGES } from '../../assets/images';
 
 export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) {
   const [activeSubtab, setActiveSubtab] = useState(() => {
@@ -228,95 +227,46 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', maxWidth: '1440px', margin: '0 auto' }}>
-      {/* Hero Banner with Clinical Photo (Blood Bank style) */}
+      {/* Workspace Banner */}
       <div
         style={{
           borderRadius: 'var(--radius-xl)',
           backgroundColor: '#FFFFFF',
           border: '1px solid var(--color-border)',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: '1.35fr 1fr',
-          boxShadow: 'var(--shadow-card)'
+          padding: '24px 28px',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
         }}
         className="daycare-banner"
       >
-        <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-              Submodules 8.1 – 8.4
-            </span>
-            <Badge variant="teal" size="sm">Ambulatory & Short-Stay Care</Badge>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
+                Submodules 8.1 – 8.4
+              </span>
+              <Badge variant="teal" size="sm">Ambulatory & Short-Stay Care</Badge>
+            </div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+              Day Care & Ambulatory Procedure Workspace
+            </h1>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', maxWidth: '780px', lineHeight: 1.5, margin: 0 }}>
+              Integrated same-day admissions, chemotherapy & dialysis chair allocation, vital signs procedure monitoring, and Aldrete discharge clearance.
+            </p>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-            Day Care & Ambulatory Procedure Workspace
-          </h1>
-          <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', maxWidth: '520px', lineHeight: 1.5, marginBottom: '20px' }}>
-            Integrated same-day admissions, chemotherapy & dialysis chair allocation, vital signs procedure monitoring, and Aldrete discharge clearance.
-          </p>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Button
-              variant={activeSubtab === '8.1' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Plus}
-              onClick={() => setActiveSubtab('8.1')}
-            >
-              New Admission
-            </Button>
-            <Button
-              variant={activeSubtab === '8.2' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Bed}
-              onClick={() => setActiveSubtab('8.2')}
-            >
-              Allocate Chair
-            </Button>
-            <Button
-              variant={activeSubtab === '8.3' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Activity}
-              onClick={() => setActiveSubtab('8.3')}
-            >
-              Record Vitals
-            </Button>
-            <Button
-              variant={activeSubtab === '8.4' ? 'primary' : 'soft'}
-              size="sm"
-              icon={FileText}
-              onClick={() => setActiveSubtab('8.4')}
-            >
-              Discharge Summary
-            </Button>
-          </div>
-        </div>
-
-        <div style={{ position: 'relative', minHeight: '190px' }}>
-          <img
-            src={HEALTHCARE_IMAGES.dayCareWard}
-            alt="Day Care Ambulatory Ward and Infusion Recliners"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
           <div
             style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.2) 20%, transparent 60%)'
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '16px',
-              right: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-dropdown)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '8px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-bg-pale-aqua)',
+              border: '1px solid rgba(8, 127, 140, 0.25)',
+              flexShrink: 0
             }}
           >
             <ShieldCheck size={16} color="var(--color-success)" />
@@ -324,6 +274,41 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
               Same-Day Discharge Gated
             </span>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <Button
+            variant={activeSubtab === '8.1' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Plus}
+            onClick={() => setActiveSubtab('8.1')}
+          >
+            New Admission
+          </Button>
+          <Button
+            variant={activeSubtab === '8.2' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Bed}
+            onClick={() => setActiveSubtab('8.2')}
+          >
+            Allocate Chair
+          </Button>
+          <Button
+            variant={activeSubtab === '8.3' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Activity}
+            onClick={() => setActiveSubtab('8.3')}
+          >
+            Record Vitals
+          </Button>
+          <Button
+            variant={activeSubtab === '8.4' ? 'primary' : 'soft'}
+            size="sm"
+            icon={FileText}
+            onClick={() => setActiveSubtab('8.4')}
+          >
+            Discharge Summary
+          </Button>
         </div>
       </div>
 

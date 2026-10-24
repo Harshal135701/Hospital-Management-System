@@ -30,7 +30,6 @@ import {
   INITIAL_ENCOUNTERS
 } from './emrDemoData';
 import { EmrService, PatientService, ClinicalStaffService } from '../../services/api';
-import { HEALTHCARE_IMAGES } from '../../assets/images';
 
 const DEMO_FALLBACK_PATIENTS = [
   {
@@ -342,103 +341,46 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
         </div>
       )}
 
-      {/* Hero Banner with Clinical Photo (Blood Bank style) */}
+      {/* Workspace Banner */}
       <div
         style={{
           borderRadius: 'var(--radius-xl)',
           backgroundColor: '#FFFFFF',
           border: '1px solid var(--color-border)',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: '1.35fr 1fr',
-          boxShadow: 'var(--shadow-card)'
+          padding: '24px 28px',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
         }}
         className="emr-banner"
       >
-        <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-              Submodules 12.1 – 12.5
-            </span>
-            <Badge variant="teal" size="sm">Longitudinal Patient Chart</Badge>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
+                Submodules 12.1 – 12.5
+              </span>
+              <Badge variant="teal" size="sm">Longitudinal Patient Chart</Badge>
+            </div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+              Electronic Medical Records (EMR) Workspace
+            </h1>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', maxWidth: '780px', lineHeight: 1.5, margin: 0 }}>
+              Longitudinal patient timeline, formulary-driven digital prescription studio, ICD-10 diagnostic coding, and diagnostic clinical documents.
+            </p>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-            Electronic Medical Records (EMR) Workspace
-          </h1>
-          <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', maxWidth: '520px', lineHeight: 1.5, marginBottom: '20px' }}>
-            Longitudinal patient timeline, formulary-driven digital prescription studio, ICD-10 diagnostic coding, and diagnostic clinical documents.
-          </p>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Button
-              variant={activeSubtab === '12.2' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Pill}
-              onClick={() => setActiveSubtab('12.2')}
-            >
-              Prescription Studio
-            </Button>
-            <Button
-              variant={activeSubtab === '12.1' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Calendar}
-              onClick={() => setActiveSubtab('12.1')}
-            >
-              Patient Timeline
-            </Button>
-            <Button
-              variant={activeSubtab === '12.3' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Tag}
-              onClick={() => setActiveSubtab('12.3')}
-            >
-              ICD-10 Diagnoses
-            </Button>
-            <Button
-              variant={activeSubtab === '12.4' ? 'primary' : 'outline'}
-              size="sm"
-              icon={Stethoscope}
-              onClick={() => setActiveSubtab('12.4')}
-            >
-              Encounters Browser
-            </Button>
-            <Button
-              variant={activeSubtab === '12.5' ? 'primary' : 'soft'}
-              size="sm"
-              icon={Paperclip}
-              onClick={() => setActiveSubtab('12.5')}
-            >
-              Clinical Documents
-            </Button>
-          </div>
-        </div>
-
-        <div style={{ position: 'relative', minHeight: '190px' }}>
-          <img
-            src={HEALTHCARE_IMAGES.emrRecords}
-            alt="Doctor Reviewing Electronic Medical Records at Workstation"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
           <div
             style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.2) 20%, transparent 60%)'
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '16px',
-              right: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-dropdown)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '8px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-bg-pale-aqua)',
+              border: '1px solid rgba(8, 127, 140, 0.25)',
+              flexShrink: 0
             }}
           >
             <ShieldCheck size={16} color="var(--color-success)" />
@@ -446,6 +388,49 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
               NABH EMR Audit Trail Active
             </span>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <Button
+            variant={activeSubtab === '12.2' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Pill}
+            onClick={() => setActiveSubtab('12.2')}
+          >
+            Prescription Studio
+          </Button>
+          <Button
+            variant={activeSubtab === '12.1' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Calendar}
+            onClick={() => setActiveSubtab('12.1')}
+          >
+            Patient Timeline
+          </Button>
+          <Button
+            variant={activeSubtab === '12.3' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Tag}
+            onClick={() => setActiveSubtab('12.3')}
+          >
+            ICD-10 Diagnoses
+          </Button>
+          <Button
+            variant={activeSubtab === '12.4' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Stethoscope}
+            onClick={() => setActiveSubtab('12.4')}
+          >
+            Encounters Browser
+          </Button>
+          <Button
+            variant={activeSubtab === '12.5' ? 'primary' : 'soft'}
+            size="sm"
+            icon={Paperclip}
+            onClick={() => setActiveSubtab('12.5')}
+          >
+            Clinical Documents
+          </Button>
         </div>
       </div>
 
