@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 8.1 & 8.2 Admissions & Chair Allocation
 async function createAdmission(data) {

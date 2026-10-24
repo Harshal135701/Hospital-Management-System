@@ -172,7 +172,43 @@ const sendNow = async (id) => {
 const cancelPendingForAppointment = (id) =>
   repo.cancelPendingForAppointment(id);
 
+
+const sendRemindersForDate = async (dateStr, appointmentIds = null) => {
+  if (!dateStr) {
+    throw new Error("Date is required");
+  }
+  const appointments = await repo.getAppointmentsForDate(dateStr);
+  const eligible = appointmentIds && Array.isArray(appointmentIds) && appointmentIds.length > 0
+    ? appointments.filter(a => appointmentIds.includes(a.id))
+    : appointments;
+
+  const results = [];
+  for (const appt of eligible) {
+    if (!appt.mobile) continue;
+    try {
+      const scheduled = await scheduleEvent(
+        appt.id,
+        "reminder_24h",
+        ["sms"],
+        new Date()
+      );
+      for (const n of scheduled) {
+        try {
+          const sent = await sendNow(n.id);
+          results.push({ appointmentId: appt.id, status: "sent", notification: sent });
+        } catch (sendErr) {
+          results.push({ appointmentId: appt.id, status: "failed", error: sendErr.message });
+        }
+      }
+    } catch (err) {
+      results.push({ appointmentId: appt.id, status: "error", error: err.message });
+    }
+  }
+  return { date: dateStr, totalProcessed: eligible.length, results };
+};
+
 module.exports = {
+  sendRemindersForDate,
   scheduleEvent,
   scheduleAppointmentReminders,
   processDueNotifications,

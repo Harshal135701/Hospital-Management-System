@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 14.1 Asset Master & Barcode Tagging
 async function createAsset(data) {

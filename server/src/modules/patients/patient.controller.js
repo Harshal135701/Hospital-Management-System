@@ -25,12 +25,48 @@ class PatientController {
     }
   }
 
+  async getPatientById(req, res, next) {
+    try {
+      const patient = await patientService.getPatientById(req.params.id);
+      res.status(200).json({
+        success: true,
+        data: patient
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async checkDuplicates(req, res, next) {
+    try {
+      const result = await patientService.checkDuplicates(req.body);
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async createPatient(req, res, next) {
     try {
       const newPatient = await patientService.createPatient(req.body);
       res.status(201).json({
         success: true,
         data: newPatient
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updatePatient(req, res, next) {
+    try {
+      const updated = await patientService.updatePatient(req.params.id, req.body);
+      res.status(200).json({
+        success: true,
+        data: updated
       });
     } catch (err) {
       next(err);

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { HospitalStateProvider } from './context/HospitalStateContext';
 import { LoginModal } from './components/auth/LoginModal';
 import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -7,12 +8,16 @@ import { PatientsView } from './components/patients/PatientsView';
 import { AppointmentsView } from './components/appointments/AppointmentsView';
 import { ClinicalsView } from './components/clinicals/ClinicalsView';
 import { BillingView } from './components/billing/BillingView';
+import { CreditBillingView } from './components/credit-billing/CreditBillingView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
+import { DepartmentsView } from './components/departments/DepartmentsView';
 import { WardsView } from './components/wards/WardsView';
 import { DayCareView } from './components/daycare/DayCareView';
 import { DietView } from './components/diet/DietView';
 import { EmrView } from './components/emr/EmrView';
+import { EmbryologyView } from './components/embryology/EmbryologyView';
+import { EmergencyView } from './components/emergency/EmergencyView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -23,8 +28,67 @@ import {
   Settings,
 } from 'lucide-react';
 
+const NAVIGATION_STORAGE_KEY = 'medicsprime_active_route';
+
+const VALID_ROUTE_BASES = new Set([
+  'dashboard',
+  'patients',
+  'appointments',
+  'billing',
+  'credit-billing',
+  'insurance',
+  'clinical',
+  'bloodbank',
+  'daycare',
+  'dietary',
+  'diet',
+  'emr',
+  'embryology',
+  'ivf',
+  'emergency',
+  'submodule',
+  'doctors',
+  'departments',
+  'rooms',
+  'lab',
+  'reports',
+  'settings'
+]);
+
+const DEFAULT_ROUTE = 'dashboard';
+
+function getInitialRoute() {
+  if (typeof window === 'undefined') return DEFAULT_ROUTE;
+  try {
+    const saved = window.sessionStorage?.getItem(NAVIGATION_STORAGE_KEY) ||
+                  window.localStorage?.getItem(NAVIGATION_STORAGE_KEY);
+    if (saved && typeof saved === 'string') {
+      const base = saved.split(':')[0];
+      if (VALID_ROUTE_BASES.has(base)) {
+        return saved;
+      }
+    }
+  } catch (e) {
+    console.warn('[Navigation] Could not read persisted route:', e);
+  }
+  return DEFAULT_ROUTE;
+}
+
 export function App() {
-  const [currentRoute, setCurrentRoute] = useState('dashboard');
+  const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const base = typeof currentRoute === 'string' ? currentRoute.split(':')[0] : '';
+      if (VALID_ROUTE_BASES.has(base)) {
+        window.sessionStorage?.setItem(NAVIGATION_STORAGE_KEY, currentRoute);
+        window.localStorage?.setItem(NAVIGATION_STORAGE_KEY, currentRoute);
+      }
+    } catch (e) {
+      console.warn('[Navigation] Could not persist route:', e);
+    }
+  }, [currentRoute]);
 
   const renderCurrentView = () => {
     const routeBase = typeof currentRoute === 'string' ? currentRoute.split(':')[0] : currentRoute;
@@ -45,6 +109,10 @@ export function App() {
       case 'billing':
         return <BillingView initialSubtab={routeSubtab || '4.1'} onNavigate={setCurrentRoute} />;
 
+      case 'credit-billing':
+      case 'insurance':
+        return <CreditBillingView initialSubtab={routeSubtab || '7.1'} onNavigate={setCurrentRoute} />;
+
       case 'clinical':
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
@@ -61,12 +129,31 @@ export function App() {
       case 'emr':
         return <EmrView initialSubtab={routeSubtab || '12.1'} onNavigate={setCurrentRoute} />;
 
+      case 'embryology':
+      case 'ivf':
+        return <EmbryologyView initialSubtab={routeSubtab || 'overview'} onNavigate={setCurrentRoute} />;
+
+      case 'emergency':
+        return <EmergencyView initialSubtab={routeSubtab || '11.1'} onNavigate={setCurrentRoute} />;
+
       case 'submodule': {
+        if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
+          return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('7.')) {
+          return <CreditBillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
         if (routeSubtab && routeSubtab.startsWith('8.')) {
           return <DayCareView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('9.')) {
           return <DietView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('10.') || routeSubtab === '10.0')) {
+          return <EmbryologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('11.')) {
+          return <EmergencyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('12.')) {
           return <EmrView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -91,12 +178,9 @@ export function App() {
 
       case 'departments':
         return (
-          <PlaceholderView
-            title="Hospital Departments & Clinical Wings"
-            subtitle="Organization of clinical disciplines, outpatient departments, and ICU wings."
-            icon={Building2}
-            imageKey="hospitalReception"
+          <DepartmentsView
             onBack={() => setCurrentRoute('dashboard')}
+            onNavigate={setCurrentRoute}
           />
         );
 
@@ -148,6 +232,7 @@ export function App() {
 
   return (
     <AuthProvider>
+      <HospitalStateProvider>
       <AppShell
         currentRoute={currentRoute}
         onNavigate={setCurrentRoute}
@@ -156,6 +241,7 @@ export function App() {
       </AppShell>
 
       <LoginModal />
+      </HospitalStateProvider>
     </AuthProvider>
   );
 }

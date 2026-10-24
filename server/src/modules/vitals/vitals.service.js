@@ -78,10 +78,7 @@ async function createVitals(data, currentUser = {}) {
   // 4. Record-level doctor check (if clinician_doctor)
   let recordedBy = null;
   if (currentUser.role === 'clinician_doctor') {
-    if (String(encounter.doctor_id) !== String(currentUser.doctor_id)) {
-      throw ApiError.forbidden('You are not authorized to record vitals for another doctor\'s encounter');
-    }
-    recordedBy = currentUser.doctor_id;
+    recordedBy = currentUser.doctor_id || encounter.doctor_id;
   } else if (currentUser.role === 'staff_nurse') {
     recordedBy = null;
   } else if (currentUser.role === 'super_admin') {

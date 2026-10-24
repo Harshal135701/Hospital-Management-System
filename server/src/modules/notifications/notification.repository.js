@@ -125,7 +125,27 @@ const cancelPendingForAppointment = async (appointmentId) => {
   return result.rows;
 };
 
+
+const getAppointmentsForDate = async (dateStr) => {
+  const result = await pool.query(
+    `SELECT a.id, a.patient_id, a.doctor_id, a.appointment_date,
+            a.start_time, a.status AS appointment_status,
+            p.full_name AS patient_name, p.mobile,
+            d.full_name AS doctor_name, dep.name AS department_name
+     FROM appointments a
+     JOIN patients p ON p.id = a.patient_id
+     JOIN doctors d ON d.id = a.doctor_id
+     JOIN departments dep ON dep.id = a.department_id
+     WHERE a.appointment_date = $1::date
+       AND a.status = 'booked'
+     ORDER BY a.start_time ASC`,
+    [dateStr]
+  );
+  return result.rows;
+};
+
 module.exports = {
+  getAppointmentsForDate,
   createNotification,
   getAppointmentDetails,
   getNotificationById,

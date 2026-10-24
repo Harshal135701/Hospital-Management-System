@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 9.1 Dietitian Nutritional Assessment
 async function createAssessment(data) {

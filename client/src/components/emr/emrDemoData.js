@@ -469,4 +469,3 @@ export const INITIAL_ENCOUNTERS = [
     ]
   }
 ];
-

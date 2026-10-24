@@ -1,77 +1,96 @@
+
 const ApiError = require('../utils/ApiError');
 const { ZodError } = require('zod');
 
 function errorHandler(err, req, res, next) {
-  // If response has already started sending
+  // Delegate if the response has already started.
   if (res.headersSent) {
     return next(err);
   }
 
-  // 1. Zod validation error
-  if (err instanceof ZodError) {
+  // 1. Zod validation errors
+  if (err instanceof ZodError || err.name === 'ZodError' || err.issues) {
+    const issues = err.issues || err.errors;
+
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: err.errors ? err.errors.map(e => ({ path: e.path.join('.'), message: e.message })) : err.message
+      errors: Array.isArray(issues)
+        ? issues.map((e) => ({
+            path: Array.isArray(e.path) ? e.path.join('.') : '',
+            message: e.message,
+          }))
+        : err.message,
     });
   }
 
-  // 2. Custom ApiError
+  // 2. Custom application errors
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
-      details: err.details
+      ...(err.details ? { errors: err.details } : {}),
     });
   }
 
-  // 3. PostgreSQL Database Errors
+  // 3. PostgreSQL errors
   if (err.code) {
     const isProd = process.env.NODE_ENV === 'production';
 
-    // Unique violation (e.g. duplicate donor_code, bag_barcode, requisition_number)
     if (err.code === '23505') {
       return res.status(409).json({
         success: false,
-        message: 'Conflict: A record with this unique identifier already exists.',
-        ...(isProd ? {} : { detail: err.detail })
+        message: 'A record with this unique identifier already exists.',
+        ...(!isProd ? { detail: err.detail } : {}),
       });
     }
 
-    // Foreign key violation
     if (err.code === '23503') {
       return res.status(400).json({
         success: false,
-        message: 'Invalid reference: The referenced record does not exist.',
-        ...(isProd ? {} : { detail: err.detail })
+        message: 'The referenced record does not exist.',
+        ...(!isProd ? { detail: err.detail } : {}),
       });
     }
 
-    // Check constraint violation
     if (err.code === '23514') {
       return res.status(400).json({
         success: false,
-        message: isProd ? 'Database check constraint failed.' : `Database constraint violation: ${err.message}`,
-        ...(isProd ? {} : { constraint: err.constraint })
+        message: isProd
+          ? 'Database constraint failed.'
+          : `Database constraint violation: ${err.message}`,
+        ...(!isProd ? { constraint: err.constraint } : {}),
       });
     }
 
-    // Custom PostgreSQL trigger RAISE EXCEPTION (error code P0001)
+    if (err.code === '22P02') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid UUID or parameter format provided.',
+      });
+    }
+
     if (err.code === 'P0001') {
       return res.status(422).json({
         success: false,
-        message: err.message,
-        ...(isProd ? {} : { hint: err.hint })
+        message: isProd
+          ? 'The requested operation could not be completed.'
+          : err.message,
+        ...(!isProd && err.hint ? { hint: err.hint } : {}),
       });
     }
   }
 
-  // Fallback 500 Internal Error
+  // 4. Unexpected errors
   console.error('[Unhandled Error]', err);
+
   const isProd = process.env.NODE_ENV === 'production';
+
   return res.status(500).json({
     success: false,
-    message: isProd ? 'Internal server error' : (err.message || 'Internal server error')
+    message: isProd
+      ? 'Internal server error'
+      : err.message || 'Internal server error',
   });
 }
 

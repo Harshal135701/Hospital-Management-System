@@ -1,4 +1,4 @@
-﻿const validation = require("./appointment.validation");
+const validation = require("./appointment.validation");
 const service = require("./appointment.service");
 
 const createAppointment = async (req, res, next) => {
@@ -128,3 +128,4 @@ module.exports = {
   getPatientHistory,
 
 };
+

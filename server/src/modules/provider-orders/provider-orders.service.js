@@ -143,7 +143,6 @@ async function createOrdersBatch(data, currentUser = {}) {
   if (items.length === 0) {
     throw ApiError.badRequest("At least one test order is required");
   }
-
   const client = await repository.pool.connect();
   try {
     await client.query('BEGIN');

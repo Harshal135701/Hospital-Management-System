@@ -19,6 +19,8 @@ import {
   Utensils,
   Egg,
   Siren,
+  ShieldAlert,
+  ArrowRightCircle,
   History,
   Pill,
   Paperclip,
@@ -49,10 +51,21 @@ import {
   HeartPulse,
   Syringe,
   ScanLine,
-  AlertCircle
+  AlertCircle,
+  Snowflake,
+  Flame,
+  LayoutGrid,
+  Printer,
+  Network,
+  FlaskConical,
+  Settings,
+  Dna,
+  Microscope
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
+  { id: '1', label: 'IVF & Andrology', count: 4, icon: FlaskConical, category: 'diagnostic', description: 'WHO 6th Edition semen analysis, straw cryopreservation, sample thawing, and donor registry.' },
+  { id: '2', label: 'Configuration & Integrations', count: 4, icon: Settings, category: 'admin', description: 'Dashboard widgets, barcode & thermal printers, scanner setup, and external API gateways.' },
   { id: '3', label: 'Appointments', count: 4, icon: Calendar, category: 'clinical', description: 'Outpatient consultation bookings, doctor shift rosters, live waiting room queue display, and patient SMS/WhatsApp alerts.' },
   { id: '4', label: 'Billing', count: 6, icon: Receipt, category: 'operations', description: 'OPD POS billing counters, interim IPD running bills, final discharge clearance, deposits, refunds, and cashier day-end settlements.' },
   { id: '5', label: 'Blood Bank', count: 5, icon: Droplet, category: 'diagnostic', description: 'Donor screening, phlebotomy barcoding, component centrifuge separation, serology testing release, and bedside cross-matching.' },
@@ -60,8 +73,8 @@ export const MODULE_GROUPS = [
   { id: '7', label: 'Insurance & TPA', count: 5, icon: ShieldCheck, category: 'operations', description: 'Insurance cashless pre-authorization, package enhancement requests, claim dossier compilation, and corporate co-pay collections.' },
   { id: '8', label: 'Day Care', count: 4, icon: Bed, category: 'clinical', description: 'Short-stay day care admissions, chemotherapy/dialysis chair allocation, procedure monitoring, and same-day discharge summaries.' },
   { id: '9', label: 'Diet & Nutrition', count: 4, icon: Utensils, category: 'operations', description: 'Dietitian clinical nutritional assessment, therapeutic diet ordering, kitchen batch meal production, and ward tray delivery tracking.' },
-  { id: '10', label: 'IVF Laboratory', count: 5, icon: Egg, category: 'diagnostic', description: 'Oocyte retrieval (OPU) dish logs, ICSI fertilization verification, Gardner embryo grading, embryo transfer, and cryo-tank storage.' },
-  { id: '11', label: 'Emergency', count: 5, icon: Siren, category: 'clinical', description: 'Level 1 to 4 Manchester triage, MLC registry, trauma bay resuscitation, trauma charting, and rapid ICU/OT disposition.' },
+  { id: '10', label: '10. Embryology', count: 5, icon: Egg, category: 'diagnostic', description: 'Oocyte retrieval (OPU) dish logs, ICSI fertilization verification, Gardner embryo grading, embryo transfer, and cryo-tank storage.' },
+  { id: '11', label: '11. Emergency', count: 5, icon: Siren, category: 'clinical', description: 'Level 1 to 4 Manchester triage, MLC registry, trauma bay resuscitation, trauma charting, and rapid ICU/OT disposition.' },
   { id: '12', label: 'Patient Clinical Records', count: 5, icon: FileSpreadsheet, category: 'clinical', description: 'Longitudinal lifetime patient timeline, e-Prescription studio, ICD-10 & SNOMED CT coding, encounters browser, and attachments.' },
   { id: '13', label: 'Finance & Accounting', count: 5, icon: Landmark, category: 'admin', description: 'Hospital chart of accounts, debit/credit payment vouchers, doctor revenue share payouts, bank reconciliation, and P&L reports.' },
   { id: '14', label: 'Assets & Maintenance', count: 5, icon: Wrench, category: 'admin', description: 'Biomedical equipment master, AMC/CMC warranties, preventive maintenance scheduler, breakdown tickets, and depreciation.' },
@@ -86,6 +99,82 @@ export const MODULE_GROUPS = [
 ];
 
 export const SUBMODULES = [
+  // Group 1 — IVF & Andrology Operations
+  {
+    id: '1.1',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Semen Analysis Entry',
+    subtitle: 'WHO 6th Edition compliant andrology entry, motility, morphology & vitality',
+    icon: FlaskConical,
+    badge: 'Diagnostic'
+  },
+  {
+    id: '1.2',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Cryopreservation / Semen Freezing',
+    subtitle: 'Specimen vitrification, straw barcodes, liquid nitrogen tank & canister allocation',
+    icon: Snowflake,
+    badge: 'Cryo-Bank'
+  },
+  {
+    id: '1.3',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Sample Thaw & Usage',
+    subtitle: 'Consent verification, aliquot retrieval, thaw survival rate & cycle deduction',
+    icon: Flame,
+    badge: 'Inventory'
+  },
+  {
+    id: '1.4',
+    groupId: '1',
+    groupName: 'IVF & Andrology Operations',
+    title: 'Donor Registry',
+    subtitle: 'Anonymous donor profiles, serology screening, consent audit & legal tracking',
+    icon: Users,
+    badge: 'Registry'
+  },
+
+  // Group 2 — Configuration & Integrations
+  {
+    id: '2.1',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'Widgets & Dashboard Configuration',
+    subtitle: 'Manage operational dashboard widgets, role-based layout & display visibility',
+    icon: LayoutGrid,
+    badge: 'Layout'
+  },
+  {
+    id: '2.2',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'Barcode & Thermal Printer Settings',
+    subtitle: 'Direct thermal, 80mm POS receipt printers, specimen tube & straw label profiles',
+    icon: Printer,
+    badge: 'Hardware'
+  },
+  {
+    id: '2.3',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'Document Scanner & Attachment Setup',
+    subtitle: 'EMR attachment file limits, category configuration & scan upload integration',
+    icon: FileSpreadsheet,
+    badge: 'EMR Setup'
+  },
+  {
+    id: '2.4',
+    groupId: '2',
+    groupName: 'Configuration & Integrations',
+    title: 'External API Integration Status',
+    subtitle: 'Live monitoring of SMS gateways, WhatsApp API, Payment Gateways & LIS links',
+    icon: Network,
+    badge: 'Gateway'
+  },
+
   // Group 3 — Appointments
   {
     id: '3.1',
@@ -397,11 +486,11 @@ export const SUBMODULES = [
     badge: 'Delivery'
   },
 
-  // Group 10 — IVF Laboratory
+  // Group 10 — Embryology
   {
     id: '10.1',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Oocyte Retrieval (OPU) Recording',
     subtitle: 'Follicles aspirated, oocytes retrieved, and MII/MI/GV maturity grading',
     icon: Egg,
@@ -410,38 +499,38 @@ export const SUBMODULES = [
   {
     id: '10.2',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Fertilization (Conventional IVF / ICSI)',
     subtitle: 'Sperm preparation, ICSI microinjection, and 2PN fertilization count',
-    icon: Egg,
-    badge: 'Embryology'
+    icon: Dna,
+    badge: 'Fertilization'
   },
   {
     id: '10.3',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Embryo Morphological Grading',
     subtitle: 'Cleavage stage, Day 3 & Day 5 Blastocyst grading (Gardner criteria)',
-    icon: Egg,
+    icon: Microscope,
     badge: 'Grading'
   },
   {
     id: '10.4',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Embryo Transfer (ET) Protocol',
     subtitle: 'Fresh/frozen ET, catheter tracking, ultrasound guidance, and luteal support',
-    icon: Egg,
+    icon: Syringe,
     badge: 'Transfer'
   },
   {
     id: '10.5',
     groupId: '10',
-    groupName: 'IVF Laboratory',
+    groupName: 'Embryology',
     title: 'Embryo Cryostorage Management',
     subtitle: 'Vitrification straws, liquid nitrogen tanks, canister coordinates, and expiry',
-    icon: Droplet,
-    badge: 'Cryo'
+    icon: Snowflake,
+    badge: 'Cryo-Bank'
   },
 
   // Group 11 — Emergency & Trauma
@@ -460,7 +549,7 @@ export const SUBMODULES = [
     groupName: 'Emergency',
     title: 'Medico-Legal Case (MLC) Registry',
     subtitle: 'Police intimation, RTA, assault, poisoning registry, and injury certificates',
-    icon: ShieldCheck,
+    icon: ShieldAlert,
     badge: 'MLC'
   },
   {
@@ -487,7 +576,7 @@ export const SUBMODULES = [
     groupName: 'Emergency',
     title: 'Rapid Disposition (ICU/OT/Ward/Discharge)',
     subtitle: 'Fast-track transfer to Cath Lab, ICU, OT, Inpatient Ward, or discharge',
-    icon: CheckCircle2,
+    icon: ArrowRightCircle,
     badge: 'Disposition'
   },
 

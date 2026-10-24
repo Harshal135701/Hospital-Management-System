@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 12.2 E-Prescription (Rx) Studio
 async function createPrescription(data) {

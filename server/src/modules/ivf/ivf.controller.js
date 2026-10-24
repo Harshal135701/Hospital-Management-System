@@ -135,7 +135,47 @@ async function updateCryostorageDisposition(req, res, next) {
   }
 }
 
+async function getAllOpus(req, res, next) {
+  try {
+    const data = await service.getAllOpus(req.query);
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getAllFertilizations(req, res, next) {
+  try {
+    const data = await service.getAllFertilizations(req.query);
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getAllEmbryos(req, res, next) {
+  try {
+    const data = await service.getAllEmbryos(req.query);
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getAllTransfers(req, res, next) {
+  try {
+    const data = await service.getAllTransfers(req.query);
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
+  getAllOpus,
+  getAllFertilizations,
+  getAllEmbryos,
+  getAllTransfers,
   createCycle,
   getCycles,
   getCycleById,

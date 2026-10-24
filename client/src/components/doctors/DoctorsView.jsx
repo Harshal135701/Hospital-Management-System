@@ -12,9 +12,14 @@ import {
   AlertCircle,
   Calendar,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Plus,
+  Edit3,
+  IndianRupee
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, SafeImage } from '../common/UIPrimitives';
+import { Card, Button, Badge, Input, Select, SafeImage, Modal } from '../common/UIPrimitives';
+import { DoctorAdminService, DepartmentService, TokenManager } from '../../services/api';
+import { formatINR } from '../../utils/formatters';
 import { ClinicalStaffService } from '../../services/api';
 import { HEALTHCARE_IMAGES, CLINICAL_FALLBACK_SVG } from '../../assets/images';
 
@@ -23,6 +28,34 @@ export const DoctorsView = ({ onBack, onNavigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
   const [isMock, setIsMock] = useState(false);
+  const [successBanner, setSuccessBanner] = useState(null);
+
+  // Doctor Admin Modals State
+  const [isAddDoctorOpen, setIsAddDoctorOpen] = useState(false);
+  const [isEditDoctorOpen, setIsEditDoctorOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState(null);
+  const [departmentsList, setDepartmentsList] = useState([]);
+  const [doctorForm, setDoctorForm] = useState({
+    fullName: '',
+    employeeCode: '',
+    departmentId: '',
+    specialty: '',
+    consultationFee: 500,
+    qualifications: 'MBBS, MD',
+    experienceYears: 5
+  });
+  const [isSubmittingDoc, setIsSubmittingDoc] = useState(false);
+  const [docModalError, setDocModalError] = useState(null);
+
+  useEffect(() => {
+    async function loadDepts() {
+      try {
+        const depts = await DepartmentService.getDepartments();
+        if (Array.isArray(depts)) setDepartmentsList(depts);
+      } catch {}
+    }
+    loadDepts();
+  }, []);
 
   useEffect(() => {
     async function loadStaff() {
@@ -34,6 +67,113 @@ export const DoctorsView = ({ onBack, onNavigate }) => {
     }
     loadStaff();
   }, []);
+
+
+  const handleAddDoctorSubmit = async (e) => {
+    e.preventDefault();
+    if (!doctorForm.fullName.trim() || !doctorForm.employeeCode.trim()) {
+      setDocModalError('Full name and employee code are required.');
+      return;
+    }
+    setIsSubmittingDoc(true);
+    setDocModalError(null);
+
+    try {
+      const payload = {
+        full_name: doctorForm.fullName.trim(),
+        employee_code: doctorForm.employeeCode.trim().toUpperCase(),
+        department_id: doctorForm.departmentId || (departmentsList[0]?.id || null),
+        specialty: doctorForm.specialty.trim() || 'General Specialist',
+        consultation_fee: parseFloat(doctorForm.consultationFee) || 500,
+        qualifications: doctorForm.qualifications.trim(),
+        experience_years: parseInt(doctorForm.experienceYears) || 0
+      };
+
+      if (TokenManager.getToken()) {
+        const res = await DoctorAdminService.createDoctor(payload);
+        const created = res?.data || res;
+        setStaffList(prev => [
+          {
+            id: created.id,
+            name: created.full_name,
+            role: 'Consultant',
+            department: departmentsList.find(d => d.id === created.department_id)?.name || 'General',
+            specialty: created.specialty,
+            qualification: created.qualifications,
+            room: 'Chamber 101',
+            shift: '08:00 - 16:00',
+            status: 'available',
+            consultation_fee: created.consultation_fee,
+            active_patients_today: 0,
+            imageKey: 'doctorConsultation'
+          },
+          ...prev
+        ]);
+      } else {
+        const newDoc = {
+          id: `doc-${Date.now()}`,
+          name: payload.full_name,
+          role: 'Consultant',
+          department: departmentsList.find(d => d.id === payload.department_id)?.name || 'General',
+          specialty: payload.specialty,
+          qualification: payload.qualifications,
+          room: 'Chamber 101',
+          shift: '08:00 - 16:00',
+          status: 'available',
+          consultation_fee: payload.consultation_fee,
+          active_patients_today: 0,
+          imageKey: 'doctorConsultation'
+        };
+        setStaffList(prev => [newDoc, ...prev]);
+      }
+
+      setIsAddDoctorOpen(false);
+      setSuccessBanner(`Doctor ${payload.full_name} added to hospital faculty.`);
+      setTimeout(() => setSuccessBanner(null), 4000);
+    } catch (err) {
+      setDocModalError(err.message || 'Failed to register doctor.');
+    } finally {
+      setIsSubmittingDoc(false);
+    }
+  };
+
+  const handleEditDoctorSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingDoctor) return;
+    setIsSubmittingDoc(true);
+    setDocModalError(null);
+
+    try {
+      const payload = {
+        full_name: doctorForm.fullName.trim(),
+        specialty: doctorForm.specialty.trim(),
+        consultation_fee: parseFloat(doctorForm.consultationFee) || 500,
+        qualifications: doctorForm.qualifications.trim(),
+        experience_years: parseInt(doctorForm.experienceYears) || 0
+      };
+
+      if (TokenManager.getToken()) {
+        await DoctorAdminService.updateDoctor(editingDoctor.id, payload);
+      }
+
+      setStaffList(prev =>
+        prev.map(s =>
+          s.id === editingDoctor.id
+            ? { ...s, name: payload.full_name, specialty: payload.specialty, consultation_fee: payload.consultation_fee, qualification: payload.qualifications }
+            : s
+        )
+      );
+
+      setIsEditDoctorOpen(false);
+      setEditingDoctor(null);
+      setSuccessBanner(`Doctor ${payload.full_name} updated successfully.`);
+      setTimeout(() => setSuccessBanner(null), 4000);
+    } catch (err) {
+      setDocModalError(err.message || 'Failed to update doctor.');
+    } finally {
+      setIsSubmittingDoc(false);
+    }
+  };
 
   const departments = ['all', ...new Set(staffList.map((s) => s.department))];
 
@@ -236,6 +376,27 @@ export const DoctorsView = ({ onBack, onNavigate }) => {
                   Today: <strong>{staff.active_patients_today}</strong> consults
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Edit3}
+                    onClick={() => {
+                      setEditingDoctor(staff);
+                      setDoctorForm({
+                        fullName: staff.name,
+                        employeeCode: staff.employee_code || 'DOC-01',
+                        departmentId: '',
+                        specialty: staff.specialty,
+                        consultationFee: staff.consultation_fee ? Number(staff.consultation_fee) : 500,
+                        qualifications: staff.qualification,
+                        experienceYears: staff.experience_years || 5
+                      });
+                      setDocModalError(null);
+                      setIsEditDoctorOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
                   {onNavigate && (
                     <Button
                       variant="outline"
@@ -258,6 +419,162 @@ export const DoctorsView = ({ onBack, onNavigate }) => {
           );
         })}
       </div>
+
+      {/* Add Doctor Modal */}
+      {isAddDoctorOpen && (
+        <Modal
+          isOpen={isAddDoctorOpen}
+          onClose={() => setIsAddDoctorOpen(false)}
+          title="Register Attending Doctor / Specialist"
+          subtitle="Add clinician to hospital directory and outpatient consultation schedules"
+          maxWidth="560px"
+        >
+          <form onSubmit={handleAddDoctorSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {docModalError && (
+              <div style={{ padding: '10px 14px', backgroundColor: '#FDE8E8', borderRadius: 'var(--radius-md)', color: '#9B1C1C', fontSize: '0.85rem' }}>
+                {docModalError}
+              </div>
+            )}
+
+            <Input
+              label="Doctor Full Name"
+              required
+              placeholder="e.g. Dr. Rajesh K. Gupta"
+              value={doctorForm.fullName}
+              onChange={(e) => setDoctorForm({ ...doctorForm, fullName: e.target.value })}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="Employee / Reg Code"
+                required
+                value={doctorForm.employeeCode}
+                onChange={(e) => setDoctorForm({ ...doctorForm, employeeCode: e.target.value })}
+              />
+
+              <div>
+                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
+                  Department
+                </label>
+                <select
+                  value={doctorForm.departmentId}
+                  onChange={(e) => setDoctorForm({ ...doctorForm, departmentId: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontSize: 'var(--font-size-sm)' }}
+                >
+                  {departmentsList.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
+              <Input
+                label="Clinical Specialty"
+                required
+                placeholder="e.g. Interventional Cardiology"
+                value={doctorForm.specialty}
+                onChange={(e) => setDoctorForm({ ...doctorForm, specialty: e.target.value })}
+              />
+
+              <Input
+                label="OPD Consultation Fee (₹)"
+                type="number"
+                min="0"
+                required
+                value={doctorForm.consultationFee}
+                onChange={(e) => setDoctorForm({ ...doctorForm, consultationFee: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '12px' }}>
+              <Input
+                label="Medical Qualifications"
+                placeholder="e.g. MBBS, MD, DM, FRCP"
+                value={doctorForm.qualifications}
+                onChange={(e) => setDoctorForm({ ...doctorForm, qualifications: e.target.value })}
+              />
+
+              <Input
+                label="Experience (Years)"
+                type="number"
+                min="0"
+                value={doctorForm.experienceYears}
+                onChange={(e) => setDoctorForm({ ...doctorForm, experienceYears: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <Button type="button" variant="ghost" onClick={() => setIsAddDoctorOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={isSubmittingDoc} icon={CheckCircle2}>
+                Save Doctor
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Doctor Modal */}
+      {isEditDoctorOpen && editingDoctor && (
+        <Modal
+          isOpen={isEditDoctorOpen}
+          onClose={() => setIsEditDoctorOpen(false)}
+          title="Edit Doctor Credentials & Tariff"
+          subtitle={`Updating details for ${editingDoctor.name}`}
+          maxWidth="560px"
+        >
+          <form onSubmit={handleEditDoctorSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {docModalError && (
+              <div style={{ padding: '10px 14px', backgroundColor: '#FDE8E8', borderRadius: 'var(--radius-md)', color: '#9B1C1C', fontSize: '0.85rem' }}>
+                {docModalError}
+              </div>
+            )}
+
+            <Input
+              label="Doctor Full Name"
+              required
+              value={doctorForm.fullName}
+              onChange={(e) => setDoctorForm({ ...doctorForm, fullName: e.target.value })}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
+              <Input
+                label="Clinical Specialty"
+                required
+                value={doctorForm.specialty}
+                onChange={(e) => setDoctorForm({ ...doctorForm, specialty: e.target.value })}
+              />
+
+              <Input
+                label="OPD Consultation Fee (₹)"
+                type="number"
+                min="0"
+                required
+                value={doctorForm.consultationFee}
+                onChange={(e) => setDoctorForm({ ...doctorForm, consultationFee: e.target.value })}
+              />
+            </div>
+
+            <Input
+              label="Medical Qualifications"
+              value={doctorForm.qualifications}
+              onChange={(e) => setDoctorForm({ ...doctorForm, qualifications: e.target.value })}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <Button type="button" variant="ghost" onClick={() => setIsEditDoctorOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={isSubmittingDoc} icon={CheckCircle2}>
+                Update Doctor
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
     </div>
   );
 };

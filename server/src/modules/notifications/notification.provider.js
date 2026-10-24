@@ -1,4 +1,4 @@
-﻿const sendMessage = async ({ channel, recipient, message }) => {
+const sendMessage = async ({ channel, recipient, message }) => {
   if (channel !== "sms") {
     throw new Error("Fast2SMS integration currently supports SMS only");
   }

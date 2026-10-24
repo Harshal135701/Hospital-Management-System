@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 13.1 Chart of Accounts & General Ledger
 async function createAccount(data) {

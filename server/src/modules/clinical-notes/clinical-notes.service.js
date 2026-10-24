@@ -138,7 +138,6 @@ async function updateClinicalNote(id, data, currentUser = {}) {
   );
 
   const note = await repository.getClinicalNoteById(id);
-
   if (!note) {
     throw ApiError.notFound("Clinical progress note not found");
   }
@@ -156,7 +155,6 @@ async function updateClinicalNote(id, data, currentUser = {}) {
   }
 
   await validateEncounter(note.encounter_id);
-
   const updatedData = {
     noteType: data.note_type,
     status: data.status,
@@ -188,7 +186,6 @@ async function finalizeClinicalNote(id, currentUser = {}) {
       throw ApiError.forbidden("You are not authorized to sign another doctor's progress note");
     }
   }
-
   if (note.status === "finalized") {
     throw ApiError.conflict("Clinical note is already finalized and signed");
   }

@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 15.1 Hospital & Branch Master
 async function createHospital(data) {

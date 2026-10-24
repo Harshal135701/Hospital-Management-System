@@ -35,4 +35,10 @@ router.post("/embryos/:embryoId/cryostore", requireRoles("lab_technician", "supe
 router.get("/cryostorage", requireRoles("lab_technician", "clinician_doctor", "super_admin"), controller.getCryostorage);
 router.patch("/cryostorage/:id/disposition", requireRoles("clinician_doctor", "super_admin"), controller.updateCryostorageDisposition);
 
+// Global Lists for Module 10 Embryology Workspace
+router.get("/opus", requireRoles("clinician_doctor", "staff_nurse", "lab_technician", "super_admin"), controller.getAllOpus);
+router.get("/fertilizations", requireRoles("clinician_doctor", "staff_nurse", "lab_technician", "super_admin"), controller.getAllFertilizations);
+router.get("/embryos", requireRoles("clinician_doctor", "staff_nurse", "lab_technician", "super_admin"), controller.getAllEmbryos);
+router.get("/transfers", requireRoles("clinician_doctor", "staff_nurse", "lab_technician", "super_admin"), controller.getAllTransfers);
+
 module.exports = router;

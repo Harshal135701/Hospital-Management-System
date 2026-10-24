@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Central API Client and Typed Data Services
  * Integrates with existing backend /api endpoints and provides explicit demo-labeled mock adapters.
  */
@@ -191,6 +191,48 @@ export const PatientService = {
     // Strict contract: GET /api/patients?search=...
     const res = await apiFetch(`/patients?search=${encodeURIComponent(query.trim())}`);
     return res?.data || res || [];
+  },
+
+  async createPatient(data) {
+    if (TokenManager.getToken()) {
+      // Authenticated production mode: POST to backend API
+      const payload = {
+        full_name: data.full_name ? String(data.full_name).trim() : '',
+        mobile: data.mobile ? String(data.mobile).trim() : '',
+        ...(data.date_of_birth ? { date_of_birth: data.date_of_birth } : {}),
+        ...(data.gender ? { gender: data.gender } : {}),
+        ...(data.uhid ? { uhid: String(data.uhid).trim() } : {})
+      };
+      const res = await apiFetch('/patients', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      return res?.data || res;
+    }
+
+    // In unauthenticated / demo mode, callers manage HospitalStateContext persistence.
+    // Provide a safe mock response if called directly without an active token:
+    const mockPatient = {
+      id: `p-${Date.now()}`,
+      uhid: `UHID-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      full_name: data.full_name ? String(data.full_name).trim() : '',
+      mobile: data.mobile ? String(data.mobile).trim() : '',
+      date_of_birth: data.date_of_birth || null,
+      gender: data.gender || 'other',
+      created_at: new Date().toISOString()
+    };
+    return { data: mockPatient, isMock: true };
+  },
+
+  async updatePatient(id, data) {
+    if (TokenManager.getToken()) {
+      const res = await apiFetch('/patients/' + encodeURIComponent(id), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return res?.data || res;
+    }
+    return { data, isMock: true };
   }
 };
 
@@ -327,6 +369,55 @@ export const DepartmentService = {
     }
     const res = await apiFetch('/departments');
     return res?.data || res || [];
+  },
+  async createDepartment(data) {
+    const res = await apiFetch('/departments', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async updateDepartment(id, data) {
+    const res = await apiFetch(`/departments/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async toggleStatus(id, isActive) {
+    const res = await apiFetch(`/departments/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_active: isActive })
+    });
+    return res?.data || res;
+  }
+};
+
+export const RoomService = {
+  async getRooms(departmentId = null) {
+    if (!TokenManager.getToken()) return [];
+    const qs = departmentId ? `?department_id=${encodeURIComponent(departmentId)}` : '';
+    const res = await apiFetch(`/rooms${qs}`);
+    return res?.data || [];
+  },
+  async createRoom(data) {
+    const res = await apiFetch('/rooms', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async updateRoom(id, data) {
+    const res = await apiFetch(`/rooms/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res?.data || res;
+  }
+};
+
+export const DoctorAdminService = {
+  async getDoctors(departmentId = null) {
+    if (!TokenManager.getToken()) return [];
+    const qs = departmentId ? `?department_id=${encodeURIComponent(departmentId)}` : '';
+    const res = await apiFetch(`/doctors${qs}`);
+    return res?.data || [];
+  },
+  async createDoctor(data) {
+    const res = await apiFetch('/doctors', { method: 'POST', body: JSON.stringify(data) });
+    return res?.data || res;
+  },
+  async updateDoctor(id, data) {
+    const res = await apiFetch(`/doctors/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res?.data || res;
   }
 };
 
@@ -1580,4 +1671,319 @@ export const ClinicalService = {
       return [];
     }
   },
+};
+
+
+// Module 7 — Credit Billing / Insurance & TPA Services
+export const InsuranceTpaService = {
+  // 7.1 Pre-Authorizations
+  async getPreauthorizations(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/preauthorizations${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getPreauthorizations fallback:', err.message);
+      return [];
+    }
+  },
+  async getPreauthorizationById(id) {
+    const res = await apiFetch(`/insurance/preauthorizations/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createPreauthorization(data) {
+    const res = await apiFetch('/insurance/preauthorizations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async submitPreauthorization(id) {
+    const res = await apiFetch(`/insurance/preauthorizations/${encodeURIComponent(id)}/submit`, {
+      method: 'PATCH'
+    });
+    return res?.data;
+  },
+  async recordPreauthDecision(id, data) {
+    const res = await apiFetch(`/insurance/preauthorizations/${encodeURIComponent(id)}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.2 Enhancement Requests
+  async getEnhancements(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/enhancements${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getEnhancements fallback:', err.message);
+      return [];
+    }
+  },
+  async getEnhancementById(id) {
+    const res = await apiFetch(`/insurance/enhancements/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createEnhancement(data) {
+    const res = await apiFetch('/insurance/enhancements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async submitEnhancement(id) {
+    const res = await apiFetch(`/insurance/enhancements/${encodeURIComponent(id)}/submit`, {
+      method: 'PATCH'
+    });
+    return res?.data;
+  },
+  async recordEnhancementDecision(id, data) {
+    const res = await apiFetch(`/insurance/enhancements/${encodeURIComponent(id)}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.3 Claim Dossiers
+  async getClaimDossiers(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/claims${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getClaimDossiers fallback:', err.message);
+      return [];
+    }
+  },
+  async getClaimDossierById(id) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createClaimDossier(data) {
+    const res = await apiFetch('/insurance/claims', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async compileClaimDossier(id) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}/compile`, {
+      method: 'PATCH'
+    });
+    return res?.data;
+  },
+  async submitClaimDossier(id, data = {}) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}/submit`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async recordClaimDecision(id, data) {
+    const res = await apiFetch(`/insurance/claims/${encodeURIComponent(id)}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.4 Patient Responsibilities (Co-Payments & Deductibles)
+  async getResponsibilities(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/responsibilities${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getResponsibilities fallback:', err.message);
+      return [];
+    }
+  },
+  async getResponsibilityById(id) {
+    const res = await apiFetch(`/insurance/responsibilities/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createResponsibility(data) {
+    const res = await apiFetch('/insurance/responsibilities', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async collectResponsibilityPayment(id, data) {
+    const res = await apiFetch(`/insurance/responsibilities/${encodeURIComponent(id)}/collect`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 7.5 TPA Reconciliations & Remittance Posting
+  async getReconciliations(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/insurance/reconciliations${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[InsuranceTpaService] getReconciliations fallback:', err.message);
+      return [];
+    }
+  },
+  async getReconciliationById(id) {
+    const res = await apiFetch(`/insurance/reconciliations/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createReconciliation(data) {
+    const res = await apiFetch('/insurance/reconciliations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async postReconciliationPayment(id, data) {
+    const res = await apiFetch(`/insurance/reconciliations/${encodeURIComponent(id)}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  }
+};
+
+
+// Module 10 — Embryology & IVF Laboratory Services
+export const EmbryologyService = {
+  // Cycles
+  async getCycles(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/ivf/cycles${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getCycles fallback:', err.message);
+      return [];
+    }
+  },
+  async getCycleById(id) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+  async createCycle(data) {
+    const res = await apiFetch('/ivf/cycles', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.1 OPU Recording
+  async getOpus(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/opu` : '/ivf/opus';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getOpus fallback:', err.message);
+      return [];
+    }
+  },
+  async recordOpu(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/opu`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.2 Fertilization Records
+  async getFertilizations(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/fertilization` : '/ivf/fertilizations';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getFertilizations fallback:', err.message);
+      return [];
+    }
+  },
+  async recordFertilization(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/fertilization`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.3 Embryo Morphological Grading
+  async getEmbryos(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/embryos` : '/ivf/embryos';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getEmbryos fallback:', err.message);
+      return [];
+    }
+  },
+  async createEmbryo(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/embryos`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async updateEmbryo(embryoId, data) {
+    const res = await apiFetch(`/ivf/embryos/${encodeURIComponent(embryoId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.4 Embryo Transfer Protocol
+  async getTransfers(cycleId = null) {
+    try {
+      const endpoint = cycleId ? `/ivf/cycles/${encodeURIComponent(cycleId)}/transfer` : '/ivf/transfers';
+      const res = await apiFetch(endpoint);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getTransfers fallback:', err.message);
+      return [];
+    }
+  },
+  async recordTransfer(cycleId, data) {
+    const res = await apiFetch(`/ivf/cycles/${encodeURIComponent(cycleId)}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 10.5 Embryo Cryostorage Management
+  async getCryostorage(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/ivf/cryostorage${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[EmbryologyService] getCryostorage fallback:', err.message);
+      return [];
+    }
+  },
+  async storeEmbryo(embryoId, data) {
+    const res = await apiFetch(`/ivf/embryos/${encodeURIComponent(embryoId)}/cryostore`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+  async updateCryostorageDisposition(id, data) {
+    const res = await apiFetch(`/ivf/cryostorage/${encodeURIComponent(id)}/disposition`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  }
 };

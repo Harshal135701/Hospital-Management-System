@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // Cycles
 async function createCycle(data) {
@@ -414,7 +414,62 @@ async function updateCryostorageDisposition(id, data) {
   return result.rows[0] || null;
 }
 
+// Global cross-cycle lists for Module 10
+async function getAllOpus(filters = {}) {
+  const query = `
+    SELECT ior.*, d.full_name AS physician_name, ic.cycle_number, ic.patient_id, p.full_name AS patient_name, p.uhid AS patient_uhid
+    FROM ivf_oocyte_retrievals ior
+    JOIN ivf_cycles ic ON ic.id = ior.cycle_id
+    JOIN patients p ON p.id = ic.patient_id
+    LEFT JOIN doctors d ON d.id = ior.physician_id
+    ORDER BY ior.retrieval_date DESC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+}
+
+async function getAllFertilizations(filters = {}) {
+  const query = `
+    SELECT ifr.*, ic.cycle_number, ic.patient_id, p.full_name AS patient_name, p.uhid AS patient_uhid
+    FROM ivf_fertilization_records ifr
+    JOIN ivf_cycles ic ON ic.id = ifr.cycle_id
+    JOIN patients p ON p.id = ic.patient_id
+    ORDER BY ifr.insemination_time DESC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+}
+
+async function getAllEmbryos(filters = {}) {
+  const query = `
+    SELECT ie.*, ic.cycle_number, ic.patient_id, p.full_name AS patient_name, p.uhid AS patient_uhid
+    FROM ivf_embryos ie
+    JOIN ivf_cycles ic ON ic.id = ie.cycle_id
+    JOIN patients p ON p.id = ic.patient_id
+    ORDER BY ie.created_at DESC, ie.embryo_code ASC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+}
+
+async function getAllTransfers(filters = {}) {
+  const query = `
+    SELECT iet.*, d.full_name AS physician_name, ic.cycle_number, ic.patient_id, p.full_name AS patient_name, p.uhid AS patient_uhid
+    FROM ivf_embryo_transfers iet
+    JOIN ivf_cycles ic ON ic.id = iet.cycle_id
+    JOIN patients p ON p.id = ic.patient_id
+    LEFT JOIN doctors d ON d.id = iet.physician_id
+    ORDER BY iet.transfer_date DESC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+}
+
 module.exports = {
+  getAllOpus,
+  getAllFertilizations,
+  getAllEmbryos,
+  getAllTransfers,
   createCycle,
   getCycles,
   getCycleById,

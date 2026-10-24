@@ -1,4 +1,4 @@
-﻿const pool = require("../../config/db");
+const pool = require("../../config/db");
 
 // 11.1 Triage Assessment
 async function createTriage(data) {

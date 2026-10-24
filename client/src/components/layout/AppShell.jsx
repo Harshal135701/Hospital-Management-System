@@ -26,12 +26,19 @@ import {
   User,
   Receipt,
   Layers,
-  Utensils,
-  FileSpreadsheet
+  Egg,
+  Siren,
+  RotateCcw,
+  AlertTriangle,
+  Database,
+  Check,
+  Copy
 } from 'lucide-react';
-import { Button } from '../common/UIPrimitives';
+import { Button, Modal, Badge } from '../common/UIPrimitives';
+import { useHospitalState } from '../../context/HospitalStateContext';
 import { useAuth } from '../../context/AuthContext';
 import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
+import { BILLING_GROUPS } from '../billing/billingConstants';
 
 export const AppShell = ({
   currentRoute,
@@ -39,6 +46,56 @@ export const AppShell = ({
   children
 }) => {
   const { user, isAuthenticated, logout, openLoginModal } = useAuth();
+  const { storageWarning, quarantineData, resetDemoData, dismissStorageWarning, retryPersistence } = useHospitalState();
+  const [isResetConfirmModalOpen, setIsResetConfirmModalOpen] = useState(false);
+  const [isQuarantineInspectModalOpen, setIsQuarantineInspectModalOpen] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState({});
+
+  const handleCopyRawPayload = async (incidentId, rawText) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard || !navigator.clipboard.writeText) {
+      setCopyFeedback(prev => ({
+        ...prev,
+        [incidentId]: { status: 'error', message: 'Clipboard API not supported' }
+      }));
+      setTimeout(() => {
+        setCopyFeedback(prev => {
+          const next = { ...prev };
+          delete next[incidentId];
+          return next;
+        });
+      }, 3000);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(rawText || '');
+      setCopyFeedback(prev => ({
+        ...prev,
+        [incidentId]: { status: 'success', message: 'Copied!' }
+      }));
+      setTimeout(() => {
+        setCopyFeedback(prev => {
+          const next = { ...prev };
+          delete next[incidentId];
+          return next;
+        });
+      }, 2000);
+    } catch (err) {
+      console.warn('[AppShell] Clipboard copy failed:', err);
+      setCopyFeedback(prev => ({
+        ...prev,
+        [incidentId]: { status: 'error', message: 'Copy denied by browser' }
+      }));
+      setTimeout(() => {
+        setCopyFeedback(prev => {
+          const next = { ...prev };
+          delete next[incidentId];
+          return next;
+        });
+      }, 3000);
+    }
+  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -46,31 +103,68 @@ export const AppShell = ({
     }
     return false;
   });
-  const [expandedSectionsManual, setExpandedSectionsManual] = useState({
-    appointments: true,
-    clinical: false,
-  });
-  const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({
-    '3': true,
-  });
+  const [expandedSectionsManual, setExpandedSectionsManual] = useState({});
+  const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({});
+  const [expandedBillingGroups, setExpandedBillingGroups] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Auto-expand active group in Billing hierarchy when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && currentRoute.startsWith('billing:')) {
+      const parts = currentRoute.split(':');
+      const subId = parts[1];
+      if (subId) {
+        const groupNum = subId.split('.')[0];
+        if (groupNum) {
+          setExpandedBillingGroups(prev => ({ ...prev, [groupNum]: true }));
+        }
+      }
+      setExpandedSectionsManual(prev => ({ ...prev, billing: true }));
+    }
+  }, [currentRoute]);
+
+  // Auto-expand Credit Billing when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'credit-billing' || currentRoute.startsWith('credit-billing:'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, 'credit-billing': true }));
+    }
+  }, [currentRoute]);
+
+  // Auto-expand Embryology when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'embryology' || currentRoute.startsWith('embryology:') || currentRoute.startsWith('submodule:10.'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, embryology: true }));
+    }
+  }, [currentRoute]);
+
+  // Auto-expand Emergency when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'emergency' || currentRoute.startsWith('emergency:') || currentRoute.startsWith('submodule:11.'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, emergency: true }));
+    }
+  }, [currentRoute]);
 
   // Auto-expand active group in Appointment hierarchy when currentRoute changes
   useEffect(() => {
-    if (typeof currentRoute === 'string' && currentRoute.startsWith('appointments:')) {
-      const parts = currentRoute.split(':');
-      if (parts[1] === 'group') {
-        const gId = parts[2];
-        if (gId) {
-          setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
+    if (typeof currentRoute === 'string' && (currentRoute === 'appointments' || currentRoute.startsWith('appointments:'))) {
+      if (currentRoute.startsWith('appointments:')) {
+        const parts = currentRoute.split(':');
+        if (parts[1] === 'group') {
+          const gId = parts[2];
+          if (gId) {
+            setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
+          }
+        } else {
+          const subId = parts[1]?.replace('submodule:', '');
+          const found = SUBMODULES.find(s => s.id === subId);
+          if (found) {
+            setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
+          }
         }
       } else {
-        const subId = parts[1]?.replace('submodule:', '');
-        const found = SUBMODULES.find(s => s.id === subId);
-        if (found) {
-          setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
-        }
+        setExpandedAppointmentGroups(prev => ({ ...prev, '3': true }));
       }
+      setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
     }
   }, [currentRoute]);
 
@@ -103,6 +197,52 @@ export const AppShell = ({
           isAppointmentHierarchy: true
         },
         {
+          id: 'billing',
+          label: 'Billing',
+          icon: Receipt,
+          badge: '16 Modules',
+          isBillingHierarchy: true
+        },
+        {
+          id: 'credit-billing',
+          label: 'Credit Billing',
+          icon: ShieldCheck,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'credit-billing:7.1', label: '7.1 TPA Pre-Authorization' },
+            { id: 'credit-billing:7.2', label: '7.2 Enhancement Requests' },
+            { id: 'credit-billing:7.3', label: '7.3 Claim Dossiers' },
+            { id: 'credit-billing:7.4', label: '7.4 Co-Pay & Deductibles' },
+            { id: 'credit-billing:7.5', label: '7.5 TPA Reconciliation' }
+          ]
+        },
+        {
+          id: 'embryology',
+          label: 'Embryology',
+          icon: Egg,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'embryology:10.1', label: 'Oocyte Retrieval (OPU) Recording' },
+            { id: 'embryology:10.2', label: 'Fertilization (Conventional IVF / ICSI)' },
+            { id: 'embryology:10.3', label: 'Embryo Morphological Grading' },
+            { id: 'embryology:10.4', label: 'Embryo Transfer (ET) Protocol' },
+            { id: 'embryology:10.5', label: 'Embryo Cryostorage Management' }
+          ]
+        },
+        {
+          id: 'emergency',
+          label: 'Emergency',
+          icon: Siren,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'emergency:11.1', label: '11.1 Triage Assessment (Level 1 to 4)' },
+            { id: 'emergency:11.2', label: '11.2 Medico-Legal Case (MLC) Registry' },
+            { id: 'emergency:11.3', label: '11.3 Emergency Bay & Bed Allocation' },
+            { id: 'emergency:11.4', label: '11.4 Trauma Clinical Charting' },
+            { id: 'emergency:11.5', label: '11.5 Rapid Disposition (ICU/OT/Ward/Discharge)' }
+          ]
+        },
+        {
           id: 'clinical',
           label: 'Clinical Desk',
           icon: Stethoscope,
@@ -112,43 +252,7 @@ export const AppShell = ({
             { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
             { id: 'clinical:orders', label: 'Orders (CPOE)' },
             { id: 'clinical:notes', label: 'Clinical Progress Notes' }
-          ]
-        },
-        {
-          id: 'daycare',
-          label: 'Day Care',
-          icon: Bed,
-          badge: '4 Ops',
-          subItems: [
-            { id: 'daycare:8.1', label: '8.1 Admission & Procedure' },
-            { id: 'daycare:8.2', label: '8.2 Chair & Bed Allocation' },
-            { id: 'daycare:8.3', label: '8.3 Procedure Monitoring' },
-            { id: 'daycare:8.4', label: '8.4 Discharge Summary' }
-          ]
-        },
-        {
-          id: 'dietary',
-          label: 'Diet & Nutrition',
-          icon: Utensils,
-          badge: 'Kitchen',
-          subItems: [
-            { id: 'dietary:9.1', label: '9.1 Nutritional Assessment' },
-            { id: 'dietary:9.2', label: '9.2 Patient Diet Ordering' },
-            { id: 'dietary:9.3', label: '9.3 Kitchen Batch Production' },
-            { id: 'dietary:9.4', label: '9.4 Ward Meal Delivery' }
-          ]
-        },
-        {
-          id: 'emr',
-          label: 'EMR Records',
-          icon: FileSpreadsheet,
-          badge: 'Rx & Chart',
-          subItems: [
-            { id: 'emr:12.1', label: '12.1 Patient Timeline' },
-            { id: 'emr:12.2', label: '12.2 Prescription Studio' },
-            { id: 'emr:12.3', label: '12.3 ICD-10 Diagnoses' },
-            { id: 'emr:12.4', label: '12.4 Encounters Browser' },
-            { id: 'emr:12.5', label: '12.5 Clinical Documents' }
+
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
@@ -453,7 +557,7 @@ export const AppShell = ({
                   const isItemActive = currentRoute === item.id ||
                     (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
-                  const hasSubItems = Boolean(item.isAppointmentHierarchy || (item.subItems && item.subItems.length > 0));
+                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || (item.subItems && item.subItems.length > 0));
                   const isExpanded = Boolean(
                     expandedSectionsManual[item.id] !== undefined
                       ? expandedSectionsManual[item.id]
@@ -461,13 +565,28 @@ export const AppShell = ({
                   ) && !effectiveCollapsed;
 
                   const handleItemClick = () => {
+                    if (item.isBillingHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('billing:4.1');
+                      } else {
+                        if (currentRoute !== 'billing' && !currentRoute.startsWith('billing:')) {
+                          handleSelectNav('billing:4.1');
+                          setExpandedSectionsManual(prev => ({ ...prev, billing: true }));
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, billing: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
                     if (item.isAppointmentHierarchy) {
                       if (effectiveCollapsed) {
-                        handleSelectNav('appointments');
+                        handleSelectNav('appointments:3.1');
                       } else {
                         if (currentRoute !== 'appointments' && !currentRoute.startsWith('appointments:')) {
-                          handleSelectNav('appointments');
+                          handleSelectNav('appointments:3.1');
                           setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
+                          setExpandedAppointmentGroups(prev => ({ ...prev, '3': true }));
                         } else {
                           setExpandedSectionsManual(prev => ({ ...prev, appointments: !isExpanded }));
                         }
@@ -760,8 +879,167 @@ export const AppShell = ({
                         </div>
                       )}
 
+                      {/* Expandable Billing Module Complete Hierarchy */}
+                      {item.isBillingHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '3px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: '360px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                          }}
+                        >
+                          {BILLING_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedBillingGroups[group.id]);
+                            const groupSubmodules = group.submodules;
+                            const isGroupActive =
+                              typeof currentRoute === 'string' &&
+                              (currentRoute === `billing:group:${group.id}` ||
+                               groupSubmodules.some(s => currentRoute === `billing:${s.id}`));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectNav(`billing:${group.submodules[0].id}`);
+                                      setExpandedBillingGroups(prev => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={group.title}
+                                  >
+                                    {group.shortTitle || group.title}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedBillingGroups(prev => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'var(--color-text-muted)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Submodules */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {groupSubmodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === `billing:${sub.id}` ||
+                                        (currentRoute === 'billing' && sub.id === '4.1');
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(`billing:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={sub.title}
+                                        >
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {sub.title}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Expandable Sub-Navigation for other modules (e.g. Clinical) */}
-                      {!item.isAppointmentHierarchy && hasSubItems && isExpanded && (
+                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && hasSubItems && isExpanded && (
                         <div
                           style={{
                             display: 'flex',
@@ -777,7 +1055,12 @@ export const AppShell = ({
                           {item.subItems.map((sub) => {
                             const isSubActive =
                               currentRoute === sub.id ||
-                              (sub.id === 'clinical:consultation' && currentRoute === 'clinical');
+                              (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
+                              (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') ||
+                              (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) ||
+                              (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) ||
+                              (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) ||
+                              (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`));
                             return (
                               <button
                                 type="button"
@@ -1108,8 +1391,12 @@ export const AppShell = ({
                       onClick={() => {
                         if (sub.id.startsWith('3.')) {
                           handleSelectNav(`appointments:${sub.id}`);
-                        } else if (sub.id.startsWith('4.')) {
+                        } else if (sub.id.startsWith('1.') || sub.id.startsWith('2.') || sub.id.startsWith('4.')) {
                           handleSelectNav(`billing:${sub.id}`);
+                        } else if (sub.id.startsWith('10.')) {
+                          handleSelectNav(`embryology:${sub.id}`);
+                        } else if (sub.id.startsWith('11.')) {
+                          handleSelectNav(`emergency:${sub.id}`);
                         } else {
                           handleSelectNav(`submodule:${sub.id}`);
                         }
@@ -1185,6 +1472,53 @@ export const AppShell = ({
               />
             </button>
 
+            {/* Demo Storage Mode Indicator & Reset Trigger */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--color-bg-pale-aqua)',
+                  border: '1px solid rgba(8, 127, 140, 0.25)',
+                  color: 'var(--color-primary-teal)',
+                  fontSize: '0.72rem',
+                  fontWeight: '600'
+                }}
+                title="Prototype running in isolated localStorage mode (v1 schema)"
+              >
+                <Database size={13} />
+                <span>Demo v1</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: '#FFFFFF',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                className="desktop-collapse-btn"
+                title="Reset demo data to clean seed state"
+                aria-label="Reset Demo Data"
+              >
+                <RotateCcw size={13} />
+                <span>Reset Demo</span>
+              </button>
+            </div>
+
             {/* Department Quick Switcher */}
             <div
               style={{
@@ -1240,11 +1574,350 @@ export const AppShell = ({
           </div>
         </header>
 
+        {/* Storage Recovery Warning Banner */}
+        {storageWarning && (
+          <div
+            style={{
+              backgroundColor: '#FFFBEB',
+              borderBottom: '1px solid #FDE68A',
+              padding: '12px 32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              zIndex: 40
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: '#FEF3C7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#D97706',
+                  flexShrink: 0
+                }}
+              >
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: '#92400E' }}>
+                  {storageWarning.type === 'PERSISTENCE_FAILED'
+                    ? 'Storage Write Warning: Persistence Paused'
+                    : storageWarning.type === 'STORAGE_UNAVAILABLE'
+                    ? 'Local Storage Unavailable: Memory-Only Mode'
+                    : 'Storage Recovery Activated: Clean Demo State Loaded'}
+                </div>
+                <div style={{ fontSize: 'var(--font-size-xs)', color: '#B45309', marginTop: '1px' }}>
+                  {storageWarning.message}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {storageWarning.type === 'PERSISTENCE_FAILED' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof retryPersistence === 'function') {
+                      retryPersistence();
+                    }
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    color: '#FFFFFF',
+                    backgroundColor: 'var(--color-primary-teal)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Retry Save
+                </button>
+              )}
+              {quarantineData && quarantineData.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsQuarantineInspectModalOpen(true)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '600',
+                  color: '#92400E',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #FCD34D',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer'
+                }}
+              >
+                Inspect Quarantined Data
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmModalOpen(true)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: '600',
+                  color: '#FFFFFF',
+                  backgroundColor: '#D97706',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer'
+                }}
+              >
+                Reset Demo Data
+              </button>
+              <button
+                type="button"
+                onClick={dismissStorageWarning}
+                style={{
+                  padding: '6px 8px',
+                  color: '#B45309',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  lineHeight: 1
+                }}
+                title="Dismiss notice"
+                aria-label="Dismiss notice"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Content Workspace */}
         <main style={{ flex: 1, padding: '32px', backgroundColor: 'var(--color-bg-main)' }}>
           {children}
         </main>
       </div>
+
+      {/* Reset Demo Data Confirmation Modal */}
+      <Modal
+        isOpen={isResetConfirmModalOpen}
+        onClose={() => {
+          setIsResetConfirmModalOpen(false);
+          setResetFeedback(null);
+        }}
+        title="Reset Hospital Demo Data"
+        subtitle="Restore clean seed dataset for prototype testing"
+        maxWidth="540px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            style={{
+              padding: '14px 16px',
+              backgroundColor: 'var(--color-bg-pale-aqua)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(8, 127, 140, 0.2)',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-primary)',
+              lineHeight: 1.5
+            }}
+          >
+            <strong>Scoped Demo Reset Policy:</strong>
+            <p style={{ margin: '6px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+              This operation strictly purges <code>medicsprime_hms_demo_v1</code> and <code>medicsprime_hms_demo_v1_quarantine</code> from your browser&apos;s localStorage. It resets all patients, appointment queue tokens, IPD admissions, billing ledgers, and lab data back to the clean factory demo state.
+            </p>
+            <p style={{ margin: '6px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+              Your UI preferences (such as collapsed sidebar) and active staff session remain completely unaffected.
+            </p>
+          </div>
+
+          {resetFeedback && (
+            <div
+              style={{
+                padding: '10px 14px',
+                backgroundColor: resetFeedback.type === 'success' ? '#ECFDF5' : '#FEF2F2',
+                border: `1px solid ${resetFeedback.type === 'success' ? '#A7F3D0' : '#FECACA'}`,
+                borderRadius: 'var(--radius-md)',
+                color: resetFeedback.type === 'success' ? '#065F46' : '#991B1B',
+                fontSize: 'var(--font-size-xs)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {resetFeedback.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
+              <span>{resetFeedback.message}</span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsResetConfirmModalOpen(false);
+                setResetFeedback(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              icon={RotateCcw}
+              onClick={() => {
+                const res = resetDemoData();
+                if (res && res.success) {
+                  setResetFeedback({
+                    type: 'success',
+                    message: 'Demo data successfully reset to clean factory seed!'
+                  });
+                  setTimeout(() => {
+                    setResetFeedback(null);
+                    setIsResetConfirmModalOpen(false);
+                  }, 1000);
+                } else {
+                  setResetFeedback({
+                    type: 'error',
+                    message: `Reset failed: ${res?.error || 'Storage write failed'}. Demo data was not cleared.`
+                  });
+                }
+              }}
+              style={{ backgroundColor: '#DC2626', borderColor: '#DC2626' }}
+            >
+              Confirm Reset
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Quarantined Data Inspector Modal */}
+      <Modal
+        isOpen={isQuarantineInspectModalOpen}
+        onClose={() => setIsQuarantineInspectModalOpen(false)}
+        title="Quarantined Storage Records"
+        subtitle="Preserved corrupted or incompatible payloads (non-destructive recovery)"
+        maxWidth="750px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+            When corrupted JSON or incompatible schema versions are encountered, MedicsPrime safely moves the raw unparsed payload into quarantine storage (<code>medicsprime_hms_demo_v1_quarantine</code>) without overwriting or deleting it.
+          </div>
+
+          {quarantineData && quarantineData.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto' }}>
+              {quarantineData.map((item, idx) => (
+                <div
+                  key={item.incidentId || idx}
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '14px',
+                    backgroundColor: '#F8FAFC'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Badge variant="warning">{item.errorType || 'CORRUPT_PAYLOAD'}</Badge>
+                      <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                        {item.incidentId}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                      {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recent'}
+                    </span>
+                  </div>
+
+                  {item.parseError && (
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-error)', marginBottom: '8px' }}>
+                      <strong>Parse Error:</strong> {item.parseError}
+                    </div>
+                  )}
+
+                  {item.versionFound !== undefined && (
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: '#92400E', marginBottom: '8px' }}>
+                      <strong>Schema Version Detected:</strong> {item.versionFound} (Supported: v1)
+                    </div>
+                  )}
+
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
+                        Preserved Raw Payload
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyRawPayload(item.incidentId, item.rawPayload)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'none',
+                          border: 'none',
+                          color: copyFeedback[item.incidentId]?.status === 'error' ? 'var(--color-error)' : 'var(--color-primary-teal)',
+                          fontSize: '0.72rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {copyFeedback[item.incidentId]?.status === 'success' ? (
+                          <>
+                            <Check size={12} /> Copied!
+                          </>
+                        ) : copyFeedback[item.incidentId]?.status === 'error' ? (
+                          <>
+                            <AlertTriangle size={12} /> {copyFeedback[item.incidentId].message}
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={12} /> Copy Raw Text
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre
+                      style={{
+                        margin: 0,
+                        padding: '10px',
+                        backgroundColor: '#1E293B',
+                        color: '#F1F5F9',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        maxHeight: '140px',
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all'
+                      }}
+                    >
+                      {item.rawPayload || '(empty)'}
+                    </pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#F8FAFC',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-sm)'
+              }}
+            >
+              No active quarantine records found. Storage is healthy.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+            <Button variant="outline" onClick={() => setIsQuarantineInspectModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <style>{`
         @keyframes pulse {

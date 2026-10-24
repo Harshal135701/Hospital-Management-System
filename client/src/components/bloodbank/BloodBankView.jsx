@@ -33,7 +33,7 @@ import { useAuth } from '../../context/AuthContext';
 export const BloodBankView = () => {
   const { user, isAuthenticated, openLoginModal } = useAuth();
   const [activeTab, setActiveTab] = useState('donors'); // 'donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover', 'audit'
-
+  
   // Data states
   const [donors, setDonors] = useState([]);
   const [collections, setCollections] = useState([]);

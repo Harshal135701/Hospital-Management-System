@@ -27,6 +27,15 @@ export function RemindersAlertsView() {
   const [successBanner, setSuccessBanner] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
+  // Manual Date-Selection Batch Reminders State
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const [batchDate, setBatchDate] = useState(tomorrowStr);
+  const [batchAppointments, setBatchAppointments] = useState([]);
+  const [selectedApptIds, setSelectedApptIds] = useState(new Set());
+  const [isLoadingBatch, setIsLoadingBatch] = useState(false);
+  const [isSendingBatch, setIsSendingBatch] = useState(false);
+  const [batchResults, setBatchResults] = useState(null);
+
   // Modal
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -40,6 +49,43 @@ export function RemindersAlertsView() {
     channel: 'whatsapp',
     customNotes: 'Please remember to bring past test reports and medical summary.',
   });
+
+  const fetchAppointmentsForBatch = async (date) => {
+    setIsLoadingBatch(true);
+    setBatchResults(null);
+    try {
+      const data = await OperationsQueueService.getAppointmentsByDate(date);
+      const list = Array.isArray(data) ? data : [];
+      setBatchAppointments(list);
+      setSelectedApptIds(new Set(list.map(a => a.id)));
+    } catch {
+      setBatchAppointments([]);
+      setSelectedApptIds(new Set());
+    } finally {
+      setIsLoadingBatch(false);
+    }
+  };
+
+  const handleSendBatchReminders = async () => {
+    if (selectedApptIds.size === 0) return;
+    setIsSendingBatch(true);
+    try {
+      const ids = Array.from(selectedApptIds);
+      const res = await OperationsQueueService.sendRemindersForDate(batchDate, ids);
+      setBatchResults(res?.data || res);
+      setSuccessBanner(`Successfully triggered 1-day-before batch appointment reminders for ${ids.length} patient(s).`);
+      loadData();
+    } catch (err) {
+      setSuccessBanner(null);
+      alert(err.message || 'Failed to dispatch batch reminders.');
+    } finally {
+      setIsSendingBatch(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointmentsForBatch(batchDate);
+  }, [batchDate]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);

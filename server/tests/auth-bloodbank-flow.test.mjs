@@ -146,6 +146,20 @@ async function runTests() {
     console.log(`[Server] Production Express server listening on ephemeral port ${port} -> ${baseUrl}`);
 
     // ========================================================================
+<<<<<<< HEAD
+    // CHECK 1: Missing Bearer Token on Blood Bank Endpoints Returns 401
+    // ========================================================================
+    console.log('\n--- CHECK 1: Unauthenticated Access Detection ---');
+    {
+      const unauthRes = await fetch(`${baseUrl}/blood-bank/donors`);
+      const unauthData = await unauthRes.json();
+      assert(unauthRes.status === 401, 'Unauthenticated GET /blood-bank/donors returns HTTP 401 Unauthorized');
+      assert(unauthData.code === 'UNAUTHORIZED', 'Returns code: UNAUTHORIZED');
+      assert(
+        unauthData.message.includes('Authentication required. Missing Bearer token in Authorization header'),
+        'Returns message: "Authentication required. Missing Bearer token in Authorization header."'
+      );
+=======
     // CHECK 1: Missing Bearer Token on Protected Endpoints Returns 401, Public 200
     // ========================================================================
     console.log('\n--- CHECK 1: Unauthenticated Access Detection & Public Endpoints ---');
@@ -164,6 +178,7 @@ async function runTests() {
           `GET ${ep} returns message: "Authentication required. Missing Bearer token in Authorization header."`
         );
       }
+>>>>>>> origin/krishna
     }
 
     // ========================================================================

@@ -1,9 +1,12 @@
+
 class ApiError extends Error {
   constructor(statusCode, message, details = null) {
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
     this.details = details;
+    this.isOperational = true;
+
     Error.captureStackTrace(this, this.constructor);
   }
 
@@ -23,7 +26,7 @@ class ApiError extends Error {
     return new ApiError(404, message);
   }
 
-  static conflict(message, details = null) {
+  static conflict(message = 'Resource conflict detected', details = null) {
     return new ApiError(409, message, details);
   }
 

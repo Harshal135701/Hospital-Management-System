@@ -1,3 +1,4 @@
+
 {
   "name": "hospital-management-system",
   "version": "1.0.0",
@@ -5,13 +6,18 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node tests/blood-bank.test.mjs",
+    "test": "npm run test:appointments && npm run test:blood-bank",
+    "test:appointments": "node tests/test_appointment_system.js",
     "test:blood-bank": "node tests/blood-bank.test.mjs",
     "test:auth-bloodbank": "node --test tests/auth-bloodbank-flow.test.mjs",
     "test:appointment-blood-request": "node --test tests/appointment-blood-request.test.mjs",
-    "test:security-rbac": "node --test tests/security-rbac.test.mjs",
+    "test:clinical": "node --test tests/clinical-module-integration.test.mjs",
+    "test:clinical-consultation": "node --test tests/clinical-consultation.test.mjs",
+    "test:appointment-queue": "node --test tests/appointment-queue.test.mjs",
+    "test:doctor-department-booking": "node --test tests/doctor-department-booking.test.mjs",
+    "test:modules-8-15": "node --test tests/modules-8-to-15.test.mjs",
     "migrate:create": "node-pg-migrate create",
-    "migrate:up": "dotenv run -f .env -- node-pg-migrate up",
+    "migrate:up": "dotenv -e .env -- node-pg-migrate up",
     "seed": "node seeds/seed-dev-staff.js"
   },
   "keywords": [],
@@ -19,11 +25,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
     "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.6.0",
     "node-pg-migrate": "^9.0.0",
     "pg": "^8.23.1",
+    "twilio": "^6.2.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
