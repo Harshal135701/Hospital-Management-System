@@ -32,7 +32,9 @@ import {
   AlertTriangle,
   Database,
   Check,
-  Copy
+  Copy,
+  Utensils,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button, Modal, Badge } from '../common/UIPrimitives';
 import { useHospitalState } from '../../context/HospitalStateContext';
@@ -108,63 +110,60 @@ export const AppShell = ({
   const [expandedBillingGroups, setExpandedBillingGroups] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Auto-expand active group in Billing hierarchy when currentRoute changes
+  // Auto-expand current active module accordion while collapsing inactive ones to prevent sidebar clutter
   useEffect(() => {
-    if (typeof currentRoute === 'string' && currentRoute.startsWith('billing:')) {
+    if (typeof currentRoute !== 'string') return;
+    const baseRoute = currentRoute.split(':')[0];
+
+    let activeSectionId = baseRoute;
+    if (baseRoute === 'insurance') activeSectionId = 'credit-billing';
+    if (baseRoute === 'ivf') activeSectionId = 'embryology';
+    if (baseRoute === 'diet') activeSectionId = 'dietary';
+    if (baseRoute === 'submodule') {
+      const parts = currentRoute.split(':');
+      const subId = parts[1] || '';
+      if (subId.startsWith('1.') || subId.startsWith('2.') || subId.startsWith('4.')) activeSectionId = 'billing';
+      else if (subId.startsWith('5.')) activeSectionId = 'bloodbank';
+      else if (subId.startsWith('7.')) activeSectionId = 'credit-billing';
+      else if (subId.startsWith('8.')) activeSectionId = 'daycare';
+      else if (subId.startsWith('9.')) activeSectionId = 'dietary';
+      else if (subId.startsWith('10.') || subId === '10.0') activeSectionId = 'embryology';
+      else if (subId.startsWith('11.')) activeSectionId = 'emergency';
+      else if (subId.startsWith('12.')) activeSectionId = 'emr';
+    }
+
+    // Keep only the active module expanded by default so sidebar doesn't get cluttered with multiple open accordions
+    setExpandedSectionsManual({ [activeSectionId]: true });
+
+    if (activeSectionId === 'billing') {
       const parts = currentRoute.split(':');
       const subId = parts[1];
       if (subId) {
         const groupNum = subId.split('.')[0];
         if (groupNum) {
-          setExpandedBillingGroups(prev => ({ ...prev, [groupNum]: true }));
+          setExpandedBillingGroups({ [groupNum]: true });
         }
       }
-      setExpandedSectionsManual(prev => ({ ...prev, billing: true }));
     }
-  }, [currentRoute]);
 
-  // Auto-expand Credit Billing when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'credit-billing' || currentRoute.startsWith('credit-billing:'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, 'credit-billing': true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand Embryology when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'embryology' || currentRoute.startsWith('embryology:') || currentRoute.startsWith('submodule:10.'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, embryology: true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand Emergency when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'emergency' || currentRoute.startsWith('emergency:') || currentRoute.startsWith('submodule:11.'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, emergency: true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand active group in Appointment hierarchy when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'appointments' || currentRoute.startsWith('appointments:'))) {
+    if (activeSectionId === 'appointments') {
       if (currentRoute.startsWith('appointments:')) {
         const parts = currentRoute.split(':');
         if (parts[1] === 'group') {
           const gId = parts[2];
           if (gId) {
-            setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
+            setExpandedAppointmentGroups({ [gId]: true });
           }
         } else {
           const subId = parts[1]?.replace('submodule:', '');
           const found = SUBMODULES.find(s => s.id === subId);
           if (found) {
-            setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
+            setExpandedAppointmentGroups({ [found.groupId]: true });
           }
         }
       } else {
-        setExpandedAppointmentGroups(prev => ({ ...prev, '3': true }));
+        setExpandedAppointmentGroups({ '3': true });
       }
-      setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
     }
   }, [currentRoute]);
 
@@ -246,20 +245,72 @@ export const AppShell = ({
           id: 'clinical',
           label: 'Clinical Desk',
           icon: Stethoscope,
+          badge: '5 Ops',
           subItems: [
             { id: 'clinical:consultation', label: 'Doctor Consultation Desk' },
             { id: 'clinical:vitals', label: 'Vitals Recording & Physical Examination' },
             { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
             { id: 'clinical:orders', label: 'Orders (CPOE)' },
             { id: 'clinical:notes', label: 'Clinical Progress Notes' }
-
+          ]
+        },
+        {
+          id: 'daycare',
+          label: 'Day Care',
+          icon: Bed,
+          badge: '4 Ops',
+          subItems: [
+            { id: 'daycare:8.1', label: '8.1 Admission & Procedure' },
+            { id: 'daycare:8.2', label: '8.2 Chair & Bed Allocation' },
+            { id: 'daycare:8.3', label: '8.3 Procedure Monitoring' },
+            { id: 'daycare:8.4', label: '8.4 Discharge Summary' }
+          ]
+        },
+        {
+          id: 'dietary',
+          label: 'Diet & Nutrition',
+          icon: Utensils,
+          badge: '4 Ops',
+          subItems: [
+            { id: 'dietary:9.1', label: '9.1 Nutritional Assessment' },
+            { id: 'dietary:9.2', label: '9.2 Patient Diet Ordering' },
+            { id: 'dietary:9.3', label: '9.3 Kitchen Batch Production' },
+            { id: 'dietary:9.4', label: '9.4 Ward Meal Delivery' }
+          ]
+        },
+        {
+          id: 'emr',
+          label: 'EMR Records',
+          icon: FileSpreadsheet,
+          badge: '5 Ops',
+          subItems: [
+            { id: 'emr:12.1', label: '12.1 Patient Timeline' },
+            { id: 'emr:12.2', label: '12.2 Prescription Studio' },
+            { id: 'emr:12.3', label: '12.3 ICD-10 Diagnoses' },
+            { id: 'emr:12.4', label: '12.4 Encounters Browser' },
+            { id: 'emr:12.5', label: '12.5 Clinical Documents' }
+          ]
+        },
+        {
+          id: 'bloodbank',
+          label: 'Blood Bank',
+          icon: Droplet,
+          badge: '7 Ops',
+          highlight: true,
+          subItems: [
+            { id: 'bloodbank:donors', label: '5.1 Donors & Screening' },
+            { id: 'bloodbank:collection', label: '5.2 Bag Collection & Barcodes' },
+            { id: 'bloodbank:inventory', label: '5.3 Inventory & Cold Chain' },
+            { id: 'bloodbank:serology', label: '5.4 Serology & Safe Release' },
+            { id: 'bloodbank:requisitions', label: '5.5 Requisitions & Crossmatch' },
+            { id: 'bloodbank:handover', label: '5.6 Issue & Handover Dispatch' },
+            { id: 'bloodbank:audit', label: '5.7 Immutable Audit Trail' }
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
         { id: 'departments', label: 'Departments & Wards', icon: Building2 },
         { id: 'rooms', label: 'Beds & Inpatient', icon: Bed },
-        { id: 'lab', label: 'Laboratory', icon: FlaskConical },
-        { id: 'bloodbank', label: 'Blood Bank', icon: Droplet, highlight: true }
+        { id: 'lab', label: 'Laboratory', icon: FlaskConical }
       ]
     },
     {
@@ -1053,14 +1104,24 @@ export const AppShell = ({
                           }}
                         >
                           {item.subItems.map((sub) => {
-                            const isSubActive =
-                              currentRoute === sub.id ||
-                              (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
-                              (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') ||
-                              (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) ||
-                              (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) ||
-                              (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) ||
-                              (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`));
+                            const isSubActive = (() => {
+                              if (currentRoute === sub.id) return true;
+                              if (sub.id === 'clinical:consultation' && currentRoute === 'clinical') return true;
+                              if (sub.id === 'daycare:8.1' && currentRoute === 'daycare') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('daycare:') && currentRoute === `submodule:${sub.id.replace('daycare:', '')}`) return true;
+                              if (sub.id === 'dietary:9.1' && (currentRoute === 'dietary' || currentRoute === 'diet')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('dietary:') && currentRoute === `submodule:${sub.id.replace('dietary:', '')}`) return true;
+                              if (sub.id === 'emr:12.1' && currentRoute === 'emr') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('emr:') && currentRoute === `submodule:${sub.id.replace('emr:', '')}`) return true;
+                              if (sub.id === 'bloodbank:donors' && currentRoute === 'bloodbank') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('bloodbank:') && currentRoute === `submodule:${sub.id.replace('bloodbank:', '')}`) return true;
+                              if (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') return true;
+                              if (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) return true;
+                              if (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`)) return true;
+                              return false;
+                            })();
                             return (
                               <button
                                 type="button"

@@ -20,13 +20,29 @@ import { DischargeSummary } from './DischargeSummary';
 import { INITIAL_ADMISSIONS, INITIAL_CHAIRS } from './daycareDemoData';
 import { DayCareService, PatientService, ClinicalStaffService } from '../../services/api';
 
-export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) {
-  const [activeSubtab, setActiveSubtab] = useState(() => {
-    if (initialSubtab && ['8.1', '8.2', '8.3', '8.4'].includes(initialSubtab)) {
-      return initialSubtab;
-    }
+export function DayCareView({ initialSubtab = '8.1', onNavigate }) {
+  const resolveSubtab = (sub) => {
+    if (!sub) return '8.1';
+    const clean = String(sub).replace('daycare:', '');
+    if (['8.1', '8.2', '8.3', '8.4'].includes(clean)) return clean;
     return '8.1';
-  });
+  };
+
+  const [activeSubtab, setActiveSubtab] = useState(() => resolveSubtab(initialSubtab));
+
+  useEffect(() => {
+    const nextSub = resolveSubtab(initialSubtab);
+    if (nextSub) {
+      setActiveSubtab(nextSub);
+    }
+  }, [initialSubtab]);
+
+  const handleSubtabChange = (subtabId) => {
+    setActiveSubtab(subtabId);
+    if (typeof onNavigate === 'function') {
+      onNavigate(`daycare:${subtabId}`);
+    }
+  };
 
   const [admissions, setAdmissions] = useState(INITIAL_ADMISSIONS);
   const [chairs, setChairs] = useState(INITIAL_CHAIRS);
@@ -281,7 +297,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
             variant={activeSubtab === '8.1' ? 'primary' : 'outline'}
             size="sm"
             icon={Plus}
-            onClick={() => setActiveSubtab('8.1')}
+            onClick={() => handleSubtabChange('8.1')}
           >
             New Admission
           </Button>
@@ -289,7 +305,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
             variant={activeSubtab === '8.2' ? 'primary' : 'outline'}
             size="sm"
             icon={Bed}
-            onClick={() => setActiveSubtab('8.2')}
+            onClick={() => handleSubtabChange('8.2')}
           >
             Allocate Chair
           </Button>
@@ -297,7 +313,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
             variant={activeSubtab === '8.3' ? 'primary' : 'outline'}
             size="sm"
             icon={Activity}
-            onClick={() => setActiveSubtab('8.3')}
+            onClick={() => handleSubtabChange('8.3')}
           >
             Record Vitals
           </Button>
@@ -305,7 +321,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
             variant={activeSubtab === '8.4' ? 'primary' : 'soft'}
             size="sm"
             icon={FileText}
-            onClick={() => setActiveSubtab('8.4')}
+            onClick={() => handleSubtabChange('8.4')}
           >
             Discharge Summary
           </Button>
@@ -351,7 +367,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate: _onNavigate }) 
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveSubtab(tab.id)}
+              onClick={() => handleSubtabChange(tab.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

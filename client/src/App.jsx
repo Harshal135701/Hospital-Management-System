@@ -117,7 +117,7 @@ export function App() {
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'bloodbank':
-        return <BloodBankView />;
+        return <BloodBankView initialTab={routeSubtab || 'donors'} initialSubtab={routeSubtab || 'donors'} onNavigate={setCurrentRoute} />;
 
       case 'daycare':
         return <DayCareView initialSubtab={routeSubtab || '8.1'} onNavigate={setCurrentRoute} />;
@@ -139,6 +139,9 @@ export function App() {
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('5.')) {
+          return <BloodBankView initialTab={routeSubtab} initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('7.')) {
           return <CreditBillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

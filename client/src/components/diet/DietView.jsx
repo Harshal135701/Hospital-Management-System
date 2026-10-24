@@ -23,13 +23,29 @@ import {
 } from './dietDemoData';
 import { DietaryService, PatientService, ClinicalStaffService } from '../../services/api';
 
-export function DietView({ initialSubtab = '9.1', onNavigate: _onNavigate }) {
-  const [activeSubtab, setActiveSubtab] = useState(() => {
-    if (initialSubtab && ['9.1', '9.2', '9.3', '9.4'].includes(initialSubtab)) {
-      return initialSubtab;
-    }
+export function DietView({ initialSubtab = '9.1', onNavigate }) {
+  const resolveSubtab = (sub) => {
+    if (!sub) return '9.1';
+    const clean = String(sub).replace('dietary:', '').replace('diet:', '');
+    if (['9.1', '9.2', '9.3', '9.4'].includes(clean)) return clean;
     return '9.1';
-  });
+  };
+
+  const [activeSubtab, setActiveSubtab] = useState(() => resolveSubtab(initialSubtab));
+
+  useEffect(() => {
+    const nextSub = resolveSubtab(initialSubtab);
+    if (nextSub) {
+      setActiveSubtab(nextSub);
+    }
+  }, [initialSubtab]);
+
+  const handleSubtabChange = (subtabId) => {
+    setActiveSubtab(subtabId);
+    if (typeof onNavigate === 'function') {
+      onNavigate(`dietary:${subtabId}`);
+    }
+  };
 
   const [assessments, setAssessments] = useState(INITIAL_ASSESSMENTS);
   const [orders, setOrders] = useState(INITIAL_DIET_ORDERS);
@@ -200,7 +216,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '9.2' ? 'primary' : 'outline'}
             size="sm"
             icon={Plus}
-            onClick={() => setActiveSubtab('9.2')}
+            onClick={() => handleSubtabChange('9.2')}
           >
             New Diet Order
           </Button>
@@ -208,7 +224,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '9.1' ? 'primary' : 'outline'}
             size="sm"
             icon={Scale}
-            onClick={() => setActiveSubtab('9.1')}
+            onClick={() => handleSubtabChange('9.1')}
           >
             Nutritional Assessment
           </Button>
@@ -216,7 +232,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '9.3' ? 'primary' : 'outline'}
             size="sm"
             icon={ChefHat}
-            onClick={() => setActiveSubtab('9.3')}
+            onClick={() => handleSubtabChange('9.3')}
           >
             Kitchen Batches
           </Button>
@@ -224,7 +240,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '9.4' ? 'primary' : 'soft'}
             size="sm"
             icon={Truck}
-            onClick={() => setActiveSubtab('9.4')}
+            onClick={() => handleSubtabChange('9.4')}
           >
             Ward Delivery
           </Button>
@@ -270,7 +286,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate: _onNavigate }) {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveSubtab(tab.id)}
+              onClick={() => handleSubtabChange(tab.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

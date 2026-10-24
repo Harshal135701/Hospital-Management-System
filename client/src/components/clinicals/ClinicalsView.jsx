@@ -177,8 +177,16 @@ const hydrateEncounterIntoPatient = (existingPatient, encounterData) => {
   };
 };
 
-export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
+export const ClinicalsView = ({ initialSubtab, onNavigate }) => {
   const { isAuthenticated } = useAuth();
+
+  const resolveClinicalSubtab = (sub) => {
+    if (!sub) return 'consultation';
+    const clean = String(sub).replace('clinical:', '');
+    const valid = ['consultation', 'vitals', 'history', 'orders', 'notes'];
+    if (valid.includes(clean)) return clean;
+    return 'consultation';
+  };
 
   // Queue state
   const [patients, setPatients] = useState(() =>
@@ -190,9 +198,22 @@ export const ClinicalsView = ({ initialSubtab, onNavigate: _onNavigate }) => {
   const [queueError, setQueueError] = useState(null);
 
   const [activePatientId, setActivePatientId] = useState('enc-2026-001'); // Eleanor Vance selected by default
-  const [internalSubtab, setInternalSubtab] = useState(null);
-  const currentSubtab = internalSubtab !== null ? internalSubtab : (initialSubtab || 'consultation');
-  const setCurrentSubtab = (tab) => setInternalSubtab(tab);
+  const [internalSubtab, setInternalSubtab] = useState(() => resolveClinicalSubtab(initialSubtab));
+  const currentSubtab = internalSubtab || resolveClinicalSubtab(initialSubtab);
+
+  useEffect(() => {
+    if (initialSubtab) {
+      setInternalSubtab(resolveClinicalSubtab(initialSubtab));
+    }
+  }, [initialSubtab]);
+
+  const setCurrentSubtab = (tab) => {
+    const resolved = resolveClinicalSubtab(tab);
+    setInternalSubtab(resolved);
+    if (typeof onNavigate === 'function') {
+      onNavigate(`clinical:${resolved}`);
+    }
+  };
 
   // OPD Queue Filters
   const [searchTerm, setSearchTerm] = useState('');

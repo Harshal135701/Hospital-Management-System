@@ -67,13 +67,29 @@ const DEMO_FALLBACK_PATIENTS = [
   }
 ];
 
-export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
-  const [activeSubtab, setActiveSubtab] = useState(() => {
-    if (initialSubtab && ['12.1', '12.2', '12.3', '12.4', '12.5'].includes(initialSubtab)) {
-      return initialSubtab;
-    }
+export function EmrView({ initialSubtab = '12.1', onNavigate }) {
+  const resolveSubtab = (sub) => {
+    if (!sub) return '12.1';
+    const clean = String(sub).replace('emr:', '');
+    if (['12.1', '12.2', '12.3', '12.4', '12.5'].includes(clean)) return clean;
     return '12.1';
-  });
+  };
+
+  const [activeSubtab, setActiveSubtab] = useState(() => resolveSubtab(initialSubtab));
+
+  useEffect(() => {
+    const nextSub = resolveSubtab(initialSubtab);
+    if (nextSub) {
+      setActiveSubtab(nextSub);
+    }
+  }, [initialSubtab]);
+
+  const handleSubtabChange = (subtabId) => {
+    setActiveSubtab(subtabId);
+    if (typeof onNavigate === 'function') {
+      onNavigate(`emr:${subtabId}`);
+    }
+  };
 
   const [patients, setPatients] = useState(DEMO_FALLBACK_PATIENTS);
   const [selectedPatientId, setSelectedPatientId] = useState('p-01');
@@ -395,7 +411,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '12.2' ? 'primary' : 'outline'}
             size="sm"
             icon={Pill}
-            onClick={() => setActiveSubtab('12.2')}
+            onClick={() => handleSubtabChange('12.2')}
           >
             Prescription Studio
           </Button>
@@ -403,7 +419,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '12.1' ? 'primary' : 'outline'}
             size="sm"
             icon={Calendar}
-            onClick={() => setActiveSubtab('12.1')}
+            onClick={() => handleSubtabChange('12.1')}
           >
             Patient Timeline
           </Button>
@@ -411,7 +427,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '12.3' ? 'primary' : 'outline'}
             size="sm"
             icon={Tag}
-            onClick={() => setActiveSubtab('12.3')}
+            onClick={() => handleSubtabChange('12.3')}
           >
             ICD-10 Diagnoses
           </Button>
@@ -419,7 +435,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '12.4' ? 'primary' : 'outline'}
             size="sm"
             icon={Stethoscope}
-            onClick={() => setActiveSubtab('12.4')}
+            onClick={() => handleSubtabChange('12.4')}
           >
             Encounters Browser
           </Button>
@@ -427,7 +443,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
             variant={activeSubtab === '12.5' ? 'primary' : 'soft'}
             size="sm"
             icon={Paperclip}
-            onClick={() => setActiveSubtab('12.5')}
+            onClick={() => handleSubtabChange('12.5')}
           >
             Clinical Documents
           </Button>
@@ -532,7 +548,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate: _onNavigate }) {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveSubtab(tab.id)}
+              onClick={() => handleSubtabChange(tab.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

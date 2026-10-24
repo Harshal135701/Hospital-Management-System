@@ -30,9 +30,48 @@ import { Card, Button, Badge, Input, Select, Modal } from '../common/UIPrimitive
 import { BloodBankService, PatientService, TokenManager } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
-export const BloodBankView = () => {
+const resolveBloodBankTab = (target) => {
+  if (!target) return 'donors';
+  const clean = String(target).replace('bloodbank:', '');
+  const numMap = {
+    '5.1': 'donors',
+    '5.2': 'collection',
+    '5.3': 'inventory',
+    '5.4': 'serology',
+    '5.5': 'requisitions',
+    '5.6': 'handover',
+    '5.7': 'audit',
+    '1': 'donors',
+    '2': 'collection',
+    '3': 'inventory',
+    '4': 'serology',
+    '5': 'requisitions',
+    '6': 'handover',
+    '7': 'audit'
+  };
+  if (numMap[clean]) return numMap[clean];
+  const validTabs = ['donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover', 'audit'];
+  if (validTabs.includes(clean)) return clean;
+  return 'donors';
+};
+
+export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors', onNavigate }) => {
   const { user, isAuthenticated, openLoginModal } = useAuth();
-  const [activeTab, setActiveTab] = useState('donors'); // 'donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover', 'audit'
+  const [activeTab, setActiveTab] = useState(() => resolveBloodBankTab(initialTab || initialSubtab));
+
+  useEffect(() => {
+    const nextTab = resolveBloodBankTab(initialTab || initialSubtab);
+    if (nextTab) {
+      setActiveTab(nextTab);
+    }
+  }, [initialTab, initialSubtab]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (typeof onNavigate === 'function') {
+      onNavigate(`bloodbank:${tabId}`);
+    }
+  };
   
   // Data states
   const [donors, setDonors] = useState([]);
@@ -770,7 +809,7 @@ export const BloodBankView = () => {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
