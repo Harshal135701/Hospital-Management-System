@@ -642,7 +642,7 @@ export function TokenQueueDisplayView() {
               </div>
               <div>
                 <div style={{ fontSize: '1.4rem', fontWeight: '800', letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-                  Apex Central Hospital — OPD Waiting Lounge
+                  Sarji Group of Hospitals — OPD Waiting Lounge
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
                   Please look for your Token Number and proceed to the designated consultation chamber.

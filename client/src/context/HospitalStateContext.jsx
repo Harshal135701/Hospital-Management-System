@@ -423,7 +423,7 @@ export const INITIAL_HOSPITAL_STATE = {
       recipient_mobile: '9830122410',
       channel: 'whatsapp',
       event_type: 'booking_confirmation',
-      message_content: 'Dear Devika, your appointment with Dr. Arindam Mitra (Cardiology) is confirmed for today at 10:00 AM in Chamber 102, Block A. Please check in at reception on arrival. Apex Central Hospital.',
+      message_content: 'Dear Devika, your appointment with Dr. Arindam Mitra (Cardiology) is confirmed for today at 10:00 AM in Chamber 102, Block A. Please check in at reception on arrival. Sarji Group of Hospitals.',
       scheduled_at: new Date(Date.now() - 3600000).toISOString(),
       sent_at: new Date(Date.now() - 3500000).toISOString(),
       status: 'delivered',

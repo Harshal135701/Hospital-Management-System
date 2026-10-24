@@ -105,7 +105,7 @@ export function RemindersAlertsView() {
             recipient_mobile: '+91 98301 22410',
             channel: 'whatsapp',
             event_type: 'booking_confirmation',
-            message_content: 'Dear Devika, your appointment with Dr. Arindam Mitra (Cardiology) is confirmed for 19 Oct 2026 at 10:15 AM (Token #104). Apex Central Hospital.',
+            message_content: 'Dear Devika, your appointment with Dr. Arindam Mitra (Cardiology) is confirmed for 19 Oct 2026 at 10:15 AM (Token #104). Sarji Group of Hospitals.',
             scheduled_at: new Date(Date.now() - 3600000).toISOString(),
             sent_at: new Date(Date.now() - 3500000).toISOString(),
             status: 'delivered'
@@ -117,7 +117,7 @@ export function RemindersAlertsView() {
             recipient_mobile: '+91 94330 88204',
             channel: 'sms',
             event_type: '24h_reminder',
-            message_content: 'Apex Central Reminder: Your OPD consultation with Dr. Ananya Sharma is scheduled for tomorrow at 10:00 AM. Please arrive 15 minutes prior for vitals check.',
+            message_content: 'Sarji Hospital Reminder: Your OPD consultation with Dr. Ananya Sharma is scheduled for tomorrow at 10:00 AM. Please arrive 15 minutes prior for vitals check.',
             scheduled_at: new Date(Date.now() - 7200000).toISOString(),
             sent_at: new Date(Date.now() - 7100000).toISOString(),
             status: 'delivered'

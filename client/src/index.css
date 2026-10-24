@@ -1,65 +1,70 @@
 /* ==========================================================================
-   MEDICSPRIME HEALTHCARE SaaS DESIGN SYSTEM TOKENS
-   Inspired by premium clinical platforms: White, Soft Aqua, Deep Teal
+   SARJI GROUP OF HOSPITALS SaaS DESIGN SYSTEM TOKENS
+   Harmonized with Corporate Palette: #0A4174, White, #49769F, Light Blue
    ========================================================================== */
 
 :root {
-  /* Primary Healthcare Palette */
-  --color-primary-teal: #087F8C;
-  --color-primary-teal-hover: #066974;
-  --color-primary-teal-light: #0a9cb0;
+  /* Primary Healthcare Palette (Sarji Corporate Navy & Slate Blue) */
+  --color-primary-teal: #0A4174;
+  --color-primary-teal-hover: #07315B;
+  --color-primary-teal-light: #49769F;
+  --color-primary-blue: #0A4174;
   
-  --color-secondary-teal: #119DA4;
-  --color-secondary-teal-hover: #0e858b;
+  --color-secondary-teal: #49769F;
+  --color-secondary-teal-hover: #375F83;
+  --color-secondary-blue: #49769F;
   
-  --color-aqua-accent: #64D8D0;
-  --color-aqua-accent-soft: rgba(100, 216, 208, 0.25);
+  --color-aqua-accent: #2563EB;
+  --color-aqua-accent-soft: rgba(73, 118, 159, 0.2);
   
-  --color-bg-pale-aqua: #EAF8F7;
-  --color-bg-soft-cyan: #F2FBFC;
-  --color-bg-main: #F7FAFA;
+  /* Backgrounds: Clean, soothing, medical light blue (not too dark, not too light) */
+  --color-bg-pale-aqua: #EBF3FA;
+  --color-bg-light-blue: #EBF3FA;
+  --color-bg-soft-cyan: #F3F7FC;
+  --color-bg-subtle-blue: #F3F7FC;
+  --color-bg-main: #F5F8FC;
   --color-bg-card: #FFFFFF;
-  --color-bg-card-subtle: #FAFDFD;
+  --color-bg-card-subtle: #FAFCFE;
 
-  /* Typography / Text Colors */
-  --color-text-primary: #183238;
-  --color-text-secondary: #687C80;
-  --color-text-muted: #8E9F9F;
+  /* Typography / Text Colors (Refined slate navy & blue-gray) */
+  --color-text-primary: #0F2438;
+  --color-text-secondary: #4A657D;
+  --color-text-muted: #829AB1;
   --color-text-inverse: #FFFFFF;
 
   /* Borders & Dividers */
-  --color-border: #DCE9E9;
-  --color-border-subtle: #E9F2F2;
-  --color-border-focus: #087F8C;
+  --color-border: #D5E2EE;
+  --color-border-subtle: #E8F0F8;
+  --color-border-focus: #0A4174;
 
   /* Clinical & Status Colors */
-  --color-success: #21856B;
-  --color-success-bg: #E7F6F1;
-  --color-success-border: #A6DDCF;
+  --color-success: #16A34A;
+  --color-success-bg: #EBF3FA;
+  --color-success-border: #BCD5EB;
 
-  --color-warning: #C68A27;
-  --color-warning-bg: #FCF5E8;
-  --color-warning-border: #F3DCAC;
+  --color-warning: #D97706;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-border: #FDE68A;
 
-  --color-error: #C94C55;
-  --color-error-bg: #FDF0F1;
-  --color-error-border: #F6C1C5;
+  --color-error: #DC2626;
+  --color-error-bg: #FEE2E2;
+  --color-error-border: #FECACA;
 
-  --color-info: #4388C7;
-  --color-info-bg: #EEF5FC;
-  --color-info-border: #B7D6F3;
+  --color-info: #0284C7;
+  --color-info-bg: #E0F2FE;
+  --color-info-border: #BAE6FD;
 
   /* Blood Bank Special Clinical Warning */
   --color-blood-crimson: #B91C1C;
   --color-blood-bg: #FEF2F2;
   --color-blood-border: #FECACA;
 
-  /* Shadows (Refined, soft, modern) */
-  --shadow-subtle: 0 1px 2px rgba(24, 50, 56, 0.04);
-  --shadow-card: 0 4px 16px -2px rgba(8, 127, 140, 0.06), 0 2px 6px -1px rgba(24, 50, 56, 0.03);
-  --shadow-card-hover: 0 10px 25px -4px rgba(8, 127, 140, 0.12), 0 4px 10px -2px rgba(24, 50, 56, 0.04);
-  --shadow-dropdown: 0 12px 30px -4px rgba(8, 127, 140, 0.15), 0 4px 12px -2px rgba(24, 50, 56, 0.06);
-  --shadow-modal: 0 20px 40px -6px rgba(8, 127, 140, 0.2), 0 10px 20px -3px rgba(24, 50, 56, 0.08);
+  /* Shadows (Harmonized with #0A4174 navy) */
+  --shadow-subtle: 0 1px 2px rgba(10, 65, 116, 0.04);
+  --shadow-card: 0 4px 16px -2px rgba(10, 65, 116, 0.06), 0 2px 6px -1px rgba(15, 36, 56, 0.03);
+  --shadow-card-hover: 0 10px 25px -4px rgba(10, 65, 116, 0.12), 0 4px 10px -2px rgba(15, 36, 56, 0.04);
+  --shadow-dropdown: 0 12px 30px -4px rgba(10, 65, 116, 0.15), 0 4px 12px -2px rgba(15, 36, 56, 0.06);
+  --shadow-modal: 0 20px 40px -6px rgba(10, 65, 116, 0.2), 0 10px 20px -3px rgba(15, 36, 56, 0.08);
 
   /* Border Radii */
   --radius-sm: 6px;
@@ -168,10 +173,10 @@ input, select, textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBDAD9;
+  background: #CBDDEE;
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #A9BFBE;
+  background: #9FBEDD;
 }

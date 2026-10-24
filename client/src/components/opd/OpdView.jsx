@@ -452,8 +452,8 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
     <div className="flex flex-col gap-6 p-6 min-h-screen bg-[var(--color-bg-primary)]">
       {/* Toast Notification */}
       {notificationMsg && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-[var(--color-primary-teal)] text-white text-sm font-medium rounded-lg shadow-xl border border-teal-600 animate-slide-in">
-          <CheckCircle2 size={18} className="text-emerald-200" />
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-[var(--color-primary-teal)] text-white text-sm font-medium rounded-lg shadow-xl border border-blue-600 animate-slide-in">
+          <CheckCircle2 size={18} className="text-sky-200" />
           <span>{notificationMsg}</span>
         </div>
       )}
@@ -462,7 +462,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[var(--color-primary-teal)] shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-[var(--color-primary-teal)] shadow-xs">
               <Stethoscope size={22} />
             </div>
             <div>
@@ -477,7 +477,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-bg-pale-aqua)] border border-teal-100 text-xs font-medium text-[var(--color-primary-teal)]">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-bg-pale-aqua)] border border-sky-100 text-xs font-medium text-[var(--color-primary-teal)]">
             <Building size={14} />
             <span>4 Active Specialty Cabins</span>
           </div>
@@ -505,7 +505,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
         <Card className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--color-text-muted)]">Today's Total OPD Visits</span>
-            <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center text-[var(--color-primary-teal)]">
+            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-[var(--color-primary-teal)]">
               <Users size={16} />
             </div>
           </div>
@@ -570,7 +570,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
               onClick={() => handleSubtabSelect(sub.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all whitespace-nowrap border-b-2 ${
                 isActive
-                  ? 'border-[var(--color-primary-teal)] text-[var(--color-primary-teal)] bg-teal-50/40 shadow-xs'
+                  ? 'border-[var(--color-primary-teal)] text-[var(--color-primary-teal)] bg-sky-50/40 shadow-xs'
                   : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-slate-50'
               }`}
             >
@@ -583,7 +583,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
 
       {/* Level 3 Subsubmodule Pills */}
       {currentSubmodule && currentSubmodule.subsubmodules && (
-        <div className="flex items-center gap-2 flex-wrap bg-[var(--color-bg-pale-aqua)]/50 p-2 rounded-lg border border-teal-100">
+        <div className="flex items-center gap-2 flex-wrap bg-[var(--color-bg-pale-aqua)]/50 p-2 rounded-lg border border-sky-100">
           <span className="text-[11px] font-semibold text-[var(--color-primary-teal)] uppercase tracking-wider px-2">
             Workflows:
           </span>
@@ -596,7 +596,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full transition-all ${
                   isSubsubActive
                     ? 'bg-[var(--color-primary-teal)] text-white shadow-xs font-semibold'
-                    : 'bg-white text-[var(--color-text-muted)] hover:text-[var(--color-primary-teal)] border border-teal-100'
+                    : 'bg-white text-[var(--color-text-muted)] hover:text-[var(--color-primary-teal)] border border-sky-100'
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
@@ -687,7 +687,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
               Real-Time Clinic Flow Rate & Waiting Room Display Link
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div className="p-3 rounded-lg border border-teal-100 bg-teal-50/20">
+              <div className="p-3 rounded-lg border border-sky-100 bg-sky-50/20">
                 <span className="text-xs font-bold text-[var(--color-primary-teal)] block mb-1">
                   Waiting Lounge Digital Signage
                 </span>
@@ -795,11 +795,11 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   <tr key={v.tokenNo} className="hover:bg-slate-50/50">
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center font-bold font-mono text-[var(--color-primary-teal)]">
+                        <span className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center font-bold font-mono text-[var(--color-primary-teal)]">
                           {v.tokenNo}
                         </span>
                         <div>
-                          <span className="font-mono text-teal-800 font-semibold block">{v.uhid}</span>
+                          <span className="font-mono text-sky-800 font-semibold block">{v.uhid}</span>
                           <span className="text-[10px] text-slate-400">{v.fee}</span>
                         </div>
                       </div>
@@ -1104,7 +1104,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   <tr key={v.tokenNo} className="hover:bg-slate-50/50">
                     <td className="py-3 px-3">
                       <div className="font-bold text-[var(--color-text-main)]">{v.patientName}</div>
-                      <div className="text-[11px] text-teal-800 font-mono">
+                      <div className="text-[11px] text-sky-800 font-mono">
                         {v.uhid} • {v.phone}
                       </div>
                     </td>
@@ -1116,7 +1116,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       {v.followUpDate === 'Pending' ? '31-Oct-2026 (Est.)' : v.followUpDate}
                     </td>
                     <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-[var(--color-primary-teal)] border border-teal-200">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-50 text-[var(--color-primary-teal)] border border-sky-200">
                         7 Days Post-Consult
                       </span>
                     </td>
@@ -1229,7 +1229,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={sessionForm.cabin}
                   onChange={(e) => setSessionForm({ ...sessionForm, cabin: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Cabin 101">Cabin 101</option>
                   <option value="Cabin 102">Cabin 102</option>
@@ -1244,7 +1244,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={sessionForm.specialty}
                   onChange={(e) => setSessionForm({ ...sessionForm, specialty: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Internal Medicine">Internal Medicine</option>
                   <option value="Cardiology">Cardiology</option>
@@ -1265,7 +1265,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 required
                 value={sessionForm.doctor}
                 onChange={(e) => setSessionForm({ ...sessionForm, doctor: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1275,7 +1275,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={sessionForm.shift}
                   onChange={(e) => setSessionForm({ ...sessionForm, shift: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Morning (09:00 - 13:00)">Morning (09:00 - 13:00)</option>
                   <option value="Afternoon (13:30 - 17:30)">Afternoon (13:30 - 17:30)</option>
@@ -1292,7 +1292,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   max="100"
                   value={sessionForm.tokenCapacity}
                   onChange={(e) => setSessionForm({ ...sessionForm, tokenCapacity: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
               <div>
@@ -1303,7 +1303,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   min="0"
                   value={sessionForm.fee}
                   onChange={(e) => setSessionForm({ ...sessionForm, fee: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1337,7 +1337,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   required
                   value={checkInForm.uhid}
                   onChange={(e) => setCheckInForm({ ...checkInForm, uhid: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
               <div>
@@ -1348,7 +1348,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   placeholder="e.g. Kavita Sundaram"
                   value={checkInForm.patientName}
                   onChange={(e) => setCheckInForm({ ...checkInForm, patientName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1363,7 +1363,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   max="120"
                   value={checkInForm.age}
                   onChange={(e) => setCheckInForm({ ...checkInForm, age: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
               <div>
@@ -1371,7 +1371,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={checkInForm.gender}
                   onChange={(e) => setCheckInForm({ ...checkInForm, gender: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Female">Female</option>
                   <option value="Male">Male</option>
@@ -1385,7 +1385,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   required
                   value={checkInForm.phone}
                   onChange={(e) => setCheckInForm({ ...checkInForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1405,7 +1405,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       doctor: matchedRoom?.doctor || checkInForm.doctor
                     });
                   }}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Internal Medicine">Internal Medicine</option>
                   <option value="Cardiology">Cardiology</option>
@@ -1428,7 +1428,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       specialty: rm?.specialty || checkInForm.specialty
                     });
                   }}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   {clinicRooms.map(r => (
                     <option key={r.cabin} value={r.cabin}>{r.cabin} - {r.doctor} ({r.specialty})</option>
@@ -1443,7 +1443,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={checkInForm.category}
                   onChange={(e) => setCheckInForm({ ...checkInForm, category: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="General">General OPD</option>
                   <option value="Senior Citizen">Senior Citizen Priority</option>
@@ -1457,7 +1457,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={checkInForm.fee}
                   onChange={(e) => setCheckInForm({ ...checkInForm, fee: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="₹800 (Paid - UPI)">₹800 (Paid - UPI / QR)</option>
                   <option value="₹800 (Paid - Cash)">₹800 (Paid - Cash)</option>
@@ -1496,7 +1496,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Current Assigned Suite:</span>
-                <span className="font-semibold text-teal-800">{selectedQueueItem.cabin} • {selectedQueueItem.doctor}</span>
+                <span className="font-semibold text-sky-800">{selectedQueueItem.cabin} • {selectedQueueItem.doctor}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Current Priority:</span>
@@ -1510,7 +1510,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={queueActionForm.category}
                   onChange={(e) => setQueueActionForm({ ...queueActionForm, category: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Emergency / STAT">Emergency / STAT (Top of Queue)</option>
                   <option value="Senior Citizen">Senior Citizen Priority</option>
@@ -1523,7 +1523,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={queueActionForm.cabin}
                   onChange={(e) => setQueueActionForm({ ...queueActionForm, cabin: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   {clinicRooms.map(r => (
                     <option key={r.cabin} value={r.cabin}>{r.cabin} - {r.doctor}</option>
@@ -1539,7 +1539,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 rows={2}
                 value={queueActionForm.notes}
                 onChange={(e) => setQueueActionForm({ ...queueActionForm, notes: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1579,7 +1579,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       doctor: pat?.doctor || followUpForm.doctor
                     });
                   }}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   {opdVisits.map(v => (
                     <option key={v.uhid} value={v.uhid}>{v.uhid} - {v.patientName}</option>
@@ -1593,7 +1593,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   required
                   value={followUpForm.doctor}
                   onChange={(e) => setFollowUpForm({ ...followUpForm, doctor: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1604,7 +1604,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <select
                   value={followUpForm.interval}
                   onChange={(e) => setFollowUpForm({ ...followUpForm, interval: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="3 Days Post-Op">3 Days Post-Op Evaluation</option>
                   <option value="7 Days Post-Consult">7 Days Post-Consult</option>
@@ -1620,7 +1620,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                   required
                   value={followUpForm.dueDate}
                   onChange={(e) => setFollowUpForm({ ...followUpForm, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1636,7 +1636,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       ...followUpForm,
                       channels: { ...followUpForm.channels, whatsapp: e.target.checked }
                     })}
-                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                    className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-blue-500"
                   />
                   <span>WhatsApp Message</span>
                 </label>
@@ -1648,7 +1648,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       ...followUpForm,
                       channels: { ...followUpForm.channels, sms: e.target.checked }
                     })}
-                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                    className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-blue-500"
                   />
                   <span>SMS Alert</span>
                 </label>
@@ -1660,7 +1660,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       ...followUpForm,
                       channels: { ...followUpForm.channels, ivrCall: e.target.checked }
                     })}
-                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                    className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-blue-500"
                   />
                   <span>Voice IVR Call</span>
                 </label>
@@ -1675,7 +1675,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 value={followUpForm.instructions}
                 onChange={(e) => setFollowUpForm({ ...followUpForm, instructions: e.target.value })}
                 placeholder="Specific blood investigations, imaging or fasting protocol to follow before visit"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 

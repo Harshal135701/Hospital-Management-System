@@ -109,8 +109,8 @@ export function ReceiptModal({ isOpen, onClose, data, type = 'opd_receipt' }) {
         >
           {/* Header */}
           <div style={{ textAlign: 'center', borderBottom: '1px dashed #9CA3AF', paddingBottom: '10px', marginBottom: '12px' }}>
-            <h2 style={{ fontSize: printFormat === '80mm' ? '1rem' : '1.25rem', fontWeight: '700', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
-              APEX CENTRAL HOSPITAL
+            <h2 style={{ fontSize: printFormat === '80mm' ? '1rem' : '1.25rem', fontWeight: '700', margin: '0 0 4px', letterSpacing: '-0.01em', color: 'var(--color-primary-teal, #0A4174)' }}>
+              SARJI GROUP OF HOSPITALS
             </h2>
             <p style={{ margin: '2px 0', fontSize: '0.72rem', color: '#4B5563' }}>
               Main Clinical Campus, Plot 14, Health City, Sector 5

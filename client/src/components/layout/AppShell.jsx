@@ -1980,7 +1980,7 @@ export const AppShell = ({
                   padding: '5px 10px',
                   borderRadius: 'var(--radius-full)',
                   backgroundColor: 'var(--color-bg-pale-aqua)',
-                  border: '1px solid rgba(8, 127, 140, 0.25)',
+                  border: '1px solid rgba(73, 118, 159, 0.35)',
                   color: 'var(--color-primary-teal)',
                   fontSize: '0.72rem',
                   fontWeight: '600'
@@ -2045,7 +2045,7 @@ export const AppShell = ({
                   padding: '6px 12px',
                   backgroundColor: 'var(--color-bg-pale-aqua)',
                   borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(8, 127, 140, 0.3)',
+                  border: '1px solid rgba(73, 118, 159, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
@@ -2217,7 +2217,7 @@ export const AppShell = ({
               padding: '14px 16px',
               backgroundColor: 'var(--color-bg-pale-aqua)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(8, 127, 140, 0.2)',
+              border: '1px solid rgba(73, 118, 159, 0.35)',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-primary)',
               lineHeight: 1.5

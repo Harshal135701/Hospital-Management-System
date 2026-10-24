@@ -622,8 +622,8 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
     <div className="flex flex-col gap-6 p-6 min-h-screen bg-[var(--color-bg-primary)]">
       {/* Toast Notification */}
       {notificationMsg && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-[var(--color-primary-teal)] text-white text-sm font-medium rounded-lg shadow-xl border border-teal-600 animate-slide-in">
-          <CheckCircle2 size={18} className="text-emerald-200" />
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-[var(--color-primary-teal)] text-white text-sm font-medium rounded-lg shadow-xl border border-blue-600 animate-slide-in">
+          <CheckCircle2 size={18} className="text-sky-200" />
           <span>{notificationMsg}</span>
         </div>
       )}
@@ -632,7 +632,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[var(--color-primary-teal)] shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-[var(--color-primary-teal)] shadow-xs">
               <HeartPulse size={22} />
             </div>
             <div>
@@ -647,7 +647,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-bg-pale-aqua)] border border-teal-100 text-xs font-medium text-[var(--color-primary-teal)]">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-bg-pale-aqua)] border border-sky-100 text-xs font-medium text-[var(--color-primary-teal)]">
             <Bed size={14} />
             <span>Wing B (18/20 Beds Occupied)</span>
           </div>
@@ -672,7 +672,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
         <Card className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--color-text-muted)]">Active Census</span>
-            <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center text-[var(--color-primary-teal)]">
+            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-[var(--color-primary-teal)]">
               <Bed size={16} />
             </div>
           </div>
@@ -737,7 +737,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               onClick={() => handleSubtabSelect(sub.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all whitespace-nowrap border-b-2 ${
                 isActive
-                  ? 'border-[var(--color-primary-teal)] text-[var(--color-primary-teal)] bg-teal-50/40 shadow-xs'
+                  ? 'border-[var(--color-primary-teal)] text-[var(--color-primary-teal)] bg-sky-50/40 shadow-xs'
                   : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-slate-50'
               }`}
             >
@@ -750,7 +750,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
 
       {/* Level 3 Subsubmodule Pills */}
       {currentSubmodule && currentSubmodule.subsubmodules && (
-        <div className="flex items-center gap-2 flex-wrap bg-[var(--color-bg-pale-aqua)]/50 p-2 rounded-lg border border-teal-100">
+        <div className="flex items-center gap-2 flex-wrap bg-[var(--color-bg-pale-aqua)]/50 p-2 rounded-lg border border-sky-100">
           <span className="text-[11px] font-semibold text-[var(--color-primary-teal)] uppercase tracking-wider px-2">
             Workflows:
           </span>
@@ -763,7 +763,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full transition-all ${
                   isSubsubActive
                     ? 'bg-[var(--color-primary-teal)] text-white shadow-xs font-semibold'
-                    : 'bg-white text-[var(--color-text-muted)] hover:text-[var(--color-primary-teal)] border border-teal-100'
+                    : 'bg-white text-[var(--color-text-muted)] hover:text-[var(--color-primary-teal)] border border-sky-100'
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
@@ -817,8 +817,8 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                     <tr
                       key={p.uhid}
                       onClick={() => setSelectedPatient(p)}
-                      className={`hover:bg-teal-50/20 cursor-pointer transition-colors ${
-                        selectedPatient?.uhid === p.uhid ? 'bg-teal-50/40' : ''
+                      className={`hover:bg-sky-50/20 cursor-pointer transition-colors ${
+                        selectedPatient?.uhid === p.uhid ? 'bg-sky-50/40' : ''
                       }`}
                     >
                       <td className="py-3 px-3 font-semibold text-[var(--color-text-main)]">
@@ -831,7 +831,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                       <td className="py-3 px-3">
                         <div className="font-semibold text-[var(--color-text-main)]">{p.name}</div>
                         <div className="text-[11px] text-[var(--color-text-muted)]">
-                          {p.age}y • {p.gender} • <span className="font-mono text-teal-700">{p.uhid}</span>
+                          {p.age}y • {p.gender} • <span className="font-mono text-sky-700">{p.uhid}</span>
                         </div>
                       </td>
                       <td className="py-3 px-3">
@@ -842,7 +842,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                         <div className="flex items-center gap-2 font-mono">
                           <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{p.temp}</span>
                           <span className="px-1.5 py-0.5 rounded bg-slate-100">{p.bp}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-teal-800 font-bold">{p.spo2}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-sky-800 font-bold">{p.spo2}</span>
                         </div>
                         <div className="text-[10px] text-slate-500 mt-0.5">
                           Pain: <span className="font-bold text-amber-700">{p.painScore}/10</span> • PR: {p.pulse}
@@ -914,7 +914,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   </h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                  <span className="text-xs font-mono text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                     Fall Risk: {selectedPatient.fallRisk}
                   </span>
                   <Button
@@ -944,7 +944,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   </h4>
                   <p className="text-xs text-slate-600">IV Maintenance @ 80 ml/hr NS + 5% Dextrose.</p>
                   <div className="mt-2 text-[11px] text-slate-500 font-mono">
-                    24h Balance: <span className="font-bold text-teal-700">+{selectedPatient.intake - selectedPatient.output} ml</span> (Intake: {selectedPatient.intake}ml / Output: {selectedPatient.output}ml)
+                    24h Balance: <span className="font-bold text-sky-700">+{selectedPatient.intake - selectedPatient.output} ml</span> (Intake: {selectedPatient.intake}ml / Output: {selectedPatient.output}ml)
                   </div>
                 </div>
 
@@ -1022,14 +1022,14 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                       </td>
                       <td className="py-2.5 px-3 font-medium text-slate-800">{log.route}</td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{log.amount} ml</td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-teal-800">{log.balance}</td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-sky-800">{log.balance}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="mt-4 p-3 rounded-lg bg-[var(--color-bg-pale-aqua)]/50 border border-teal-100 flex items-center justify-between text-xs">
+            <div className="mt-4 p-3 rounded-lg bg-[var(--color-bg-pale-aqua)]/50 border border-sky-100 flex items-center justify-between text-xs">
               <div className="flex items-center gap-4">
                 <div>
                   <span className="text-[var(--color-text-muted)] block">Total Intake (24h)</span>
@@ -1083,9 +1083,9 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-500 block">Oxygen Saturation (SpO2)</span>
-                    <span className="text-lg font-bold font-mono text-teal-800">{selectedPatient.spo2}</span>
+                    <span className="text-lg font-bold font-mono text-sky-800">{selectedPatient.spo2}</span>
                   </div>
-                  <span className="text-[11px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">Room Air</span>
+                  <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">Room Air</span>
                 </div>
 
                 <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -1128,7 +1128,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500">Scheduled Slots:</span>
-              <span className="px-2 py-1 rounded bg-teal-50 text-[var(--color-primary-teal)] text-xs font-mono font-semibold border border-teal-200">
+              <span className="px-2 py-1 rounded bg-sky-50 text-[var(--color-primary-teal)] text-xs font-mono font-semibold border border-sky-200">
                 08:00
               </span>
               <span className="px-2 py-1 rounded bg-amber-50 text-amber-700 text-xs font-mono font-semibold border border-amber-200">
@@ -1165,7 +1165,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   <tr key={m.id} className="hover:bg-slate-50/50">
                     <td className="py-3 px-3">
                       <div className="font-bold text-[var(--color-text-main)]">{m.patientName}</div>
-                      <div className="text-[11px] text-teal-800 font-mono">
+                      <div className="text-[11px] text-sky-800 font-mono">
                         {m.bed} • {m.patientUhid}
                       </div>
                     </td>
@@ -1213,7 +1213,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                     <td className="py-3 px-3 text-slate-600">
                       <div>{m.adminBy}</div>
                       {m.barcodeVerified && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-teal-700 font-medium">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-sky-700 font-medium">
                           <QrCode size={11} /> Barcode Dual-Match
                         </span>
                       )}
@@ -1323,7 +1323,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                     </td>
                     <td className="py-3 px-3">
                       <div className="font-bold text-[var(--color-text-main)]">{ord.patient}</div>
-                      <span className="text-[11px] font-mono text-teal-800">{ord.bed}</span>
+                      <span className="text-[11px] font-mono text-sky-800">{ord.bed}</span>
                     </td>
                     <td className="py-3 px-3 text-slate-700 font-medium">
                       {ord.doctor}
@@ -1418,7 +1418,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-            <div className="p-4 rounded-lg border border-teal-200 bg-teal-50/20">
+            <div className="p-4 rounded-lg border border-sky-200 bg-sky-50/20">
               <span className="text-xs font-bold text-[var(--color-primary-teal)] uppercase tracking-wider block mb-1">
                 S - Situation (Current Ward State)
               </span>
@@ -1461,7 +1461,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <div>
                 <span className="text-[11px] text-slate-500 block">Incoming Night Shift Nurse</span>
                 <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                  <User size={14} className="text-teal-600" />
+                  <User size={14} className="text-sky-600" />
                   {sbarNotes.incomingNurse}
                 </span>
               </div>
@@ -1630,7 +1630,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={carePlanForm.fallRisk}
                   onChange={(e) => setCarePlanForm({ ...carePlanForm, fallRisk: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="High (Morse 65)">High (Morse 65 - Yellow Wristband)</option>
                   <option value="Moderate (Morse 35)">Moderate (Morse 35)</option>
@@ -1642,7 +1642,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={carePlanForm.diet}
                   onChange={(e) => setCarePlanForm({ ...carePlanForm, diet: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="NPO (Nil Per Os)">NPO (Nil Per Os)</option>
                   <option value="Diabetic Soft Diet">Diabetic Soft Diet</option>
@@ -1660,7 +1660,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 required
                 value={carePlanForm.hydrationGoal}
                 onChange={(e) => setCarePlanForm({ ...carePlanForm, hydrationGoal: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1670,7 +1670,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 rows={2}
                 value={carePlanForm.drainProtocol}
                 onChange={(e) => setCarePlanForm({ ...carePlanForm, drainProtocol: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1680,7 +1680,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 rows={2}
                 value={carePlanForm.precautions}
                 onChange={(e) => setCarePlanForm({ ...carePlanForm, precautions: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1691,7 +1691,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 required
                 value={carePlanForm.nurse}
                 onChange={(e) => setCarePlanForm({ ...carePlanForm, nurse: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1722,7 +1722,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={fluidForm.category}
                   onChange={(e) => setFluidForm({ ...fluidForm, category: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Intake">Fluid Intake (+)</option>
                   <option value="Output">Fluid Output / Excretion (-)</option>
@@ -1736,7 +1736,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   value={fluidForm.time}
                   onChange={(e) => setFluidForm({ ...fluidForm, time: e.target.value })}
                   placeholder="e.g. 14:00"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1747,7 +1747,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={fluidForm.route}
                   onChange={(e) => setFluidForm({ ...fluidForm, route: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   {fluidForm.category === 'Intake' ? (
                     <>
@@ -1776,7 +1776,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   max="5000"
                   value={fluidForm.amount}
                   onChange={(e) => setFluidForm({ ...fluidForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1788,7 +1788,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 value={fluidForm.colorNotes}
                 onChange={(e) => setFluidForm({ ...fluidForm, colorNotes: e.target.value })}
                 placeholder="e.g. Clear pale straw, no sediment"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1824,7 +1824,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500">Drug & Route:</span>
-                <span className="text-xs font-bold text-teal-800">{selectedMarItem.medication} • {selectedMarItem.route}</span>
+                <span className="text-xs font-bold text-sky-800">{selectedMarItem.medication} • {selectedMarItem.route}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500">Scheduled Slot:</span>
@@ -1840,7 +1840,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   onClick={() => setMarAdminForm({ ...marAdminForm, action: 'administer' })}
                   className={`py-2 px-3 text-xs font-semibold rounded-md border text-center transition-colors ${
                     marAdminForm.action === 'administer'
-                      ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -1861,19 +1861,19 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
             </div>
 
             {marAdminForm.action === 'administer' ? (
-              <div className="p-3 rounded-lg border border-teal-100 bg-teal-50/50 space-y-2">
+              <div className="p-3 rounded-lg border border-sky-100 bg-sky-50/50 space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={marAdminForm.barcodeVerified}
                     onChange={(e) => setMarAdminForm({ ...marAdminForm, barcodeVerified: e.target.checked })}
-                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                    className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-blue-500"
                   />
                   <span className="text-xs font-medium text-slate-800">
                     Dual Barcode Verified (Patient 2D Wristband + Medication Unit Dose)
                   </span>
                 </label>
-                <p className="text-[11px] text-teal-700 pl-6">
+                <p className="text-[11px] text-sky-700 pl-6">
                   Confirms 5 Rights: Right Patient, Right Drug, Right Dose, Right Route, Right Time.
                 </p>
               </div>
@@ -1898,7 +1898,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 required
                 value={marAdminForm.nurseName}
                 onChange={(e) => setMarAdminForm({ ...marAdminForm, nurseName: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1933,7 +1933,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={newMedForm.patientUhid}
                   onChange={(e) => setNewMedForm({ ...newMedForm, patientUhid: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   {patients.map(p => (
                     <option key={p.uhid} value={p.uhid}>{p.bed} - {p.name}</option>
@@ -1947,7 +1947,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   required
                   value={newMedForm.doctor}
                   onChange={(e) => setNewMedForm({ ...newMedForm, doctor: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -1960,7 +1960,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 value={newMedForm.medication}
                 onChange={(e) => setNewMedForm({ ...newMedForm, medication: e.target.value })}
                 placeholder="e.g. Inj. Meropenem 1g IV"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -1970,7 +1970,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={newMedForm.route}
                   onChange={(e) => setNewMedForm({ ...newMedForm, route: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="IV Piggyback over 30m">IV Piggyback over 30m</option>
                   <option value="IV Push Slow">IV Push Slow</option>
@@ -1984,7 +1984,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={newMedForm.frequency}
                   onChange={(e) => setNewMedForm({ ...newMedForm, frequency: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="TDS (08:00, 14:00, 20:00)">TDS (Q8H)</option>
                   <option value="BD (08:00, 20:00)">BD (Q12H)</option>
@@ -2001,7 +2001,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   value={newMedForm.scheduledTime}
                   onChange={(e) => setNewMedForm({ ...newMedForm, scheduledTime: e.target.value })}
                   placeholder="e.g. 14:00 PM"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
@@ -2033,7 +2033,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={doctorOrderForm.bed}
                   onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, bed: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   {patients.map(p => (
                     <option key={p.bed} value={p.bed}>{p.bed} - {p.name}</option>
@@ -2047,7 +2047,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   required
                   value={doctorOrderForm.doctor}
                   onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, doctor: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
               <div>
@@ -2055,7 +2055,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 <select
                   value={doctorOrderForm.priority}
                   onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, priority: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="Urgent">Urgent</option>
                   <option value="STAT">STAT (Emergency)</option>
@@ -2069,7 +2069,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <select
                 value={doctorOrderForm.orderType}
                 onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, orderType: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               >
                 <option value="Nursing Intervention">Nursing Intervention</option>
                 <option value="Blood Transfusion">Blood Transfusion</option>
@@ -2087,7 +2087,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 value={doctorOrderForm.description}
                 onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, description: e.target.value })}
                 placeholder="Specific clinical steps, monitoring parameters, or transfusion requirements"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -2117,7 +2117,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <select
                 value={sbarForm.shift}
                 onChange={(e) => setSbarForm({ ...sbarForm, shift: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               >
                 <option value="Day Shift (07:00 - 15:00)">Day Shift (07:00 - 15:00)</option>
                 <option value="Evening Shift (15:00 - 23:00)">Evening Shift (15:00 - 23:00)</option>
@@ -2132,7 +2132,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 rows={2}
                 value={sbarForm.situation}
                 onChange={(e) => setSbarForm({ ...sbarForm, situation: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -2143,18 +2143,18 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 rows={2}
                 value={sbarForm.background}
                 onChange={(e) => setSbarForm({ ...sbarForm, background: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-teal-700 mb-1">A - Assessment (Current Findings & Response to Rx)</label>
+              <label className="block text-xs font-bold text-sky-700 mb-1">A - Assessment (Current Findings & Response to Rx)</label>
               <textarea
                 required
                 rows={2}
                 value={sbarForm.assessment}
                 onChange={(e) => setSbarForm({ ...sbarForm, assessment: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -2165,7 +2165,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                 rows={2}
                 value={sbarForm.recommendation}
                 onChange={(e) => setSbarForm({ ...sbarForm, recommendation: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -2177,7 +2177,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   required
                   value={sbarForm.outgoingNurse}
                   onChange={(e) => setSbarForm({ ...sbarForm, outgoingNurse: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
               <div>
@@ -2187,7 +2187,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                   required
                   value={sbarForm.incomingNurse}
                   onChange={(e) => setSbarForm({ ...sbarForm, incomingNurse: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>

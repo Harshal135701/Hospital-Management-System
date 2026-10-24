@@ -217,13 +217,13 @@ export function SubmoduleScrollbarNav({
                 padding: '12px 14px',
                 borderRadius: '10px',
                 border: isSelected
-                  ? '2px solid var(--color-primary-teal, #0D9488)'
-                  : '1px solid var(--color-border, #E5E7EB)',
+                  ? '2px solid var(--color-primary-teal, #0A4174)'
+                  : '1px solid var(--color-border, #D5E2EE)',
                 backgroundColor: isSelected
-                  ? 'var(--color-primary-teal-light, #F0FDF4)'
+                  ? 'var(--color-bg-pale-aqua, #EBF3FA)'
                   : '#ffffff',
                 boxShadow: isSelected
-                  ? '0 4px 12px rgba(13, 148, 136, 0.12)'
+                  ? '0 4px 12px rgba(10, 65, 116, 0.15)'
                   : '0 1px 2px rgba(0,0,0,0.03)',
                 cursor: 'pointer',
                 transition: 'all 0.18s ease',
@@ -233,13 +233,13 @@ export function SubmoduleScrollbarNav({
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
-                  e.currentTarget.style.borderColor = '#0D9488';
+                  e.currentTarget.style.borderColor = 'var(--color-primary-teal, #0A4174)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSelected) {
-                  e.currentTarget.style.borderColor = '#E5E7EB';
+                  e.currentTarget.style.borderColor = 'var(--color-border, #D5E2EE)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }
               }}
@@ -251,8 +251,8 @@ export function SubmoduleScrollbarNav({
                       width: '28px',
                       height: '28px',
                       borderRadius: '8px',
-                      backgroundColor: isSelected ? 'var(--color-primary-teal, #0D9488)' : '#F3F4F6',
-                      color: isSelected ? '#ffffff' : '#0D9488',
+                      backgroundColor: isSelected ? 'var(--color-primary-teal, #0A4174)' : 'var(--color-bg-pale-aqua, #EBF3FA)',
+                      color: isSelected ? '#ffffff' : 'var(--color-primary-teal, #0A4174)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -267,8 +267,8 @@ export function SubmoduleScrollbarNav({
                       fontWeight: '700',
                       padding: '2px 8px',
                       borderRadius: '10px',
-                      backgroundColor: isSelected ? 'rgba(13, 148, 136, 0.15)' : '#F3F4F6',
-                      color: isSelected ? 'var(--color-primary-teal, #0D9488)' : '#6B7280',
+                      backgroundColor: isSelected ? 'rgba(73, 118, 159, 0.2)' : '#F3F4F6',
+                      color: isSelected ? 'var(--color-primary-teal, #0A4174)' : '#6B7280',
                     }}
                   >
                     {sub.id}
@@ -279,7 +279,7 @@ export function SubmoduleScrollbarNav({
                   style={{
                     fontSize: '0.875rem',
                     fontWeight: isSelected ? '700' : '600',
-                    color: isSelected ? 'var(--color-primary-teal, #0D9488)' : '#111827',
+                    color: isSelected ? 'var(--color-primary-teal, #0A4174)' : 'var(--color-text-primary, #0F2438)',
                     lineHeight: '1.25',
                     marginBottom: '4px',
                   }}
@@ -290,7 +290,7 @@ export function SubmoduleScrollbarNav({
                 <div
                   style={{
                     fontSize: '0.72rem',
-                    color: '#6B7280',
+                    color: 'var(--color-text-secondary, #4A657D)',
                     lineHeight: '1.3',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
@@ -321,7 +321,7 @@ export function SubmoduleScrollbarNav({
                     style={{
                       fontSize: '0.72rem',
                       fontWeight: '700',
-                      color: 'var(--color-primary-teal, #0D9488)',
+                      color: 'var(--color-primary-teal, #0A4174)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '2px',

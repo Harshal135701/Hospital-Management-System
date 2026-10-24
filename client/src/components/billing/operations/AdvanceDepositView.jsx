@@ -486,13 +486,13 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
                 lineHeight: 1.5
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #087F8C', paddingBottom: '10px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--color-primary-teal, #0A4174)', paddingBottom: '10px', marginBottom: '12px' }}>
                 <div>
-                  <h3 style={{ margin: 0, color: '#087F8C', fontWeight: '800', fontSize: '1.1rem' }}>APEX CENTRAL HOSPITAL</h3>
+                  <h3 style={{ margin: 0, color: 'var(--color-primary-teal, #0A4174)', fontWeight: '800', fontSize: '1.1rem' }}>SARJI GROUP OF HOSPITALS</h3>
                   <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>Advance Cashier & Trust Collections Desk</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: '700', color: '#087F8C' }}>{selectedReceipt.receipt_number}</div>
+                  <div style={{ fontWeight: '700', color: 'var(--color-primary-teal, #0A4174)' }}>{selectedReceipt.receipt_number}</div>
                   <div style={{ fontSize: '0.7rem', color: '#6B7280' }}>Date: {formatDateTimeIN(selectedReceipt.date)}</div>
                 </div>
               </div>
@@ -508,7 +508,7 @@ export function AdvanceDepositView({ onOpenReceiptModal }) {
 
               <div style={{ borderTop: '1px dashed #D1D5DB', borderBottom: '1.5px solid #111827', padding: '10px 0', margin: '8px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: '700' }}>DEPOSIT AMOUNT RECEIVED:</span>
-                <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#087F8C' }}>{formatINR(selectedReceipt.amount)}</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--color-primary-teal, #0A4174)' }}>{formatINR(selectedReceipt.amount)}</span>
               </div>
 
               {selectedReceipt.notes && (

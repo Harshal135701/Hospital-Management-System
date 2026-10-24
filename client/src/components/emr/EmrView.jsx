@@ -352,7 +352,7 @@ export function EmrView({ initialSubtab = '12.1', onNavigate }) {
             fontSize: '0.88rem'
           }}
         >
-          <CheckCircle2 size={18} style={{ color: '#087F8C' }} />
+          <CheckCircle2 size={18} style={{ color: 'var(--color-primary-teal)' }} />
           <span>{toastMessage}</span>
         </div>
       )}

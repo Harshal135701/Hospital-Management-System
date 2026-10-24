@@ -167,7 +167,7 @@ export const DashboardView = ({ onNavigate }) => {
             </span>
             <span style={{ color: 'var(--color-border)' }}>•</span>
             <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontWeight: '500' }}>
-              Apex Central Hospital — Shift: 08:00–16:00 (Live: {activeShiftTime})
+              Sarji Group of Hospitals — Shift: 08:00–16:00 (Live: {activeShiftTime})
             </span>
             {isDataMock && (
               <Badge variant="teal" size="sm">Schema Connected (Demo Verified)</Badge>
@@ -219,7 +219,7 @@ export const DashboardView = ({ onNavigate }) => {
             padding: '12px 16px',
             borderRadius: 'var(--radius-lg)',
             background: 'linear-gradient(135deg, var(--color-bg-pale-aqua) 0%, #FFFFFF 100%)',
-            border: '1px solid rgba(100, 216, 208, 0.4)',
+            border: '1px solid rgba(73, 118, 159, 0.35)',
             boxShadow: 'var(--shadow-subtle)',
             position: 'relative',
             overflow: 'hidden'
@@ -311,7 +311,7 @@ export const DashboardView = ({ onNavigate }) => {
                 <span style={{ fontSize: '1.65rem', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
                   {s.value}
                 </span>
-                <Badge variant={s.trend === 'Optimal' ? 'info' : 'success'} size="sm">
+                <Badge variant={s.trend === 'Optimal' ? 'info' : (s.badge === 'Empty Stock' ? 'warning' : 'teal')} size="sm">
                   {s.badge}
                 </Badge>
               </div>
@@ -423,7 +423,7 @@ export const DashboardView = ({ onNavigate }) => {
                   padding: '8px 12px',
                   borderRadius: 'var(--radius-md)',
                   backgroundColor: 'var(--color-bg-pale-aqua)',
-                  border: '1px solid rgba(100, 216, 208, 0.4)'
+                  border: '1px solid rgba(73, 118, 159, 0.35)'
                 }}
               >
                 <div
@@ -571,7 +571,7 @@ export const DashboardView = ({ onNavigate }) => {
               Hospital Departments & Specialized Clinical Care
             </h2>
             <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', margin: '2px 0 0 0' }}>
-              Multi-disciplinary clinical centers operating 24/7 across Apex Central Hospital campus
+              Multi-disciplinary clinical centers operating 24/7 across Sarji Group of Hospitals campus
             </p>
           </div>
           <Badge variant="teal" size="sm">7 Integrated Services</Badge>
@@ -706,7 +706,7 @@ export const DashboardView = ({ onNavigate }) => {
                       color: 'var(--color-primary-teal)',
                       fontSize: '0.78rem',
                       fontWeight: '600',
-                      border: '1px solid rgba(100, 216, 208, 0.4)',
+                      border: '1px solid rgba(73, 118, 159, 0.35)',
                       cursor: 'pointer'
                     }}
                   >

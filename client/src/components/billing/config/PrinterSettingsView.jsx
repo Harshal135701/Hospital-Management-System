@@ -242,7 +242,7 @@ export function PrinterSettingsView() {
                   }}
                 >
                   <div style={{ textAlign: 'center', borderBottom: '1px dashed #9CA3AF', paddingBottom: '8px', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: '800', fontSize: '0.85rem' }}>APEX CENTRAL HOSPITAL</div>
+                    <div style={{ fontWeight: '800', fontSize: '0.85rem', color: 'var(--color-primary-teal, #0A4174)' }}>SARJI GROUP OF HOSPITALS</div>
                     <div style={{ fontSize: '0.65rem', color: '#6B7280' }}>80mm Thermal Cashier Desk</div>
                     <div style={{ fontWeight: '700', marginTop: '4px' }}>SAMPLE TEST TICKET</div>
                   </div>

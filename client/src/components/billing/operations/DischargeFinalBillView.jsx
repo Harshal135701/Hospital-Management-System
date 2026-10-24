@@ -366,7 +366,7 @@ export function DischargeFinalBillView({ onOpenReceiptModal }) {
             }}
           >
             <div style={{ textAlign: 'center', borderBottom: '2px solid #111827', paddingBottom: '8px', marginBottom: '12px' }}>
-              <div style={{ fontWeight: '900', fontSize: '1rem' }}>APEX CENTRAL HOSPITAL</div>
+              <div style={{ fontWeight: '900', fontSize: '1rem' }}>SARJI GROUP OF HOSPITALS</div>
               <div style={{ fontSize: '0.7rem' }}>HOSPITAL SECURITY & PATIENT DISCHARGE CLEARANCE GATE PASS</div>
               <div style={{ fontWeight: '800', color: '#059669', marginTop: '4px' }}>[ ALL CHARGES SETTLED - AUTHORIZED TO LEAVE ]</div>
             </div>
@@ -423,10 +423,10 @@ export function DischargeFinalBillView({ onOpenReceiptModal }) {
               fontSize: '0.85rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #087F8C', paddingBottom: '12px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--color-primary-teal, #0A4174)', paddingBottom: '12px', marginBottom: '14px' }}>
               <div>
-                <h2 style={{ margin: '0 0 2px', fontSize: '1.25rem', color: '#087F8C', fontWeight: '800' }}>
-                  APEX CENTRAL HOSPITAL
+                <h2 style={{ margin: '0 0 2px', fontSize: '1.25rem', color: 'var(--color-primary-teal, #0A4174)', fontWeight: '800' }}>
+                  SARJI GROUP OF HOSPITALS
                 </h2>
                 <div style={{ fontSize: '0.75rem', color: '#4B5563' }}>Main Clinical Campus, Plot 14, Sector 5, Kolkata 700091</div>
                 <div style={{ fontSize: '0.7rem', color: '#6B7280' }}>GSTIN: 19AAACA8912E1Z8 | Clinical Est. Reg: WB/KOL/2021/041</div>

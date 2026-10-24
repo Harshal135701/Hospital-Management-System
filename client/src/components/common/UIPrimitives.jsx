@@ -42,7 +42,7 @@ export const Button = ({
       backgroundColor: 'var(--color-primary-teal)',
       color: 'var(--color-text-inverse)',
       borderColor: 'var(--color-primary-teal)',
-      boxShadow: '0 2px 6px rgba(8, 127, 140, 0.25)'
+      boxShadow: '0 2px 6px rgba(10, 65, 116, 0.25)'
     },
     secondary: {
       backgroundColor: 'var(--color-secondary-teal)',
@@ -58,7 +58,7 @@ export const Button = ({
     soft: {
       backgroundColor: 'var(--color-bg-pale-aqua)',
       color: 'var(--color-primary-teal)',
-      borderColor: 'rgba(100, 216, 208, 0.3)'
+      borderColor: 'rgba(73, 118, 159, 0.35)'
     },
     ghost: {
       backgroundColor: 'transparent',
@@ -176,7 +176,12 @@ export const Badge = ({
     teal: {
       backgroundColor: 'var(--color-bg-pale-aqua)',
       color: 'var(--color-primary-teal)',
-      borderColor: 'rgba(100, 216, 208, 0.4)'
+      borderColor: 'rgba(73, 118, 159, 0.35)'
+    },
+    blue: {
+      backgroundColor: 'var(--color-bg-pale-aqua)',
+      color: 'var(--color-primary-teal)',
+      borderColor: 'rgba(73, 118, 159, 0.35)'
     },
     gray: {
       backgroundColor: '#F1F4F4',
@@ -423,7 +428,7 @@ export const SafeImage = ({
     return (
       <div style={containerStyle} className={className} aria-label={alt}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '8px', textAlign: 'center' }}>
-          <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'rgba(8, 127, 140, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-teal)', fontWeight: '700', fontSize: '13px' }}>
+          <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'rgba(10, 65, 116, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-teal)', fontWeight: '700', fontSize: '13px' }}>
             +
           </div>
           <span style={{ fontSize: '0.68rem', color: 'var(--color-primary-teal)', fontWeight: '600' }}>
