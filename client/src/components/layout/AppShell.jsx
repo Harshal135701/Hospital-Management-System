@@ -253,6 +253,23 @@ export const AppShell = ({
           ]
         },
 
+
+        {
+          id: 'general',
+          label: 'General',
+          icon: Building2,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'general:15.1', label: 'Hospital & Branch Master' },
+            { id: 'general:15.2', label: 'Department & Clinic Hierarchy' },
+            { id: 'general:15.3', label: 'Doctor & Consultant Master' },
+            { id: 'general:15.4', label: 'Service Catalog & Tariff Master' },
+            { id: 'general:15.5', label: 'Corporate Tariff Rate Contracts' }
+          ]
+        },
+
+
+
         {
           id: 'embryology',
           label: 'Embryology',

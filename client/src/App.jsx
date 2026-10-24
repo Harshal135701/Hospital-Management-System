@@ -20,6 +20,7 @@ import { EmbryologyView } from './components/embryology/EmbryologyView';
 import { EmergencyView } from './components/emergency/EmergencyView';
 import { FinanceView } from './components/finance/FinanceView';
 import { FixedAssetView } from './components/fixed-asset/FixedAssetView';
+import { GeneralView } from './components/general/GeneralView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -55,6 +56,7 @@ const VALID_ROUTE_BASES = new Set([
   'rooms',
   'lab',
   'fixed-asset',
+  'general',
   'reports',
   'settings'
 ]);
@@ -145,6 +147,9 @@ export function App() {
 
       case 'fixed-asset':
         return <FixedAssetView initialSubtab={routeSubtab || '14.1'} onNavigate={setCurrentRoute} />;
+
+      case 'general':
+        return <GeneralView initialSubtab={routeSubtab || '15.1'} onNavigate={(subtab) => setCurrentRoute(`general:${subtab}`)} />;
 
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
