@@ -325,8 +325,7 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '16px',
-            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)',
-            animation: 'pulse 2s infinite'
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
