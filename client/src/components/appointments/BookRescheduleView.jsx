@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
   Clock,
@@ -6,961 +6,1569 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
-  Lock,
   Droplet,
   Search,
   Filter,
   User,
-  AlertCircle
+  AlertCircle,
+  X,
+  Phone,
+  Stethoscope,
+  ClipboardList,
+  UserPlus,
+  CalendarClock,
+  Ban,
+  Check,
 } from 'lucide-react';
-import { Card, Button, Badge, Modal, Input, Select } from '../common/UIPrimitives';
-import {
-  AppointmentService,
-  AppointmentBloodRequestService,
-  PatientService,
-  DepartmentService,
-  ClinicalStaffService,
-  TokenManager
-} from '../../services/api';
+
+import { AppointmentBloodRequestService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { formatINR, formatDateIN, formatTime12h } from '../../utils/formatters';
 
-export function BookRescheduleView({ onNavigate: _onNavigate }) {
-  const { user, isAuthenticated, openLoginModal } = useAuth();
+const APPOINTMENTS_KEY = 'hms_demo_appointments';
+const PATIENTS_KEY = 'hms_demo_patients';
 
-  // State
-  const [appointments, setAppointments] = useState([]);
-  const [bloodRequests, setBloodRequests] = useState([]);
-  const [activeTab, setActiveTab] = useState('appointments'); // 'appointments' | 'blood_requests'
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [successBanner, setSuccessBanner] = useState(null);
+const DEPARTMENTS = [
+  { id: 'dept-01', name: 'Cardiology' },
+  { id: 'dept-02', name: 'Orthopedics' },
+  { id: 'dept-03', name: 'General Medicine' },
+  { id: 'dept-04', name: 'Pediatrics' },
+  { id: 'dept-05', name: 'Dermatology' },
+  { id: 'dept-06', name: 'Neurology' },
+  { id: 'dept-07', name: 'Gynecology' },
+  { id: 'dept-08', name: 'General Surgery' },
+];
 
-  // Filter state
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [statusFilter, setStatusFilter] = useState('');
-  const [searchFilter, setSearchFilter] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
+const DOCTORS = [
+  { id: 'doc-01', full_name: 'Dr. Ananya Mehta', department_id: 'dept-01' },
+  { id: 'doc-02', full_name: 'Dr. Rahul Kulkarni', department_id: 'dept-01' },
+  { id: 'doc-03', full_name: 'Dr. Vikram Patil', department_id: 'dept-02' },
+  { id: 'doc-04', full_name: 'Dr. Neha Shah', department_id: 'dept-02' },
+  { id: 'doc-05', full_name: 'Dr. Amit Joshi', department_id: 'dept-03' },
+  { id: 'doc-06', full_name: 'Dr. Pooja Deshmukh', department_id: 'dept-03' },
+  { id: 'doc-07', full_name: 'Dr. Snehal More', department_id: 'dept-04' },
+  { id: 'doc-08', full_name: 'Dr. Karan Singh', department_id: 'dept-05' },
+  { id: 'doc-09', full_name: 'Dr. Rohan Gupta', department_id: 'dept-06' },
+  { id: 'doc-10', full_name: 'Dr. Priya Nair', department_id: 'dept-07' },
+  { id: 'doc-11', full_name: 'Dr. Sagar Pawar', department_id: 'dept-08' },
+];
 
-  // Modals state
-  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
-  const [isBloodRequestModalOpen, setIsBloodRequestModalOpen] = useState(false);
-  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+const SAMPLE_PATIENTS = [
+  { id: 'pat-001', full_name: 'Rahul Sharma', uhid: 'UHID-1001', mobile: '9876543210', gender: 'Male' },
+  { id: 'pat-002', full_name: 'Priya Patil', uhid: 'UHID-1002', mobile: '9876543211', gender: 'Female' },
+  { id: 'pat-003', full_name: 'Amit Deshmukh', uhid: 'UHID-1003', mobile: '9876543212', gender: 'Male' },
+  { id: 'pat-004', full_name: 'Sneha Kulkarni', uhid: 'UHID-1004', mobile: '9876543213', gender: 'Female' },
+  { id: 'pat-005', full_name: 'Vivek Jadhav', uhid: 'UHID-1005', mobile: '9876543214', gender: 'Male' },
+  { id: 'pat-006', full_name: 'Pooja Shinde', uhid: 'UHID-1006', mobile: '9876543215', gender: 'Female' },
+  { id: 'pat-007', full_name: 'Sanket Pawar', uhid: 'UHID-1007', mobile: '9876543216', gender: 'Male' },
+  { id: 'pat-008', full_name: 'Neha Joshi', uhid: 'UHID-1008', mobile: '9876543217', gender: 'Female' },
+];
 
-  // Booking Form State
-  const [bookForm, setBookForm] = useState({
-    patientId: '',
-    doctorId: '',
-    departmentId: '',
-    appointmentDate: new Date().toISOString().slice(0, 10),
-    startTime: '',
-    visitType: 'first_visit',
-    notes: '',
-    isPriority: false,
-    roomId: null,
+const ACTIVE_STATUSES = ['booked', 'arrived', 'waiting', 'in_consultation'];
+
+const STATUS_LABELS = {
+  booked: 'Booked',
+  arrived: 'Arrived',
+  waiting: 'Waiting',
+  in_consultation: 'In consultation',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  no_show: 'No show',
+};
+
+const STATUS_COLORS = {
+  booked: '#087f8c',
+  arrived: '#5267b8',
+  waiting: '#b7791f',
+  in_consultation: '#0f766e',
+  completed: '#21865b',
+  cancelled: '#b42318',
+  no_show: '#718096',
+};
+
+const todayISO = () => {
+  const date = new Date();
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
+};
+
+const readStorage = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    if (!value) return fallback;
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Unable to save ${key} to localStorage:`, error);
+  }
+};
+
+const normalizeMobile = (value = '') => {
+  let digits = String(value).replace(/\D/g, '');
+  if (digits.startsWith('91') && digits.length === 12) digits = digits.slice(2);
+  if (digits.startsWith('0') && digits.length === 11) digits = digits.slice(1);
+  return digits;
+};
+
+const formatDate = (value) => {
+  if (!value) return '—';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
+};
 
-  // Booking Modal Auxiliary State
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [patientSearchQuery, setPatientSearchQuery] = useState('');
-  const [patientSearchResults, setPatientSearchResults] = useState([]);
-  const [isSearchingPatients, setIsSearchingPatients] = useState(false);
-
-  const [departmentsList, setDepartmentsList] = useState([]);
-  const [doctorsList, setDoctorsList] = useState([]);
-  const [_isLoadingMetadata, setIsLoadingMetadata] = useState(false);
-
-  const [availableSlotsData, setAvailableSlotsData] = useState(null);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-  const [bookingModalError, setBookingModalError] = useState(null);
-
-  // Quick Register Patient inside Booking Modal
-  const [isQuickRegisterOpen, setIsQuickRegisterOpen] = useState(false);
-  const [quickPatientForm, setQuickPatientForm] = useState({
-    fullName: '',
-    mobile: '',
-    dob: '',
-    gender: 'female'
+const formatTime = (value) => {
+  if (!value) return '—';
+  const [hours, minutes] = String(value).slice(0, 5).split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return value;
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
   });
-  const [isRegisteringQuickPatient, setIsRegisteringQuickPatient] = useState(false);
-  const [quickRegisterError, setQuickRegisterError] = useState(null);
+};
 
-  // Reschedule Form State
-  const [rescheduleForm, setRescheduleForm] = useState({
-    appointmentDate: new Date().toISOString().slice(0, 10),
-    startTime: '10:00',
-    reason: '',
-  });
+const makeSlots = () => {
+  const slots = [];
+  const ranges = [
+    [9 * 60, 12 * 60],
+    [14 * 60, 16 * 60 + 30],
+  ];
 
-  // Cancel Form State
-  const [cancelReason, setCancelReason] = useState('Patient requested cancellation');
-
-  // Blood Request Form State
-  const [bloodReqForm, setBloodReqForm] = useState({
-    patientId: '',
-    patientName: '',
-    patientUhid: '',
-    appointmentId: '',
-    appointmentNumber: '',
-    bloodGroup: 'O+',
-    componentType: 'whole_blood',
-    unitsRequested: 1,
-    urgency: 'routine',
-    clinicalIndication: '',
-    requiredBy: '',
-    notes: '',
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Load appointments data
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      if (activeTab === 'appointments') {
-        const filters = {};
-        if (selectedDate) filters.date = selectedDate;
-        if (statusFilter) filters.status = statusFilter;
-        if (departmentFilter) filters.departmentId = departmentFilter;
-        const data = await AppointmentService.getAppointments(filters);
-        setAppointments(Array.isArray(data) ? data : []);
-      } else {
-        const data = await AppointmentBloodRequestService.getBloodRequests();
-        setBloodRequests(Array.isArray(data) ? data : []);
-      }
-    } catch (err) {
-      if (err.status === 401) {
-        setErrorMessage('Authentication required to view appointments. Please sign in with your staff account.');
-      } else if (err.status === 403) {
-        setErrorMessage('Access denied. Your current staff role is not authorized to view this resource.');
-      } else {
-        setErrorMessage(err.message || 'Failed to retrieve appointments from database.');
-      }
-    } finally {
-      setIsLoading(false);
+  ranges.forEach(([start, end]) => {
+    for (let minute = start; minute < end; minute += 15) {
+      const hours = String(Math.floor(minute / 60)).padStart(2, '0');
+      const mins = String(minute % 60).padStart(2, '0');
+      slots.push(`${hours}:${mins}`);
     }
-  }, [activeTab, selectedDate, statusFilter, departmentFilter]);
+  });
+
+  return slots;
+};
+
+const ALL_SLOTS = makeSlots();
+
+const initialBookForm = {
+  patientId: '',
+  departmentId: '',
+  doctorId: '',
+  appointmentDate: todayISO(),
+  startTime: '',
+  visitType: 'Consultation',
+  consultationFee: '500',
+  notes: '',
+  isPriority: false,
+};
+
+const initialPatientForm = {
+  fullName: '',
+  mobile: '',
+  dob: '',
+  gender: 'Male',
+};
+
+const initialRescheduleForm = {
+  appointmentDate: todayISO(),
+  startTime: '',
+  reason: '',
+};
+
+const initialBloodForm = {
+  patientId: '',
+  bloodGroup: 'O+',
+  units: '1',
+  urgency: 'Routine',
+  notes: '',
+};
+
+const styles = {
+  page: {
+    padding: '24px',
+    color: 'var(--color-text-primary, #163b40)',
+    background: 'var(--color-bg-pale-aqua, #f3faf9)',
+    minHeight: '100%',
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '16px',
+    flexWrap: 'wrap',
+    marginBottom: '22px',
+  },
+  title: {
+    margin: 0,
+    fontSize: '26px',
+    fontWeight: 750,
+    letterSpacing: '-0.6px',
+    color: 'var(--color-text-primary, #163b40)',
+  },
+  subtitle: {
+    margin: '7px 0 0',
+    color: 'var(--color-text-secondary, #648184)',
+    fontSize: '14px',
+  },
+  button: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '10px 14px',
+    borderRadius: 'var(--radius-md, 9px)',
+    border: '1px solid var(--color-border, #cfe3e1)',
+    background: '#fff',
+    color: 'var(--color-text-primary, #23484b)',
+    fontSize: '13px',
+    fontWeight: 650,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  primaryButton: {
+    background: 'var(--color-primary-teal, #fff)',
+    color: '#fff',
+    border: '1px solid var(--color-primary-teal, #087f8c)',
+  },
+  dangerButton: {
+    background: '#fff',
+    color: '#b42318',
+    border: '1px solid #f3c7c4',
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+    gap: '14px',
+    marginBottom: '20px',
+  },
+  statCard: {
+    background: '#fff',
+    border: '1px solid var(--color-border-subtle, #deecea)',
+    borderRadius: 'var(--radius-lg, 13px)',
+    padding: '17px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '12px',
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: '12px',
+    color: 'var(--color-text-secondary, #648184)',
+    fontWeight: 600,
+    marginBottom: '8px',
+  },
+  statValue: {
+    fontSize: '27px',
+    fontWeight: 750,
+    lineHeight: 1.1,
+    color: 'var(--color-text-primary, #163b40)',
+  },
+  panel: {
+    background: '#fff',
+    border: '1px solid var(--color-border-subtle, #deecea)',
+    borderRadius: 'var(--radius-lg, 13px)',
+    overflow: 'hidden',
+    marginBottom: '18px',
+  },
+  panelHeader: {
+    padding: '17px 18px',
+    borderBottom: '1px solid var(--color-border-subtle, #deecea)',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  panelTitle: {
+    margin: 0,
+    fontSize: '15px',
+    fontWeight: 750,
+    color: 'var(--color-text-primary, #163b40)',
+  },
+  filters: {
+    padding: '15px 18px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+    gap: '12px',
+    borderBottom: '1px solid var(--color-border-subtle, #deecea)',
+  },
+  field: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    minWidth: 0,
+  },
+  label: {
+    fontSize: '12px',
+    fontWeight: 650,
+    color: 'var(--color-text-secondary, #49696c)',
+  },
+  input: {
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
+    border: '1px solid var(--color-border, #cfe3e1)',
+    borderRadius: 'var(--radius-sm, 8px)',
+    padding: '10px 11px',
+    background: '#fff',
+    color: 'var(--color-text-primary, #163b40)',
+    fontSize: '13px',
+    outlineColor: 'var(--color-primary-teal, #fff)',
+  },
+  textarea: {
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
+    border: '1px solid var(--color-border, #cfe3e1)',
+    borderRadius: 'var(--radius-sm, 8px)',
+    padding: '10px 11px',
+    background: '#fff',
+    color: 'var(--color-text-primary, #163b40)',
+    fontSize: '13px',
+    minHeight: '82px',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    outlineColor: 'var(--color-primary-teal, #fff)',
+  },
+  tableWrap: {
+    overflowX: 'auto',
+    width: '100%',
+  },
+  table: {
+    borderCollapse: 'collapse',
+    width: '100%',
+    minWidth: '950px',
+    textAlign: 'left',
+  },
+  th: {
+    background: 'var(--color-bg-pale-aqua, #f3faf9)',
+    color: 'var(--color-text-secondary, #648184)',
+    fontSize: '11px',
+    fontWeight: 750,
+    textTransform: 'uppercase',
+    letterSpacing: '0.45px',
+    padding: '12px 14px',
+    borderBottom: '1px solid var(--color-border-subtle, #deecea)',
+    whiteSpace: 'nowrap',
+  },
+  td: {
+    padding: '13px 14px',
+    borderBottom: '1px solid var(--color-border-subtle, #e5efee)',
+    fontSize: '12px',
+    color: 'var(--color-text-primary, #345457)',
+    verticalAlign: 'middle',
+  },
+  muted: {
+    color: 'var(--color-text-secondary, #648184)',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 1000,
+    background: 'rgba(13, 45, 48, 0.52)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '18px',
+  },
+  modal: {
+    width: '100%',
+    maxWidth: '720px',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    background: '#fff',
+    borderRadius: 'var(--radius-xl, 15px)',
+    boxShadow: '0 24px 80px rgba(13, 45, 48, 0.22)',
+  },
+  modalHeader: {
+    padding: '19px 21px',
+    borderBottom: '1px solid var(--color-border-subtle, #deecea)',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  modalBody: {
+    padding: '20px 21px',
+  },
+  modalFooter: {
+    padding: '15px 21px',
+    borderTop: '1px solid var(--color-border-subtle, #deecea)',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
+  formGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '15px',
+  },
+  banner: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '9px',
+    padding: '12px 14px',
+    borderRadius: '9px',
+    fontSize: '13px',
+    marginBottom: '16px',
+  },
+  empty: {
+    padding: '42px 20px',
+    textAlign: 'center',
+    color: 'var(--color-text-secondary, #648184)',
+  },
+  slotGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(94px, 1fr))',
+    gap: '8px',
+    marginTop: '8px',
+  },
+  slot: {
+    padding: '9px 6px',
+    border: '1px solid var(--color-border, #cfe3e1)',
+    borderRadius: '8px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    background: '#fff',
+    color: 'var(--color-text-primary, #345457)',
+  },
+};
+
+function Field({ label, children, style }) {
+  return (
+    <div style={{ ...styles.field, ...style }}>
+      <label style={styles.label}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const color = STATUS_COLORS[status] || '#475569';
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '5px 8px',
+        borderRadius: '20px',
+        color,
+        background: `${color}14`,
+        fontSize: '11px',
+        fontWeight: 750,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {STATUS_LABELS[status] || status || 'Unknown'}
+    </span>
+  );
+}
+
+function ModalShell({ title, subtitle, onClose, children, footer }) {
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      style={styles.modalOverlay}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        style={styles.modal}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div style={styles.modalHeader}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 750 }}>{title}</h2>
+            {subtitle && (
+              <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#64748b' }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close modal" style={{ ...styles.button, padding: '7px' }}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={styles.modalBody}>{children}</div>
+        {footer && <div style={styles.modalFooter}>{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+export default function BookRescheduleView() {
+  const authContext = useAuth();
+  const user = authContext?.user;
+
+  const [activeTab, setActiveTab] = useState('appointments');
+  const [appointments, setAppointments] = useState(() =>
+    readStorage(APPOINTMENTS_KEY, [])
+  );
+  const [localPatients, setLocalPatients] = useState(() =>
+    readStorage(PATIENTS_KEY, SAMPLE_PATIENTS)
+  );
+  const [departments] = useState(DEPARTMENTS);
+  const [doctors] = useState(DOCTORS);
+  const [bloodRequests, setBloodRequests] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [searchFilter, setSearchFilter] = useState('');
+
+  const [showBookModal, setShowBookModal] = useState(false);
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showBloodModal, setShowBloodModal] = useState(false);
+
+  const [bookForm, setBookForm] = useState(initialBookForm);
+  const [patientForm, setPatientForm] = useState(initialPatientForm);
+  const [rescheduleForm, setRescheduleForm] = useState(initialRescheduleForm);
+  const [cancelReason, setCancelReason] = useState('');
+  const [bloodForm, setBloodForm] = useState(initialBloodForm);
+
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [patientSearch, setPatientSearch] = useState('');
+
+  useEffect(() => {
+    writeStorage(APPOINTMENTS_KEY, appointments);
+  }, [appointments]);
+
+  useEffect(() => {
+    writeStorage(PATIENTS_KEY, localPatients);
+  }, [localPatients]);
+
+  const clearMessages = useCallback(() => {
+    setError('');
+    setSuccess('');
+  }, []);
+
+  const notifySuccess = useCallback((message) => {
+    setError('');
+    setSuccess(message);
+  }, []);
+
+  const notifyError = useCallback((message) => {
+    setSuccess('');
+    setError(message);
+  }, []);
+
+  const loadData = useCallback(async () => {
+    // Appointment records are intentionally local-only for the frontend demo.
+    if (activeTab === 'appointments') {
+      setLoading(false);
+      setError('');
+      return;
+    }
+
+    if (activeTab === 'blood_requests') {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await AppointmentBloodRequestService.getBloodRequests();
+        const rows = Array.isArray(response)
+          ? response
+          : response?.data ?? response?.bloodRequests ?? response?.blood_requests ?? [];
+
+        setBloodRequests(Array.isArray(rows) ? rows : []);
+      } catch (err) {
+        console.error('Unable to load blood requests:', err);
+        setBloodRequests([]);
+        setError(err?.response?.data?.message || err?.message || 'Unable to load blood requests.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     loadData();
-  }, [loadData, isAuthenticated]);
+  }, [loadData]);
 
-  const loadBookingMetadata = async () => {
-    setIsLoadingMetadata(true);
-    try {
-      const [deptRes, docRes] = await Promise.all([
-        DepartmentService.getDepartments(),
-        ClinicalStaffService.getStaff()
-      ]);
-      setDepartmentsList(Array.isArray(deptRes) ? deptRes : []);
-      setDoctorsList(Array.isArray(docRes?.data) ? docRes.data : Array.isArray(docRes) ? docRes : []);
-    } catch (err) {
-      console.warn('[BookRescheduleView] Metadata load failed:', err.message);
-    } finally {
-      setIsLoadingMetadata(false);
-    }
-  };
-
-  const handleOpenBookModal = () => {
-    setBookForm({
-      patientId: '',
-      doctorId: '',
-      departmentId: '',
-      appointmentDate: new Date().toISOString().slice(0, 10),
-      startTime: '',
-      visitType: 'first_visit',
-      notes: '',
-      isPriority: false,
-      roomId: null,
-    });
-    setSelectedPatient(null);
-    setPatientSearchQuery('');
-    setPatientSearchResults([]);
-    setBookingModalError(null);
-    setAvailableSlotsData(null);
-    setIsBookModalOpen(true);
-    loadBookingMetadata();
-  };
-
-  const handleDepartmentChange = async (deptId) => {
-    setBookForm(prev => ({ ...prev, departmentId: deptId, doctorId: '', startTime: '', roomId: null }));
-    setAvailableSlotsData(null);
-    try {
-      const docRes = await ClinicalStaffService.getStaff(deptId || null);
-      setDoctorsList(Array.isArray(docRes?.data) ? docRes.data : Array.isArray(docRes) ? docRes : []);
-    } catch (err) {
-      console.warn('[BookRescheduleView] Filtered staff load failed:', err.message);
-    }
-  };
-
-  const fetchAvailableSlots = async (doctorId, date) => {
-    if (!doctorId || !date) return;
-    setIsLoadingSlots(true);
-    try {
-      const res = await AppointmentService.getAvailableSlots(doctorId, date, 15);
-      setAvailableSlotsData(res);
-      setBookForm(prev => {
-        if (!res.slots || !res.slots.some(s => s.startTime === prev.startTime && s.available)) {
-          return { ...prev, startTime: '' };
-        }
-        return prev;
-      });
-    } catch {
-      // Fallback slots generator for realistic display
-      const fallback = [
-        { startTime: '09:00', available: true },
-        { startTime: '09:15', available: true },
-        { startTime: '09:30', available: false },
-        { startTime: '09:45', available: true },
-        { startTime: '10:00', available: true },
-        { startTime: '10:15', available: true },
-        { startTime: '10:30', available: false },
-        { startTime: '10:45', available: true },
-        { startTime: '11:00', available: true },
-        { startTime: '11:15', available: true },
-        { startTime: '11:30', available: true },
-        { startTime: '11:45', available: true },
-        { startTime: '14:00', available: true },
-        { startTime: '14:15', available: true },
-        { startTime: '14:30', available: true },
-      ];
-      setAvailableSlotsData({ slots: fallback });
-    } finally {
-      setIsLoadingSlots(false);
-    }
-  };
-
-  // Debounced Patient Search Effect
   useEffect(() => {
-    if (!isBookModalOpen || selectedPatient) return;
-    const q = patientSearchQuery.trim();
-    if (q.length < 2) {
-      setPatientSearchResults([]);
-      setIsSearchingPatients(false);
-      return;
-    }
+    if (!success) return undefined;
+    const timer = window.setTimeout(() => setSuccess(''), 4500);
+    return () => window.clearTimeout(timer);
+  }, [success]);
 
-    setIsSearchingPatients(true);
-    const timer = setTimeout(async () => {
-      try {
-        const results = await PatientService.searchPatients(q);
-        setPatientSearchResults(Array.isArray(results) ? results : []);
-      } catch {
-        setPatientSearchResults([]);
-      } finally {
-        setIsSearchingPatients(false);
-      }
-    }, 300);
+  const departmentById = useMemo(
+    () => Object.fromEntries(departments.map((department) => [department.id, department])),
+    [departments]
+  );
 
-    return () => clearTimeout(timer);
-  }, [patientSearchQuery, isBookModalOpen, selectedPatient]);
+  const doctorById = useMemo(
+    () => Object.fromEntries(doctors.map((doctor) => [doctor.id, doctor])),
+    [doctors]
+  );
 
-  const handleQuickRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setQuickRegisterError(null);
-    if (!quickPatientForm.fullName.trim() || !quickPatientForm.mobile.trim()) {
-      setQuickRegisterError('Patient full name and mobile number are required.');
-      return;
-    }
-    let cleanMobile = quickPatientForm.mobile.replace(/[\s\-()]/g, '');
-    if (cleanMobile.startsWith('+91')) cleanMobile = cleanMobile.slice(3);
-    else if (cleanMobile.startsWith('0') && cleanMobile.length === 11) cleanMobile = cleanMobile.slice(1);
+  const patientById = useMemo(
+    () => Object.fromEntries(localPatients.map((patient) => [patient.id, patient])),
+    [localPatients]
+  );
 
-    if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      setQuickRegisterError('Please enter a valid 10-digit Indian mobile number.');
-      return;
-    }
+  const filteredDoctors = useMemo(() => {
+    if (!bookForm.departmentId) return doctors;
+    return doctors.filter((doctor) => doctor.department_id === bookForm.departmentId);
+  }, [bookForm.departmentId, doctors]);
 
-    setIsRegisteringQuickPatient(true);
-    try {
-      const res = await PatientService.createPatient({
-        full_name: quickPatientForm.fullName.trim(),
-        mobile: cleanMobile,
-        date_of_birth: quickPatientForm.dob || null,
-        gender: quickPatientForm.gender
-      });
-      const created = res?.data || res;
-      if (!created || !created.id) throw new Error('Could not create patient record.');
+  const filteredPatientsForSelect = useMemo(() => {
+    const query = patientSearch.trim().toLowerCase();
+    if (!query) return localPatients;
 
-      setSelectedPatient(created);
-      setBookForm(prev => ({ ...prev, patientId: created.id }));
-      setIsQuickRegisterOpen(false);
-      setQuickPatientForm({ fullName: '', mobile: '', dob: '', gender: 'female' });
-      setSuccessBanner(`Patient ${created.full_name} (${created.uhid}) registered and selected for consultation.`);
-    } catch (err) {
-      setQuickRegisterError(err.message || 'Failed to register patient.');
-    } finally {
-      setIsRegisteringQuickPatient(false);
-    }
-  };
-
-  const selectedDoctorObj = doctorsList.find(d => String(d.id) === String(bookForm.doctorId));
-  const activeConsultationFee = selectedDoctorObj?.consultation_fee !== undefined && selectedDoctorObj?.consultation_fee !== null
-    ? Number(selectedDoctorObj.consultation_fee)
-    : 500;
-
-  const handleBookSubmit = async (e) => {
-    e.preventDefault();
-    if (!bookForm.patientId || !bookForm.doctorId || !bookForm.departmentId || !bookForm.startTime) {
-      setBookingModalError('Please select patient, department, doctor, and an available consultation slot.');
-      return;
-    }
-    setIsSubmitting(true);
-    setBookingModalError(null);
-    try {
-      const payload = {
-        patientId: bookForm.patientId,
-        doctorId: bookForm.doctorId,
-        departmentId: bookForm.departmentId,
-        appointmentDate: bookForm.appointmentDate,
-        startTime: bookForm.startTime,
-        visitType: bookForm.visitType,
-        notes: bookForm.notes ? bookForm.notes.trim() : null,
-        isPriority: Boolean(bookForm.isPriority),
-        roomId: bookForm.roomId || null,
-      };
-
-      const res = await AppointmentService.createAppointment(payload);
-      setIsBookModalOpen(false);
-      const aptNum = res.data?.appointment_number || res.appointment_number || 'APT-CONFIRMED';
-      const tokenNum = res.data?.token_number || res.token_number || '1';
-      setSuccessBanner(`Appointment ${aptNum} booked successfully! Assigned Outpatient Queue Token #${tokenNum}.`);
-      loadData();
-    } catch (err) {
-      if (err.status === 409 || (err.message && err.message.toLowerCase().includes('already booked'))) {
-        setBookingModalError('The requested time slot was just booked by another user. Please select another slot.');
-        fetchAvailableSlots(bookForm.doctorId, bookForm.appointmentDate);
-      } else {
-        setBookingModalError(err.message || 'Failed to complete appointment booking.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Open Order Blood Modal for an appointment
-  const handleOpenBloodModal = (apt) => {
-    setSelectedAppointment(apt);
-    setBloodReqForm({
-      patientId: apt.patient_id,
-      patientName: apt.patient_name || 'Patient',
-      patientUhid: apt.patient_uhid || 'UHID',
-      appointmentId: apt.id,
-      appointmentNumber: apt.appointment_number,
-      bloodGroup: 'O+',
-      componentType: 'whole_blood',
-      unitsRequested: 1,
-      urgency: 'routine',
-      clinicalIndication: `Pre-operative reserve for outpatient consultation ${apt.appointment_number}`,
-      requiredBy: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
-      notes: '',
-    });
-    setIsBloodRequestModalOpen(true);
-  };
-
-  const handleBloodRequestSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    try {
-      const payload = {
-        patientId: bloodReqForm.patientId,
-        appointmentId: bloodReqForm.appointmentId,
-        bloodGroup: bloodReqForm.bloodGroup,
-        componentType: bloodReqForm.componentType,
-        unitsRequested: parseInt(bloodReqForm.unitsRequested, 10),
-        urgency: bloodReqForm.urgency,
-        clinicalIndication: bloodReqForm.clinicalIndication,
-        requiredBy: bloodReqForm.requiredBy ? new Date(bloodReqForm.requiredBy).toISOString() : null,
-        notes: bloodReqForm.notes || null,
-      };
-
-      const res = await AppointmentBloodRequestService.createBloodRequest(payload);
-      setIsBloodRequestModalOpen(false);
-      setSuccessBanner(
-        `Blood requisition successfully ordered for ${bloodReqForm.patientName}! Formal Blood Bank Requisition: ${res.data?.blood_requisition?.requisition_number || 'Linked'}`
-      );
-      loadData();
-    } catch (err) {
-      setErrorMessage(err.message || 'Failed to submit appointment blood request.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRescheduleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedAppointment) return;
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    try {
-      await AppointmentService.rescheduleAppointment(selectedAppointment.id, rescheduleForm);
-      setIsRescheduleModalOpen(false);
-      setSuccessBanner(`Appointment ${selectedAppointment.appointment_number} rescheduled successfully.`);
-      loadData();
-    } catch (err) {
-      setErrorMessage(err.message || 'Failed to reschedule appointment slot.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancelSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedAppointment) return;
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    try {
-      await AppointmentService.cancelAppointment(selectedAppointment.id, cancelReason);
-      setIsCancelModalOpen(false);
-      setSuccessBanner(`Appointment ${selectedAppointment.appointment_number} has been cancelled.`);
-      loadData();
-    } catch (err) {
-      setErrorMessage(err.message || 'Failed to cancel appointment.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdateStatus = async (apt, newStatus, reason = null) => {
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    try {
-      await AppointmentService.updateAppointmentStatus(apt.id, newStatus, { reason });
-      setSuccessBanner(`Appointment ${apt.appointment_number} marked as ${newStatus.replace('_', ' ')}.`);
-      loadData();
-    } catch (err) {
-      setErrorMessage(err.message || `Failed to update status to ${newStatus}.`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getStatusBadge = (status) => {
-    const map = {
-      booked: 'teal',
-      arrived: 'warning',
-      waiting: 'warning',
-      in_consultation: 'purple',
-      completed: 'success',
-      cancelled: 'danger',
-      no_show: 'gray',
-      pending: 'warning',
-      under_review: 'purple',
-      approved: 'success',
-      fulfilled: 'teal',
-      rejected: 'danger',
-    };
-    return <Badge variant={map[status] || 'gray'} size="sm">{String(status).replace('_', ' ').toUpperCase()}</Badge>;
-  };
-
-  const isClinicianOrAdmin = user && ['clinician_doctor', 'blood_bank_officer', 'super_admin'].includes(user.role);
-
-  // Filter rows by client search
-  const filteredAppointments = appointments.filter((apt) => {
-    if (!searchFilter.trim()) return true;
-    const q = searchFilter.toLowerCase().trim();
-    return (
-      (apt.patient_name && apt.patient_name.toLowerCase().includes(q)) ||
-      (apt.patient_uhid && apt.patient_uhid.toLowerCase().includes(q)) ||
-      (apt.appointment_number && apt.appointment_number.toLowerCase().includes(q)) ||
-      (apt.doctor_name && apt.doctor_name.toLowerCase().includes(q)) ||
-      (apt.token_number && String(apt.token_number).includes(q))
+    return localPatients.filter((patient) =>
+      [patient.full_name, patient.uhid, patient.mobile]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
     );
-  });
+  }, [localPatients, patientSearch]);
+
+  const filteredAppointments = useMemo(() => {
+    const query = searchFilter.trim().toLowerCase();
+
+    return appointments
+      .filter((appointment) => !selectedDate || appointment.appointment_date === selectedDate)
+      .filter((appointment) => statusFilter === 'all' || appointment.status === statusFilter)
+      .filter((appointment) =>
+        departmentFilter === 'all' || appointment.department_id === departmentFilter
+      )
+      .filter((appointment) => {
+        if (!query) return true;
+        return [
+          appointment.appointment_number,
+          appointment.patient_name,
+          appointment.patient_uhid,
+          appointment.doctor_name,
+          appointment.department_name,
+          appointment.token_number,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query));
+      })
+      .sort((a, b) => {
+        const timeCompare = String(a.start_time || '').localeCompare(String(b.start_time || ''));
+        if (timeCompare !== 0) return timeCompare;
+        return String(a.token_number || '').localeCompare(String(b.token_number || ''), undefined, {
+          numeric: true,
+        });
+      });
+  }, [appointments, selectedDate, statusFilter, departmentFilter, searchFilter]);
+
+  const todayAppointments = useMemo(
+    () => appointments.filter((appointment) => appointment.appointment_date === todayISO()),
+    [appointments]
+  );
+
+  const activeToday = todayAppointments.filter((appointment) =>
+    ACTIVE_STATUSES.includes(appointment.status)
+  );
+
+  const bookedToday = todayAppointments.filter((appointment) => appointment.status === 'booked');
+  const completedToday = todayAppointments.filter((appointment) => appointment.status === 'completed');
+
+  const getSlotAvailability = useCallback(
+    (doctorId, date, time, ignoredAppointmentId = null) => {
+      if (!doctorId || !date || !time) return true;
+
+      return !appointments.some((appointment) => {
+        if (appointment.id === ignoredAppointmentId) return false;
+        if (!ACTIVE_STATUSES.includes(appointment.status)) return false;
+
+        return (
+          appointment.doctor_id === doctorId &&
+          appointment.appointment_date === date &&
+          String(appointment.start_time || '').slice(0, 5) === time
+        );
+      });
+    },
+    [appointments]
+  );
+
+  const availableSlots = useMemo(() => {
+    if (!bookForm.doctorId || !bookForm.appointmentDate) return [];
+
+    return ALL_SLOTS.map((time) => ({
+      time,
+      available: getSlotAvailability(bookForm.doctorId, bookForm.appointmentDate, time),
+    }));
+  }, [bookForm.doctorId, bookForm.appointmentDate, getSlotAvailability]);
+
+  const rescheduleSlots = useMemo(() => {
+    if (!selectedAppointment || !rescheduleForm.appointmentDate) return [];
+
+    return ALL_SLOTS.map((time) => ({
+      time,
+      available: getSlotAvailability(
+        selectedAppointment.doctor_id,
+        rescheduleForm.appointmentDate,
+        time,
+        selectedAppointment.id
+      ),
+    }));
+  }, [selectedAppointment, rescheduleForm.appointmentDate, getSlotAvailability]);
+
+  const openBookModal = () => {
+    clearMessages();
+    setSelectedPatient(null);
+    setPatientSearch('');
+    setBookForm({ ...initialBookForm, appointmentDate: selectedDate || todayISO() });
+    setShowBookModal(true);
+  };
+
+  const closeBookModal = () => {
+    setShowBookModal(false);
+    setSelectedPatient(null);
+    setPatientSearch('');
+    setBookForm(initialBookForm);
+  };
+
+  const handleBookSubmit = (event) => {
+    event.preventDefault();
+    clearMessages();
+
+    if (!bookForm.patientId) {
+      notifyError('Please select a patient.');
+      return;
+    }
+    if (!bookForm.departmentId) {
+      notifyError('Please select a department.');
+      return;
+    }
+    if (!bookForm.doctorId) {
+      notifyError('Please select a doctor.');
+      return;
+    }
+    if (!bookForm.appointmentDate || !bookForm.startTime) {
+      notifyError('Please select an appointment date and time slot.');
+      return;
+    }
+    if (bookForm.appointmentDate < todayISO()) {
+      notifyError('Appointments cannot be booked for a past date.');
+      return;
+    }
+    if (!getSlotAvailability(bookForm.doctorId, bookForm.appointmentDate, bookForm.startTime)) {
+      notifyError('This doctor already has an active appointment at that time. Please choose another slot.');
+      return;
+    }
+
+    const patient = patientById[bookForm.patientId];
+    const doctor = doctorById[bookForm.doctorId];
+    const department = departmentById[bookForm.departmentId];
+
+    if (!patient || !doctor || !department) {
+      notifyError('Some selected details are invalid. Please select the patient, department, and doctor again.');
+      return;
+    }
+
+    const sameDayAppointments = appointments.filter(
+      (appointment) =>
+        appointment.appointment_date === bookForm.appointmentDate &&
+        appointment.status !== 'cancelled'
+    );
+
+    const sequence = sameDayAppointments.length + 1;
+    const dateCode = bookForm.appointmentDate.replaceAll('-', '');
+    const appointmentNumber = `APT-${dateCode}-${String(sequence).padStart(4, '0')}`;
+
+    const doctorDayAppointments = appointments.filter(
+      (appointment) =>
+        appointment.doctor_id === bookForm.doctorId &&
+        appointment.appointment_date === bookForm.appointmentDate &&
+        ACTIVE_STATUSES.includes(appointment.status)
+    );
+
+    const numericTokens = doctorDayAppointments
+      .map((appointment) => Number(appointment.token_number))
+      .filter(Number.isFinite);
+
+    const tokenNumber = String(Math.max(0, ...numericTokens) + 1).padStart(3, '0');
+
+    const appointment = {
+      id: `local-${Date.now()}`,
+      appointment_number: appointmentNumber,
+      token_number: tokenNumber,
+      patient_id: patient.id,
+      patient_name: patient.full_name,
+      patient_uhid: patient.uhid || '',
+      patient_mobile: patient.mobile || '',
+      doctor_id: doctor.id,
+      doctor_name: doctor.full_name,
+      department_id: department.id,
+      department_name: department.name,
+      appointment_date: bookForm.appointmentDate,
+      start_time: bookForm.startTime,
+      visit_type: bookForm.visitType,
+      notes: bookForm.notes.trim(),
+      is_priority: Boolean(bookForm.isPriority),
+      room_id: null,
+      consultation_fee: Number(bookForm.consultationFee) || 0,
+      status: 'booked',
+      created_at: new Date().toISOString(),
+      created_by: user?.id || user?.full_name || 'demo-user',
+    };
+
+    setAppointments((current) => [...current, appointment]);
+    setSelectedDate(bookForm.appointmentDate);
+    setStatusFilter('all');
+    setDepartmentFilter('all');
+    setSearchFilter('');
+    closeBookModal();
+    notifySuccess(`Appointment ${appointmentNumber} booked successfully. Token: ${tokenNumber}.`);
+  };
+
+  const handleQuickRegisterSubmit = (event) => {
+    event.preventDefault();
+    clearMessages();
+
+    const fullName = patientForm.fullName.trim().replace(/\s+/g, ' ');
+    const mobile = normalizeMobile(patientForm.mobile);
+
+    if (fullName.length < 2) {
+      notifyError('Please enter the patient’s full name.');
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      notifyError('Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+    if (localPatients.some((patient) => normalizeMobile(patient.mobile) === mobile)) {
+      notifyError('A patient with this mobile number already exists.');
+      return;
+    }
+
+    const maxUhid = localPatients.reduce((max, patient) => {
+      const number = Number(String(patient.uhid || '').replace(/\D/g, ''));
+      return Number.isFinite(number) ? Math.max(max, number) : max;
+    }, 1000);
+
+    const patient = {
+      id: `pat-${Date.now()}`,
+      uhid: `UHID-${String(maxUhid + 1).padStart(4, '0')}`,
+      full_name: fullName,
+      mobile,
+      dob: patientForm.dob || '',
+      gender: patientForm.gender,
+      created_at: new Date().toISOString(),
+    };
+
+    setLocalPatients((current) => [...current, patient]);
+    setSelectedPatient(patient);
+    setBookForm((current) => ({ ...current, patientId: patient.id }));
+    setPatientForm(initialPatientForm);
+    setShowPatientModal(false);
+    setPatientSearch('');
+    notifySuccess(`Patient registered successfully. UHID: ${patient.uhid}.`);
+  };
+
+  const openRescheduleModal = (appointment) => {
+    clearMessages();
+    setSelectedAppointment(appointment);
+    setRescheduleForm({
+      appointmentDate: appointment.appointment_date || todayISO(),
+      startTime: String(appointment.start_time || '').slice(0, 5),
+      reason: '',
+    });
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSubmit = (event) => {
+    event.preventDefault();
+    clearMessages();
+
+    if (!selectedAppointment) return;
+    if (!rescheduleForm.appointmentDate || !rescheduleForm.startTime) {
+      notifyError('Please select a new date and time.');
+      return;
+    }
+    if (rescheduleForm.appointmentDate < todayISO()) {
+      notifyError('Appointments cannot be rescheduled to a past date.');
+      return;
+    }
+    if (
+      !getSlotAvailability(
+        selectedAppointment.doctor_id,
+        rescheduleForm.appointmentDate,
+        rescheduleForm.startTime,
+        selectedAppointment.id
+      )
+    ) {
+      notifyError('The selected slot is already occupied. Please choose another slot.');
+      return;
+    }
+
+    setAppointments((current) =>
+      current.map((appointment) =>
+        appointment.id === selectedAppointment.id
+          ? {
+              ...appointment,
+              appointment_date: rescheduleForm.appointmentDate,
+              start_time: rescheduleForm.startTime,
+              reschedule_reason: rescheduleForm.reason.trim(),
+              updated_at: new Date().toISOString(),
+              status: 'booked',
+            }
+          : appointment
+      )
+    );
+
+    setSelectedDate(rescheduleForm.appointmentDate);
+    setShowRescheduleModal(false);
+    setSelectedAppointment(null);
+    notifySuccess(`Appointment ${selectedAppointment.appointment_number} rescheduled successfully.`);
+  };
+
+  const openCancelModal = (appointment) => {
+    clearMessages();
+    setSelectedAppointment(appointment);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const handleCancelSubmit = (event) => {
+    event.preventDefault();
+    clearMessages();
+
+    if (!selectedAppointment) return;
+    if (!cancelReason.trim()) {
+      notifyError('Please enter a cancellation reason.');
+      return;
+    }
+
+    setAppointments((current) =>
+      current.map((appointment) =>
+        appointment.id === selectedAppointment.id
+          ? {
+              ...appointment,
+              status: 'cancelled',
+              cancellation_reason: cancelReason.trim(),
+              cancelled_at: new Date().toISOString(),
+            }
+          : appointment
+      )
+    );
+
+    const number = selectedAppointment.appointment_number;
+    setShowCancelModal(false);
+    setSelectedAppointment(null);
+    setCancelReason('');
+    notifySuccess(`Appointment ${number} cancelled.`);
+  };
+
+  const handleUpdateStatus = (appointment, nextStatus) => {
+    clearMessages();
+
+    const allowedTransitions = {
+      booked: ['arrived', 'cancelled', 'no_show'],
+      arrived: ['waiting', 'cancelled', 'no_show'],
+      waiting: ['in_consultation', 'cancelled', 'no_show'],
+      in_consultation: ['completed'],
+    };
+
+    if (!(allowedTransitions[appointment.status] || []).includes(nextStatus)) {
+      notifyError('That status change is not allowed.');
+      return;
+    }
+
+    setAppointments((current) =>
+      current.map((item) =>
+        item.id === appointment.id
+          ? { ...item, status: nextStatus, updated_at: new Date().toISOString() }
+          : item
+      )
+    );
+
+    notifySuccess(
+      `${appointment.appointment_number} status updated to ${STATUS_LABELS[nextStatus] || nextStatus}.`
+    );
+  };
+
+  const handleBloodRequestSubmit = async (event) => {
+    event.preventDefault();
+    clearMessages();
+
+    if (!bloodForm.patientId) {
+      notifyError('Please select a patient.');
+      return;
+    }
+
+    const units = Number(bloodForm.units);
+    if (!Number.isInteger(units) || units < 1 || units > 20) {
+      notifyError('Units must be a whole number between 1 and 20.');
+      return;
+    }
+
+    const patient = patientById[bloodForm.patientId];
+    if (!patient) {
+      notifyError('Selected patient could not be found.');
+      return;
+    }
+
+    const payload = {
+      patient_id: patient.id,
+      patient_name: patient.full_name,
+      patient_uhid: patient.uhid,
+      blood_group: bloodForm.bloodGroup,
+      units,
+      urgency: bloodForm.urgency,
+      notes: bloodForm.notes.trim(),
+    };
+
+    try {
+      setLoading(true);
+      await AppointmentBloodRequestService.createBloodRequest(payload);
+      setShowBloodModal(false);
+      setBloodForm(initialBloodForm);
+      notifySuccess('Blood request submitted successfully.');
+      setActiveTab('blood_requests');
+    } catch (err) {
+      console.error('Unable to create blood request:', err);
+      notifyError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Unable to submit the blood request. Please check the server and try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openBloodModal = () => {
+    clearMessages();
+    setBloodForm(initialBloodForm);
+    setShowBloodModal(true);
+  };
+
+  const renderAppointmentActions = (appointment) => {
+    const actions = [];
+
+    if (appointment.status === 'booked') {
+      actions.push(
+        <button
+          key="arrived"
+          type="button"
+          style={styles.button}
+          onClick={() => handleUpdateStatus(appointment, 'arrived')}
+          title="Mark patient as arrived"
+        >
+          <Check size={14} /> Arrived
+        </button>
+      );
+    }
+
+    if (appointment.status === 'arrived') {
+      actions.push(
+        <button
+          key="waiting"
+          type="button"
+          style={styles.button}
+          onClick={() => handleUpdateStatus(appointment, 'waiting')}
+        >
+          <Clock size={14} /> Waiting
+        </button>
+      );
+    }
+
+    if (appointment.status === 'waiting') {
+      actions.push(
+        <button
+          key="consult"
+          type="button"
+          style={styles.button}
+          onClick={() => handleUpdateStatus(appointment, 'in_consultation')}
+        >
+          <Stethoscope size={14} /> Consult
+        </button>
+      );
+    }
+
+    if (appointment.status === 'in_consultation') {
+      actions.push(
+        <button
+          key="complete"
+          type="button"
+          style={{ ...styles.button, color: '#15803d', borderColor: '#bbf7d0' }}
+          onClick={() => handleUpdateStatus(appointment, 'completed')}
+        >
+          <CheckCircle2 size={14} /> Complete
+        </button>
+      );
+    }
+
+    if (ACTIVE_STATUSES.includes(appointment.status)) {
+      actions.push(
+        <button
+          key="reschedule"
+          type="button"
+          style={styles.button}
+          onClick={() => openRescheduleModal(appointment)}
+          title="Reschedule appointment"
+        >
+          <CalendarClock size={14} />
+        </button>
+      );
+      actions.push(
+        <button
+          key="cancel"
+          type="button"
+          style={{ ...styles.button, color: '#b91c1c', borderColor: '#fecaca' }}
+          onClick={() => openCancelModal(appointment)}
+          title="Cancel appointment"
+        >
+          <Ban size={14} />
+        </button>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', minWidth: '145px' }}>
+        {actions.length ? actions : <span style={styles.muted}>No actions</span>}
+      </div>
+    );
+  };
+
+  const isClinicianOrAdmin =
+    user &&
+    ['clinician_doctor', 'blood_bank_officer', 'super_admin'].includes(user.role);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Approved Clinical Design Header */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          borderBottom: '1px solid var(--color-border)',
-          paddingBottom: '16px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--color-bg-pale-aqua)',
-              color: 'var(--color-primary-teal)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Calendar size={20} />
-          </div>
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: '1.45rem',
-                fontWeight: '700',
-                color: 'var(--color-text-primary)',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              Book / Reschedule Appointment
-            </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-              Outpatient consultation scheduling, doctor slot allocation, check-in, and rescheduling.
-            </p>
-          </div>
+    <div style={styles.page}>
+      <div style={styles.header}>
+        <div>
+          <h1 style={styles.title}>Appointments</h1>
+          <p style={styles.subtitle}>
+            Book visits, manage doctor schedules, and track patient queues.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={RefreshCw}
-            loading={isLoading}
-            onClick={loadData}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '9px' }}>
+          <button type="button" style={styles.button} onClick={openBloodModal}>
+            <Droplet size={16} /> Blood Request
+          </button>
+          <button
+            type="button"
+            style={{ ...styles.button, ...styles.primaryButton }}
+            onClick={openBookModal}
           >
-            Sync Schedule
-          </Button>
-          {!isAuthenticated ? (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={Lock}
-              onClick={() => openLoginModal('Please sign in to book or manage appointments.')}
-            >
-              Sign In to Book
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={Plus}
-              onClick={handleOpenBookModal}
-            >
-              Book New Appointment
-            </Button>
-          )}
+            <Plus size={17} /> Book Appointment
+          </button>
         </div>
       </div>
 
-      {/* Success Notification Banner */}
-      {successBanner && (
+      {success && (
         <div
+          role="status"
           style={{
-            padding: '10px 16px',
-            backgroundColor: 'var(--color-success-bg, #DEF7EC)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-success-border, #BCF0DA)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: 'var(--color-success, #03543F)',
-            fontSize: 'var(--font-size-sm)'
+            ...styles.banner,
+            background: '#f0fdf4',
+            color: '#166534',
+            border: '1px solid #bbf7d0',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={16} />
-            <span>{successBanner}</span>
-          </div>
+          <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+          <span>{success}</span>
           <button
-            onClick={() => setSuccessBanner(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 'bold' }}
+            type="button"
+            onClick={() => setSuccess('')}
+            style={{ marginLeft: 'auto', border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit' }}
+            aria-label="Dismiss success message"
           >
-            ✕
+            <X size={15} />
           </button>
         </div>
       )}
 
-      {/* Error Alert */}
-      {errorMessage && (
+      {error && (
         <div
+          role="alert"
           style={{
-            padding: '10px 16px',
-            backgroundColor: 'var(--color-error-bg, #FDE8E8)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-error-border, #F8B4B4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: 'var(--color-error, #9B1C1C)',
-            fontSize: 'var(--font-size-sm)'
+            ...styles.banner,
+            background: '#fef2f2',
+            color: '#991b1b',
+            border: '1px solid #fecaca',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertTriangle size={16} />
-            <span>{errorMessage}</span>
-          </div>
-          <Button variant="outline" size="sm" onClick={loadData}>Retry</Button>
+          <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError('')}
+            style={{ marginLeft: 'auto', border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit' }}
+            aria-label="Dismiss error message"
+          >
+            <X size={15} />
+          </button>
         </div>
       )}
 
-      {/* View Switcher Tabs: Consultation Schedule vs Blood Requests */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', gap: '8px' }}>
-        <button
-          type="button"
-          onClick={() => setActiveTab('appointments')}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 14px',
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-            border: 'none',
-            borderBottom: activeTab === 'appointments' ? '3px solid var(--color-primary-teal)' : '3px solid transparent',
-            backgroundColor: activeTab === 'appointments' ? '#FFFFFF' : 'transparent',
-            color: activeTab === 'appointments' ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
-            fontWeight: activeTab === 'appointments' ? '700' : '500',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            marginBottom: '-1px'
-          }}
-        >
-          <Calendar size={15} />
-          <span>Consultation Schedule</span>
-          <span
-            style={{
-              padding: '1px 6px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.68rem',
-              fontWeight: '700',
-              backgroundColor: activeTab === 'appointments' ? 'var(--color-bg-pale-aqua)' : '#EEF2F2',
-              color: activeTab === 'appointments' ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)'
-            }}
-          >
-            {appointments.length}
-          </span>
-        </button>
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div>
+            <div style={styles.statLabel}>Today's appointments</div>
+            <div style={styles.statValue}>{todayAppointments.length}</div>
+          </div>
+          <div style={{ background: '#eff6ff', color: '#2563eb', borderRadius: '10px', padding: '11px' }}>
+            <Calendar size={22} />
+          </div>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('blood_requests')}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 14px',
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-            border: 'none',
-            borderBottom: activeTab === 'blood_requests' ? '3px solid var(--color-primary-teal)' : '3px solid transparent',
-            backgroundColor: activeTab === 'blood_requests' ? '#FFFFFF' : 'transparent',
-            color: activeTab === 'blood_requests' ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
-            fontWeight: activeTab === 'blood_requests' ? '700' : '500',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            marginBottom: '-1px'
-          }}
-        >
-          <Droplet size={15} color="#EF8354" />
-          <span>Linked Blood Requisitions</span>
-          <span
-            style={{
-              padding: '1px 6px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.68rem',
-              fontWeight: '700',
-              backgroundColor: activeTab === 'blood_requests' ? 'var(--color-bg-pale-aqua)' : '#EEF2F2',
-              color: activeTab === 'blood_requests' ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)'
-            }}
-          >
-            {bloodRequests.length}
-          </span>
-        </button>
+        <div style={styles.statCard}>
+          <div>
+            <div style={styles.statLabel}>Active queue</div>
+            <div style={styles.statValue}>{activeToday.length}</div>
+          </div>
+          <div style={{ background: '#f5f3ff', color: '#7c3aed', borderRadius: '10px', padding: '11px' }}>
+            <Clock size={22} />
+          </div>
+        </div>
+
+        <div style={styles.statCard}>
+          <div>
+            <div style={styles.statLabel}>Awaiting arrival</div>
+            <div style={styles.statValue}>{bookedToday.length}</div>
+          </div>
+          <div style={{ background: '#fff7ed', color: '#c2410c', borderRadius: '10px', padding: '11px' }}>
+            <User size={22} />
+          </div>
+        </div>
+
+        <div style={styles.statCard}>
+          <div>
+            <div style={styles.statLabel}>Completed today</div>
+            <div style={styles.statValue}>{completedToday.length}</div>
+          </div>
+          <div style={{ background: '#f0fdf4', color: '#15803d', borderRadius: '10px', padding: '11px' }}>
+            <CheckCircle2 size={22} />
+          </div>
+        </div>
       </div>
 
-      {activeTab === 'appointments' ? (
-        <>
-          {/* Compact Filter Toolbar */}
-          <div
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '12px 16px',
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px'
-            }}
-          >
-            {/* Search Input */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', minWidth: '260px', flex: 1 }}>
-              <span style={{ position: 'absolute', left: '10px', color: 'var(--color-text-muted)' }}>
-                <Search size={15} />
-              </span>
-              <input
-                type="text"
-                placeholder="Search patient, UHID, appointment, or token..."
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '7px 10px 7px 32px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1.5px solid var(--color-border)',
-                  fontSize: '0.85rem',
-                  outline: 'none'
-                }}
-              />
-              {searchFilter && (
-                <button
-                  type="button"
-                  onClick={() => setSearchFilter('')}
-                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+      <div style={styles.panel}>
+        <div style={styles.panelHeader}>
+          <div>
+            <h2 style={styles.panelTitle}>Appointment Management</h2>
+            <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#64748b' }}>
+              {activeTab === 'appointments'
+                ? 'Manage bookings and patient flow for the selected date.'
+                : 'Blood requests loaded from the hospital service.'}
+            </p>
+          </div>
 
-            {/* Date, Status & Department Filters */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
-                  Date:
-                </span>
+          <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('appointments');
+                clearMessages();
+              }}
+              style={{
+                ...styles.button,
+                ...(activeTab === 'appointments'
+                  ? { background: '#087f8c', color: '#fff', borderColor: '#087f8c' }
+                  : {}),
+              }}
+            >
+              <Calendar size={15} /> Appointments
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('blood_requests');
+                clearMessages();
+              }}
+              style={{
+                ...styles.button,
+                ...(activeTab === 'blood_requests'
+                  ? { background: '#087f8c', color: '#fff', borderColor: '#087f8c' }
+                  : {}),
+              }}
+            >
+              <Droplet size={15} /> Blood Requests
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'appointments' ? (
+          <>
+            <div style={styles.filters}>
+              <Field label="Appointment date">
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1.5px solid var(--color-border)',
-                    fontSize: '0.82rem',
-                    backgroundColor: '#FFFFFF',
-                    color: 'var(--color-text-primary)'
-                  }}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  style={styles.input}
                 />
-              </div>
+              </Field>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
-                  Status:
-                </span>
+              <Field label="Search">
+                <div style={{ position: 'relative' }}>
+                  <Search
+                    size={15}
+                    color="#94a3b8"
+                    style={{ position: 'absolute', top: '12px', left: '10px' }}
+                  />
+                  <input
+                    value={searchFilter}
+                    onChange={(event) => setSearchFilter(event.target.value)}
+                    placeholder="Patient, UHID, doctor, token..."
+                    style={{ ...styles.input, paddingLeft: '32px' }}
+                  />
+                </div>
+              </Field>
+
+              <Field label="Department">
+                <select
+                  value={departmentFilter}
+                  onChange={(event) => setDepartmentFilter(event.target.value)}
+                  style={styles.input}
+                >
+                  <option value="all">All departments</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Appointment status">
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1.5px solid var(--color-border)',
-                    fontSize: '0.82rem',
-                    backgroundColor: '#FFFFFF',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer'
-                  }}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  style={styles.input}
                 >
-                  <option value="">All Statuses</option>
-                  <option value="booked">Booked</option>
-                  <option value="arrived">Arrived</option>
-                  <option value="waiting">Waiting</option>
-                  <option value="in_consultation">In Consultation</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="all">All statuses</option>
+                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
                 </select>
-              </div>
+              </Field>
 
-              {(selectedDate || statusFilter || searchFilter) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <button
+                  type="button"
+                  style={{ ...styles.button, width: '100%' }}
                   onClick={() => {
-                    setSelectedDate(new Date().toISOString().slice(0, 10));
-                    setStatusFilter('');
+                    setSelectedDate(todayISO());
+                    setStatusFilter('all');
+                    setDepartmentFilter('all');
                     setSearchFilter('');
-                    setDepartmentFilter('');
                   }}
                 >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Focused Appointments Table Card */}
-          <Card
-            title={`Consultation Schedule (${filteredAppointments.length})`}
-            subtitle={`Outpatient schedule for ${formatDateIN(selectedDate)}. Check in patients to issue OPD queue tokens.`}
-          >
-            {isLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-                <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 10px' }} />
-                <div>Loading consultation schedule...</div>
+                  <Filter size={15} /> Reset filters
+                </button>
               </div>
-            ) : filteredAppointments.length === 0 ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-                <Calendar size={32} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-                <div style={{ fontWeight: '600', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                  No appointments scheduled for this date
-                </div>
-                <div style={{ fontSize: '0.82rem', marginBottom: '14px' }}>
-                  Use "Book New Appointment" to schedule a patient consultation.
-                </div>
-                <Button variant="primary" size="sm" icon={Plus} onClick={handleOpenBookModal}>
-                  Book Appointment
-                </Button>
+            </div>
+
+            <div style={styles.panelHeader}>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                Showing <strong style={{ color: '#172033' }}>{filteredAppointments.length}</strong> appointment(s)
+                {selectedDate ? ` for ${formatDate(selectedDate)}` : ''}
+              </span>
+              <button
+                type="button"
+                style={styles.button}
+                onClick={() => {
+                  setAppointments(readStorage(APPOINTMENTS_KEY, []));
+                  setLocalPatients(readStorage(PATIENTS_KEY, SAMPLE_PATIENTS));
+                  notifySuccess('Local appointment and patient data refreshed.');
+                }}
+              >
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
+
+            {filteredAppointments.length === 0 ? (
+              <div style={styles.empty}>
+                <Calendar size={34} color="#94a3b8" style={{ marginBottom: '12px' }} />
+                <h3 style={{ margin: '0 0 6px', fontSize: '15px', color: '#334155' }}>
+                  No appointments found
+                </h3>
+                <p style={{ margin: '0 auto 17px', fontSize: '13px', maxWidth: '380px' }}>
+                  There are no appointments matching these filters. Book a new appointment or change the selected date.
+                </p>
+                <button
+                  type="button"
+                  style={{ ...styles.button, ...styles.primaryButton }}
+                  onClick={openBookModal}
+                >
+                  <Plus size={15} /> Book Appointment
+                </button>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
                   <thead>
-                    <tr style={{ borderBottom: '1.5px solid var(--color-border)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                      <th style={{ padding: '10px 14px', fontWeight: '600' }}>Slot & Token</th>
-                      <th style={{ padding: '10px 14px', fontWeight: '600' }}>Time</th>
-                      <th style={{ padding: '10px 14px', fontWeight: '600' }}>Patient Details</th>
-                      <th style={{ padding: '10px 14px', fontWeight: '600' }}>Department & Doctor</th>
-                      <th style={{ padding: '10px 14px', fontWeight: '600' }}>Visit Type</th>
-                      <th style={{ padding: '10px 14px', fontWeight: '600' }}>Status</th>
-                      <th style={{ padding: '10px 14px', fontWeight: '600', textAlign: 'right' }}>Actions</th>
+                    <tr>
+                      <th style={styles.th}>Token / Appointment</th>
+                      <th style={styles.th}>Patient</th>
+                      <th style={styles.th}>Doctor / Department</th>
+                      <th style={styles.th}>Date & Time</th>
+                      <th style={styles.th}>Visit</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAppointments.map((apt) => (
-                      <tr
-                        key={apt.id}
-                        style={{ borderBottom: '1px solid var(--color-border-subtle)', transition: 'background-color 0.15s ease' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-soft-cyan)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      >
-                        <td style={{ padding: '12px 14px' }}>
-                          <div style={{ fontWeight: '700', color: 'var(--color-primary-teal)' }}>
-                            {apt.appointment_number}
+                    {filteredAppointments.map((appointment) => (
+                      <tr key={appointment.id}>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 800, color: '#087f8c', fontSize: '13px' }}>
+                            Token {appointment.token_number || '—'}
                           </div>
-                          {apt.token_number && (
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                fontSize: '0.7rem',
-                                fontWeight: '700',
-                                padding: '1px 6px',
-                                borderRadius: 'var(--radius-sm)',
-                                backgroundColor: 'var(--color-bg-pale-aqua)',
-                                color: 'var(--color-primary-teal)',
-                                marginTop: '3px'
-                              }}
-                            >
-                              Token #{apt.token_number}
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            {appointment.appointment_number || '—'}
+                          </div>
+                          {appointment.is_priority && (
+                            <span style={{ display: 'inline-block', marginTop: '5px', color: '#b45309', fontWeight: 750, fontSize: '10px' }}>
+                              Priority
                             </span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <Clock size={13} color="var(--color-text-muted)" />
-                            <span>{formatTime12h(apt.start_time)}</span>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 750, color: '#172033' }}>
+                            {appointment.patient_name || 'Unknown patient'}
                           </div>
-                        </td>
-                        <td style={{ padding: '12px 14px' }}>
-                          <div style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                            {apt.patient_name}
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            {appointment.patient_uhid || 'No UHID'}
                           </div>
-                          <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                            {apt.patient_uhid}
-                          </div>
-                        </td>
-                        <td style={{ padding: '12px 14px' }}>
-                          <div style={{ fontWeight: '500', color: 'var(--color-text-primary)' }}>
-                            {apt.doctor_name}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                            {apt.department_name}
-                          </div>
-                        </td>
-                        <td style={{ padding: '12px 14px' }}>
-                          <span style={{ textTransform: 'capitalize', color: 'var(--color-text-primary)' }}>
-                            {String(apt.visit_type || 'first_visit').replace('_', ' ')}
-                          </span>
-                          {apt.is_priority && (
-                            <span
-                              style={{
-                                marginLeft: '6px',
-                                fontSize: '0.68rem',
-                                padding: '1px 5px',
-                                borderRadius: 'var(--radius-sm)',
-                                backgroundColor: '#FDE8E8',
-                                color: '#9B1C1C',
-                                fontWeight: '700'
-                              }}
-                            >
-                              PRIORITY
-                            </span>
+                          {appointment.patient_mobile && (
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                              {appointment.patient_mobile}
+                            </div>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
-                          {getStatusBadge(apt.status)}
-                        </td>
-                        <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '6px' }}>
-                            {isClinicianOrAdmin && apt.status !== 'cancelled' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                icon={Droplet}
-                                onClick={() => handleOpenBloodModal(apt)}
-                                style={{ borderColor: '#EF8354', color: '#C05621' }}
-                              >
-                                Order Blood
-                              </Button>
-                            )}
-
-                            {apt.status === 'booked' && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  icon={CheckCircle2}
-                                  onClick={() => handleUpdateStatus(apt, 'arrived')}
-                                  style={{ borderColor: 'var(--color-primary-teal)', color: 'var(--color-primary-teal)' }}
-                                >
-                                  Check In
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedAppointment(apt);
-                                    setRescheduleForm({
-                                      appointmentDate: apt.appointment_date,
-                                      startTime: String(apt.start_time).slice(0, 5),
-                                      reason: '',
-                                    });
-                                    setIsRescheduleModalOpen(true);
-                                  }}
-                                >
-                                  Reschedule
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedAppointment(apt);
-                                    setIsCancelModalOpen(true);
-                                  }}
-                                  style={{ color: 'var(--color-error)' }}
-                                >
-                                  Cancel
-                                </Button>
-                              </>
-                            )}
-
-                            {apt.status === 'arrived' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUpdateStatus(apt, 'waiting')}
-                              >
-                                To Waiting
-                              </Button>
-                            )}
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 650, color: '#172033' }}>
+                            {appointment.doctor_name || '—'}
                           </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            {appointment.department_name || '—'}
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <div>{formatDate(appointment.appointment_date)}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            <Clock size={12} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
+                            {formatTime(appointment.start_time)}
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <div>{appointment.visit_type || 'Consultation'}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            ₹{Number(appointment.consultation_fee || 0).toLocaleString('en-IN')}
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <StatusBadge status={appointment.status} />
+                        </td>
+                        <td style={styles.td}>{renderAppointmentActions(appointment)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div style={styles.panelHeader}>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                {bloodRequests.length} blood request(s)
+              </div>
+              <button
+                type="button"
+                style={styles.button}
+                onClick={loadData}
+                disabled={loading}
+              >
+                <RefreshCw size={14} /> {loading ? 'Loading...' : 'Refresh requests'}
+              </button>
+            </div>
+
+            {loading ? (
+              <div style={styles.empty}>Loading blood requests...</div>
+            ) : bloodRequests.length === 0 ? (
+              <div style={styles.empty}>
+                <Droplet size={34} color="#94a3b8" style={{ marginBottom: '12px' }} />
+                <h3 style={{ margin: '0 0 6px', fontSize: '15px', color: '#334155' }}>
+                  No blood requests to display
+                </h3>
+                <p style={{ margin: '0 0 16px', fontSize: '13px' }}>
+                  Create a blood request to send it to the hospital service.
+                </p>
+                <button
+                  type="button"
+                  style={{ ...styles.button, ...styles.primaryButton }}
+                  onClick={openBloodModal}
+                >
+                  <Droplet size={15} /> New blood request
+                </button>
+              </div>
+            ) : (
+              <div style={styles.tableWrap}>
+                <table style={{ ...styles.table, minWidth: '750px' }}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Request</th>
+                      <th style={styles.th}>Patient</th>
+                      <th style={styles.th}>Blood group</th>
+                      <th style={styles.th}>Units</th>
+                      <th style={styles.th}>Urgency</th>
+                      <th style={styles.th}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bloodRequests.map((request, index) => (
+                      <tr key={request.id || request.request_id || index}>
+                        <td style={styles.td}>
+                          {request.request_number || request.request_id || request.id || `Request ${index + 1}`}
+                        </td>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 650 }}>
+                            {request.patient_name || patientById[request.patient_id]?.full_name || '—'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            {request.patient_uhid || patientById[request.patient_id]?.uhid || ''}
+                          </div>
+                        </td>
+                        <td style={styles.td}>{request.blood_group || request.bloodGroup || '—'}</td>
+                        <td style={styles.td}>{request.units ?? request.units_required ?? '—'}</td>
+                        <td style={styles.td}>{request.urgency || 'Routine'}</td>
+                        <td style={styles.td}>
+                          <StatusBadge status={String(request.status || 'pending').toLowerCase()} />
                         </td>
                       </tr>
                     ))}
@@ -968,629 +1576,599 @@ export function BookRescheduleView({ onNavigate: _onNavigate }) {
                 </table>
               </div>
             )}
-          </Card>
-        </>
-      ) : (
-        /* Tab 2: Linked Blood Requests */
-        <Card
-          title={`Appointment-Linked Blood Requisitions (${bloodRequests.length})`}
-          subtitle="Outpatient blood orders transactionally linked to formal Blood Bank requisitions."
-        >
-          {isLoading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-              Loading appointment blood requests...
-            </div>
-          ) : bloodRequests.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-              <Droplet size={32} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-              <div style={{ fontWeight: '600', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                No appointment blood requests recorded
-              </div>
-              <div style={{ fontSize: '0.82rem' }}>
-                Select an appointment from the Consultation Schedule and click "Order Blood" to initiate a requisition.
-              </div>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1.5px solid var(--color-border)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Requisition ID</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Patient Details</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Appointment</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Blood Group</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Component & Units</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Urgency</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600' }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bloodRequests.map((req) => (
-                    <tr key={req.id} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                      <td style={{ padding: '12px 14px', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                        {req.requisition_number || req.id.slice(0, 8)}
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ fontWeight: '600' }}>{req.patient_name}</div>
-                        <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--color-text-secondary)' }}>{req.patient_uhid}</div>
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        {req.appointment_number || '-'}
-                      </td>
-                      <td style={{ padding: '12px 14px', fontWeight: '700' }}>
-                        {req.blood_group}
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        {String(req.component_type).replace('_', ' ').toUpperCase()} • {req.units_requested} Unit(s)
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <Badge variant={req.urgency === 'stat' ? 'danger' : 'gray'} size="sm">
-                          {req.urgency}
-                        </Badge>
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        {getStatusBadge(req.status)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      )}
+          </>
+        )}
+      </div>
 
-      {/* MODAL 1: Book New Appointment */}
-      {isBookModalOpen && (
-        <Modal
-          isOpen={isBookModalOpen}
-          onClose={() => setIsBookModalOpen(false)}
-          title="Book Outpatient Consultation"
-          subtitle="Schedule a patient consultation with a specialist and allocate an OPD slot."
-          maxWidth="640px"
-        >
-          <form onSubmit={handleBookSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {bookingModalError && (
-              <div
-                style={{
-                  padding: '10px 14px',
-                  backgroundColor: '#FDE8E8',
-                  borderRadius: 'var(--radius-md)',
-                  color: '#9B1C1C',
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '11px', padding: '0 2px' }}>
+        <AlertTriangle size={14} />
+        <span>
+          Demo note: appointment and patient records are stored in this browser. Blood requests use the configured hospital API.
+        </span>
+      </div>
+
+      {showBookModal && (
+        <ModalShell
+          title="Book appointment"
+          subtitle="Select the patient, doctor, date, and an available time slot."
+          onClose={closeBookModal}
+          footer={
+            <>
+              <button type="button" style={styles.button} onClick={closeBookModal}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="book-appointment-form"
+                style={{ ...styles.button, ...styles.primaryButton }}
               >
-                <AlertCircle size={16} />
-                <span>{bookingModalError}</span>
-              </div>
-            )}
-
-            {/* Step 1: Patient Search & Selection */}
-            <div>
-              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
-                Select Patient <span style={{ color: 'var(--color-error)' }}>*</span>
-              </label>
-
-              {selectedPatient ? (
-                <div
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1.5px solid var(--color-primary-teal)',
-                    backgroundColor: 'var(--color-bg-pale-aqua)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <User size={18} color="var(--color-primary-teal)" />
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
-                        {selectedPatient.full_name}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>
-                        {selectedPatient.uhid} • {selectedPatient.gender} • Mobile: {selectedPatient.mobile || 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                <CheckCircle2 size={15} /> Confirm booking
+              </button>
+            </>
+          }
+        >
+          <form id="book-appointment-form" onSubmit={handleBookSubmit}>
+            <div style={styles.formGrid}>
+              <Field label="Patient *" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    value={patientSearch}
+                    onChange={(event) => setPatientSearch(event.target.value)}
+                    placeholder="Search patient by name, UHID, or mobile"
+                    style={styles.input}
+                  />
+                  <button
+                    type="button"
+                    style={styles.button}
                     onClick={() => {
-                      setSelectedPatient(null);
-                      setBookForm(prev => ({ ...prev, patientId: '' }));
+                      setPatientForm(initialPatientForm);
+                      setShowPatientModal(true);
                     }}
+                    title="Register a new patient"
                   >
-                    Change
-                  </Button>
+                    <UserPlus size={15} /> New
+                  </button>
                 </div>
-              ) : (
-                <div style={{ position: 'relative' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ flex: 1 }}>
-                      <Input
-                        placeholder="Search by Patient Name, UHID, or Mobile..."
-                        value={patientSearchQuery}
-                        onChange={(e) => setPatientSearchQuery(e.target.value)}
-                        icon={Search}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="md"
-                      icon={Plus}
-                      onClick={() => {
-                        setQuickRegisterError(null);
-                        setIsQuickRegisterOpen(true);
-                      }}
-                    >
-                      New Patient
-                    </Button>
-                  </div>
+                <select
+                  value={bookForm.patientId}
+                  onChange={(event) => {
+                    const patient = patientById[event.target.value] || null;
+                    setSelectedPatient(patient);
+                    setBookForm((current) => ({ ...current, patientId: event.target.value }));
+                  }}
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Select a patient</option>
+                  {filteredPatientsForSelect.map((patient) => (
+                    <option key={patient.id} value={patient.id}>
+                      {patient.full_name} — {patient.uhid || 'No UHID'} — {patient.mobile || 'No mobile'}
+                    </option>
+                  ))}
+                </select>
+                {selectedPatient && (
+                  <span style={{ color: '#64748b', fontSize: '11px' }}>
+                    Selected: {selectedPatient.full_name} · {selectedPatient.uhid}
+                  </span>
+                )}
+              </Field>
 
-                  {isSearchingPatients && (
-                    <div style={{ position: 'absolute', right: '12px', top: '10px', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                      Searching...
-                    </div>
-                  )}
+              <Field label="Department *">
+                <select
+                  value={bookForm.departmentId}
+                  onChange={(event) =>
+                    setBookForm((current) => ({
+                      ...current,
+                      departmentId: event.target.value,
+                      doctorId: '',
+                      startTime: '',
+                    }))
+                  }
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Select department</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-                  {patientSearchResults.length > 0 && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        zIndex: 20,
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: 'var(--radius-md)',
-                        boxShadow: 'var(--shadow-dropdown)',
-                        maxHeight: '180px',
-                        overflowY: 'auto',
-                        marginTop: '4px'
-                      }}
-                    >
-                      {patientSearchResults.map((pat) => (
-                        <div
-                          key={pat.id}
-                          onClick={() => {
-                            setSelectedPatient(pat);
-                            setBookForm(prev => ({ ...prev, patientId: pat.id }));
-                            setPatientSearchQuery('');
-                            setPatientSearchResults([]);
-                          }}
-                          style={{
-                            padding: '10px 14px',
-                            borderBottom: '1px solid var(--color-border-subtle)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-pale-aqua)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <div>
-                            <div style={{ fontWeight: '600', fontSize: '0.85rem' }}>{pat.full_name}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>
-                              {pat.uhid} • {pat.gender} • {pat.mobile}
-                            </div>
-                          </div>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--color-primary-teal)', fontWeight: '600' }}>
-                            Select →
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+              <Field label="Doctor *">
+                <select
+                  value={bookForm.doctorId}
+                  onChange={(event) =>
+                    setBookForm((current) => ({
+                      ...current,
+                      doctorId: event.target.value,
+                      startTime: '',
+                    }))
+                  }
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Select doctor</option>
+                  {filteredDoctors.map((doctor) => (
+                    <option key={doctor.id} value={doctor.id}>
+                      {doctor.full_name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-            {/* Step 2: Department and Doctor */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <Select
-                label="Clinical Department"
-                required
-                value={bookForm.departmentId}
-                onChange={(e) => handleDepartmentChange(e.target.value)}
-                options={[
-                  { value: '', label: '-- Select Department --' },
-                  ...departmentsList.map(d => ({ value: d.id, label: d.name }))
-                ]}
-              />
-
-              <Select
-                label="Treating Clinician"
-                required
-                value={bookForm.doctorId}
-                onChange={(e) => {
-                  const docId = e.target.value;
-                  setBookForm(prev => ({ ...prev, doctorId: docId }));
-                  fetchAvailableSlots(docId, bookForm.appointmentDate);
-                }}
-                options={[
-                  { value: '', label: '-- Select Doctor --' },
-                  ...doctorsList.map(doc => ({
-                  value: doc.id,
-                  label: `${doc.full_name || doc.name}${doc.specialty ? ' (' + doc.specialty + ')' : ''} - ${formatINR(doc.consultation_fee ? Number(doc.consultation_fee) : 500)}`
-                }))
-                ]}
-              />
-            </div>
-
-            {/* Step 3: Date and Slot Selection */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
-                  Consultation Date <span style={{ color: 'var(--color-error)' }}>*</span>
-                </label>
+              <Field label="Appointment date *">
                 <input
                   type="date"
+                  min={todayISO()}
                   value={bookForm.appointmentDate}
-                  min={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => {
-                    const d = e.target.value;
-                    setBookForm(prev => ({ ...prev, appointmentDate: d }));
-                    if (bookForm.doctorId) {
-                      fetchAvailableSlots(bookForm.doctorId, d);
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1.5px solid var(--color-border)',
-                    fontSize: '0.85rem'
-                  }}
+                  onChange={(event) =>
+                    setBookForm((current) => ({
+                      ...current,
+                      appointmentDate: event.target.value,
+                      startTime: '',
+                    }))
+                  }
+                  style={styles.input}
                   required
                 />
-              </div>
+              </Field>
 
-              <Select
-                label="Visit Type"
-                value={bookForm.visitType}
-                onChange={(e) => setBookForm(prev => ({ ...prev, visitType: e.target.value }))}
-                options={[
-                  { value: 'first_visit', label: 'First Consultation (New)' },
-                  { value: 'follow_up', label: 'Follow-up Consultation' },
-                  { value: 'routine_review', label: 'Routine Investigation Review' },
-                  { value: 'emergency_referral', label: 'Specialist Urgent Referral' },
-                ]}
-              />
+              <Field label="Visit type">
+                <select
+                  value={bookForm.visitType}
+                  onChange={(event) =>
+                    setBookForm((current) => ({ ...current, visitType: event.target.value }))
+                  }
+                  style={styles.input}
+                >
+                  <option>Consultation</option>
+                  <option>Follow-up</option>
+                  <option>Review</option>
+                  <option>Emergency</option>
+                </select>
+              </Field>
+
+              <Field label="Consultation fee (₹)">
+                <input
+                  type="number"
+                  min="0"
+                  max="100000"
+                  value={bookForm.consultationFee}
+                  onChange={(event) =>
+                    setBookForm((current) => ({
+                      ...current,
+                      consultationFee: event.target.value,
+                    }))
+                  }
+                  style={styles.input}
+                />
+              </Field>
+
+              <Field label="Notes" style={{ gridColumn: '1 / -1' }}>
+                <textarea
+                  value={bookForm.notes}
+                  onChange={(event) =>
+                    setBookForm((current) => ({ ...current, notes: event.target.value }))
+                  }
+                  style={styles.textarea}
+                  maxLength={1000}
+                  placeholder="Reason for visit or relevant booking notes"
+                />
+              </Field>
             </div>
 
-            {/* Live Time Slots Picker */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                  Available Consultation Slots <span style={{ color: 'var(--color-error)' }}>*</span>
-                </label>
-                {isLoadingSlots && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Refreshing slots...</span>}
+            <div style={{ marginTop: '19px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 750 }}>Available time slots *</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                    15-minute slots · Morning and afternoon sessions
+                  </div>
+                </div>
+                {bookForm.startTime && (
+                  <span style={{ fontSize: '12px', color: '#087f8c', fontWeight: 750 }}>
+                    Selected: {formatTime(bookForm.startTime)}
+                  </span>
+                )}
               </div>
 
-              {!bookForm.doctorId ? (
-                <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: '#F9FAFB', border: '1px dashed var(--color-border)', textAlign: 'center', fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-                  Please select a department and doctor to view scheduled time slots.
-                </div>
-              ) : availableSlotsData?.slots && availableSlotsData.slots.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))', gap: '8px', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
-                  {availableSlotsData.slots.map((slot) => {
-                    const isSelected = bookForm.startTime === slot.startTime;
+              {!bookForm.doctorId || !bookForm.appointmentDate ? (
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '12px' }}>
+                  Choose a department, doctor, and date to see available slots.
+                </p>
+              ) : (
+                <div style={styles.slotGrid}>
+                  {availableSlots.map(({ time, available }) => {
+                    const selected = bookForm.startTime === time;
                     return (
                       <button
+                        key={time}
                         type="button"
-                        key={slot.startTime}
-                        disabled={!slot.available}
-                        onClick={() => setBookForm(prev => ({ ...prev, startTime: slot.startTime }))}
+                        disabled={!available}
+                        onClick={() =>
+                          setBookForm((current) => ({ ...current, startTime: time }))
+                        }
                         style={{
-                          padding: '6px 8px',
-                          borderRadius: 'var(--radius-sm)',
-                          fontSize: '0.78rem',
-                          fontWeight: isSelected ? '700' : '500',
-                          border: isSelected ? '1.5px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
-                          backgroundColor: isSelected ? 'var(--color-primary-teal)' : slot.available ? '#FFFFFF' : '#F3F4F6',
-                          color: isSelected ? '#FFFFFF' : slot.available ? 'var(--color-text-primary)' : '#9CA3AF',
-                          cursor: slot.available ? 'pointer' : 'not-allowed',
-                          textAlign: 'center',
-                          transition: 'all 0.15s ease'
+                          ...styles.slot,
+                          ...(selected
+                            ? { background: '#087f8c', borderColor: '#087f8c', color: '#fff', fontWeight: 750 }
+                            : {}),
+                          ...(!available
+                            ? { background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', textDecoration: 'line-through' }
+                            : {}),
                         }}
+                        title={available ? `Select ${formatTime(time)}` : 'Already booked'}
                       >
-                        {formatTime12h(slot.startTime)}
+                        {formatTime(time)}
                       </button>
                     );
                   })}
                 </div>
-              ) : (
-                <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.82rem' }}>
-                  No open slots found for this doctor on the selected date. Choose another date or clinician.
-                </div>
               )}
             </div>
 
-            {/* Notes & Priority */}
-            <Input
-              label="Consultation Chief Complaint / Notes"
-              placeholder="e.g. Follow-up post ECG, recurrent chest discomfort"
-              value={bookForm.notes}
-              onChange={(e) => setBookForm(prev => ({ ...prev, notes: e.target.value }))}
-            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '9px', marginTop: '18px', fontSize: '13px', color: '#334155' }}>
+              <input
+                type="checkbox"
+                checked={bookForm.isPriority}
+                onChange={(event) =>
+                  setBookForm((current) => ({ ...current, isPriority: event.target.checked }))
+                }
+              />
+              Mark as priority appointment
+            </label>
+          </form>
+        </ModalShell>
+      )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: '#F8FBFB', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+      {showPatientModal && (
+        <ModalShell
+          title="Quick patient registration"
+          subtitle="Register a patient locally and select them for this appointment."
+          onClose={() => setShowPatientModal(false)}
+          footer={
+            <>
+              <button type="button" style={styles.button} onClick={() => setShowPatientModal(false)}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="quick-register-form"
+                style={{ ...styles.button, ...styles.primaryButton }}
+              >
+                <UserPlus size={15} /> Register patient
+              </button>
+            </>
+          }
+        >
+          <form id="quick-register-form" onSubmit={handleQuickRegisterSubmit}>
+            <div style={styles.formGrid}>
+              <Field label="Full name *" style={{ gridColumn: '1 / -1' }}>
                 <input
-                  type="checkbox"
-                  checked={bookForm.isPriority}
-                  onChange={(e) => setBookForm(prev => ({ ...prev, isPriority: e.target.checked }))}
+                  value={patientForm.fullName}
+                  onChange={(event) =>
+                    setPatientForm((current) => ({ ...current, fullName: event.target.value }))
+                  }
+                  style={styles.input}
+                  placeholder="Enter patient's full name"
+                  maxLength={100}
+                  required
                 />
-                <span style={{ fontWeight: '600' }}>Mark as High Priority / Fast-Track</span>
-              </label>
+              </Field>
 
-              <div style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--color-primary-teal)' }}>
-                Doctor OPD Fee: {formatINR(activeConsultationFee)}
-              </div>
-            </div>
+              <Field label="Mobile number *">
+                <div style={{ position: 'relative' }}>
+                  <Phone
+                    size={15}
+                    color="#94a3b8"
+                    style={{ position: 'absolute', top: '12px', left: '10px' }}
+                  />
+                  <input
+                    type="tel"
+                    value={patientForm.mobile}
+                    onChange={(event) =>
+                      setPatientForm((current) => ({ ...current, mobile: event.target.value }))
+                    }
+                    style={{ ...styles.input, paddingLeft: '32px' }}
+                    placeholder="10-digit mobile"
+                    maxLength={15}
+                    required
+                  />
+                </div>
+              </Field>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-              <Button variant="ghost" onClick={() => setIsBookModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" loading={isSubmitting}>
-                Confirm & Assign Token
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
+              <Field label="Date of birth">
+                <input
+                  type="date"
+                  max={todayISO()}
+                  value={patientForm.dob}
+                  onChange={(event) =>
+                    setPatientForm((current) => ({ ...current, dob: event.target.value }))
+                  }
+                  style={styles.input}
+                />
+              </Field>
 
-      {/* MODAL 2: Reschedule Appointment */}
-      {isRescheduleModalOpen && selectedAppointment && (
-        <Modal
-          isOpen={isRescheduleModalOpen}
-          onClose={() => setIsRescheduleModalOpen(false)}
-          title={`Reschedule: ${selectedAppointment.appointment_number}`}
-          subtitle={`Moving appointment for ${selectedAppointment.patient_name} with ${selectedAppointment.doctor_name}`}
-          maxWidth="480px"
-        >
-          <form onSubmit={handleRescheduleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
-                New Appointment Date
-              </label>
-              <input
-                type="date"
-                value={rescheduleForm.appointmentDate}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setRescheduleForm(prev => ({ ...prev, appointmentDate: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontSize: '0.85rem' }}
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
-                New Start Time
-              </label>
-              <input
-                type="time"
-                value={rescheduleForm.startTime}
-                onChange={(e) => setRescheduleForm(prev => ({ ...prev, startTime: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontSize: '0.85rem' }}
-                required
-              />
-            </div>
-
-            <Input
-              label="Reason for Rescheduling"
-              placeholder="e.g. Patient requested morning slot change"
-              value={rescheduleForm.reason}
-              onChange={(e) => setRescheduleForm(prev => ({ ...prev, reason: e.target.value }))}
-              required
-            />
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-              <Button variant="ghost" onClick={() => setIsRescheduleModalOpen(false)}>
-                Keep Original
-              </Button>
-              <Button type="submit" variant="primary" loading={isSubmitting}>
-                Save New Slot
-              </Button>
+              <Field label="Gender">
+                <select
+                  value={patientForm.gender}
+                  onChange={(event) =>
+                    setPatientForm((current) => ({ ...current, gender: event.target.value }))
+                  }
+                  style={styles.input}
+                >
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                  <option>Prefer not to say</option>
+                </select>
+              </Field>
             </div>
           </form>
-        </Modal>
+        </ModalShell>
       )}
 
-      {/* MODAL 3: Cancel Appointment */}
-      {isCancelModalOpen && selectedAppointment && (
-        <Modal
-          isOpen={isCancelModalOpen}
-          onClose={() => setIsCancelModalOpen(false)}
-          title={`Cancel Appointment: ${selectedAppointment.appointment_number}`}
-          subtitle={`Are you sure you want to cancel the booking for ${selectedAppointment.patient_name}?`}
-          maxWidth="460px"
-        >
-          <form onSubmit={handleCancelSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <Select
-              label="Cancellation Reason"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              options={[
-                'Patient requested cancellation',
-                'Clinician unavailable / emergency surgery',
-                'Patient admitted as Inpatient (IPD)',
-                'Duplicate appointment booked in error',
-                'Patient unable to visit clinic'
-              ]}
-            />
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-              <Button variant="ghost" onClick={() => setIsCancelModalOpen(false)}>
-                Back
-              </Button>
-              <Button type="submit" variant="danger" loading={isSubmitting}>
-                Confirm Cancellation
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* MODAL 4: Order Blood Requisition */}
-      {isBloodRequestModalOpen && selectedAppointment && (
-        <Modal
-          isOpen={isBloodRequestModalOpen}
-          onClose={() => setIsBloodRequestModalOpen(false)}
-          title="Order Blood Requisition"
-          subtitle={`Create formal Blood Bank order linked to ${selectedAppointment.appointment_number} (${selectedAppointment.patient_name})`}
-          maxWidth="520px"
-        >
-          <form onSubmit={handleBloodRequestSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Select
-                label="Blood Group"
-                value={bloodReqForm.bloodGroup}
-                onChange={(e) => setBloodReqForm(prev => ({ ...prev, bloodGroup: e.target.value }))}
-                options={['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']}
-              />
-              <Select
-                label="Component Type"
-                value={bloodReqForm.componentType}
-                onChange={(e) => setBloodReqForm(prev => ({ ...prev, componentType: e.target.value }))}
-                options={[
-                  { value: 'whole_blood', label: 'Whole Blood' },
-                  { value: 'prbc', label: 'PRBC (Packed Cells)' },
-                  { value: 'ffp', label: 'FFP (Fresh Frozen Plasma)' },
-                  { value: 'platelets', label: 'Platelet Concentrate' },
-                  { value: 'cryo', label: 'Cryoprecipitate' }
-                ]}
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input
-                label="Units Requested"
-                type="number"
-                min="1"
-                max="10"
-                value={bloodReqForm.unitsRequested}
-                onChange={(e) => setBloodReqForm(prev => ({ ...prev, unitsRequested: e.target.value }))}
-                required
-              />
-              <Select
-                label="Urgency Level"
-                value={bloodReqForm.urgency}
-                onChange={(e) => setBloodReqForm(prev => ({ ...prev, urgency: e.target.value }))}
-                options={[
-                  { value: 'routine', label: 'Routine (Elective)' },
-                  { value: 'urgent', label: 'Urgent (Within 4 hrs)' },
-                  { value: 'stat', label: 'STAT (Emergency)' }
-                ]}
-              />
-            </div>
-
-            <Input
-              label="Clinical Indication"
-              placeholder="e.g. Pre-operative reserve, severe anemia"
-              value={bloodReqForm.clinicalIndication}
-              onChange={(e) => setBloodReqForm(prev => ({ ...prev, clinicalIndication: e.target.value }))}
-              required
-            />
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-              <Button variant="ghost" onClick={() => setIsBloodRequestModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" loading={isSubmitting}>
-                Dispatch Requisition
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Quick Register Patient Modal */}
-      {isQuickRegisterOpen && (
-        <Modal
-          isOpen={isQuickRegisterOpen}
-          onClose={() => setIsQuickRegisterOpen(false)}
-          title="Register New Patient"
-          subtitle="Quickly establish an outpatient record and return to slot booking."
-          maxWidth="500px"
-        >
-          <form onSubmit={handleQuickRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {quickRegisterError && (
-              <div
-                style={{
-                  padding: '10px 14px',
-                  backgroundColor: '#FDE8E8',
-                  borderRadius: 'var(--radius-md)',
-                  color: '#9B1C1C',
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
+      {showRescheduleModal && selectedAppointment && (
+        <ModalShell
+          title="Reschedule appointment"
+          subtitle={`${selectedAppointment.appointment_number} · ${selectedAppointment.patient_name}`}
+          onClose={() => {
+            setShowRescheduleModal(false);
+            setSelectedAppointment(null);
+          }}
+          footer={
+            <>
+              <button
+                type="button"
+                style={styles.button}
+                onClick={() => {
+                  setShowRescheduleModal(false);
+                  setSelectedAppointment(null);
                 }}
               >
-                <AlertCircle size={16} />
-                <span>{quickRegisterError}</span>
-              </div>
-            )}
+                Keep current booking
+              </button>
+              <button
+                type="submit"
+                form="reschedule-form"
+                style={{ ...styles.button, ...styles.primaryButton }}
+              >
+                <CalendarClock size={15} /> Confirm reschedule
+              </button>
+            </>
+          }
+        >
+          <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '9px', marginBottom: '17px', fontSize: '12px', color: '#475569' }}>
+            Current booking: <strong>{formatDate(selectedAppointment.appointment_date)}</strong> at{' '}
+            <strong>{formatTime(selectedAppointment.start_time)}</strong> with{' '}
+            <strong>{selectedAppointment.doctor_name}</strong>.
+          </div>
 
-            <Input
-              label="Patient Full Name"
-              required
-              placeholder="e.g. Radhika Sharma"
-              value={quickPatientForm.fullName}
-              onChange={(e) => setQuickPatientForm({ ...quickPatientForm, fullName: e.target.value })}
-            />
+          <form id="reschedule-form" onSubmit={handleRescheduleSubmit}>
+            <div style={styles.formGrid}>
+              <Field label="New appointment date *">
+                <input
+                  type="date"
+                  min={todayISO()}
+                  value={rescheduleForm.appointmentDate}
+                  onChange={(event) =>
+                    setRescheduleForm((current) => ({
+                      ...current,
+                      appointmentDate: event.target.value,
+                      startTime: '',
+                    }))
+                  }
+                  style={styles.input}
+                  required
+                />
+              </Field>
 
-            <Input
-              label="Primary Mobile Number"
-              required
-              placeholder="+91 98765 43210"
-              value={quickPatientForm.mobile}
-              onChange={(e) => setQuickPatientForm({ ...quickPatientForm, mobile: e.target.value })}
-            />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input
-                label="Date of Birth"
-                type="date"
-                value={quickPatientForm.dob}
-                onChange={(e) => setQuickPatientForm({ ...quickPatientForm, dob: e.target.value })}
-              />
-
-              <Select
-                label="Gender"
-                required
-                value={quickPatientForm.gender}
-                onChange={(e) => setQuickPatientForm({ ...quickPatientForm, gender: e.target.value })}
-                options={[
-                  { value: 'female', label: 'Female' },
-                  { value: 'male', label: 'Male' },
-                  { value: 'other', label: 'Other' }
-                ]}
-              />
+              <Field label="Reason for rescheduling">
+                <input
+                  value={rescheduleForm.reason}
+                  onChange={(event) =>
+                    setRescheduleForm((current) => ({ ...current, reason: event.target.value }))
+                  }
+                  style={styles.input}
+                  maxLength={300}
+                  placeholder="Reason (optional)"
+                />
+              </Field>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-              <Button type="button" variant="ghost" onClick={() => setIsQuickRegisterOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" loading={isRegisteringQuickPatient} icon={CheckCircle2}>
-                {isRegisteringQuickPatient ? 'Saving...' : 'Create & Select Patient'}
-              </Button>
+            <div style={{ marginTop: '17px', fontSize: '13px', fontWeight: 750 }}>
+              Select a new time *
+            </div>
+            <div style={styles.slotGrid}>
+              {rescheduleSlots.map(({ time, available }) => {
+                const selected = rescheduleForm.startTime === time;
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    disabled={!available}
+                    onClick={() =>
+                      setRescheduleForm((current) => ({ ...current, startTime: time }))
+                    }
+                    style={{
+                      ...styles.slot,
+                      ...(selected
+                        ? { background: '#087f8c', borderColor: '#087f8c', color: '#fff', fontWeight: 750 }
+                        : {}),
+                      ...(!available
+                        ? { background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', textDecoration: 'line-through' }
+                        : {}),
+                    }}
+                    title={available ? `Select ${formatTime(time)}` : 'Already booked'}
+                  >
+                    {formatTime(time)}
+                  </button>
+                );
+              })}
             </div>
           </form>
-        </Modal>
+        </ModalShell>
       )}
 
+      {showCancelModal && selectedAppointment && (
+        <ModalShell
+          title="Cancel appointment"
+          subtitle={`${selectedAppointment.appointment_number} · ${selectedAppointment.patient_name}`}
+          onClose={() => {
+            setShowCancelModal(false);
+            setSelectedAppointment(null);
+          }}
+          footer={
+            <>
+              <button
+                type="button"
+                style={styles.button}
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setSelectedAppointment(null);
+                }}
+              >
+                Go back
+              </button>
+              <button
+                type="submit"
+                form="cancel-form"
+                style={{ ...styles.button, ...styles.dangerButton }}
+              >
+                <Ban size={15} /> Confirm cancellation
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', gap: '10px', background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa', padding: '12px', borderRadius: '9px', marginBottom: '16px', fontSize: '12px' }}>
+            <AlertTriangle size={17} style={{ flexShrink: 0 }} />
+            <span>This will mark the appointment as cancelled. The record will remain in the appointment history.</span>
+          </div>
+
+          <form id="cancel-form" onSubmit={handleCancelSubmit}>
+            <Field label="Cancellation reason *">
+              <textarea
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                style={styles.textarea}
+                placeholder="Enter the reason for cancellation"
+                maxLength={500}
+                required
+              />
+            </Field>
+          </form>
+        </ModalShell>
+      )}
+
+      {showBloodModal && (
+        <ModalShell
+          title="Create blood request"
+          subtitle="Submit a blood request through the configured hospital API."
+          onClose={() => setShowBloodModal(false)}
+          footer={
+            <>
+              <button type="button" style={styles.button} onClick={() => setShowBloodModal(false)}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="blood-request-form"
+                disabled={loading}
+                style={{
+                  ...styles.button,
+                  ...styles.primaryButton,
+                  opacity: loading ? 0.65 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <Droplet size={15} /> {loading ? 'Submitting...' : 'Submit request'}
+              </button>
+            </>
+          }
+        >
+          <form id="blood-request-form" onSubmit={handleBloodRequestSubmit}>
+            <div style={styles.formGrid}>
+              <Field label="Patient *" style={{ gridColumn: '1 / -1' }}>
+                <select
+                  value={bloodForm.patientId}
+                  onChange={(event) =>
+                    setBloodForm((current) => ({ ...current, patientId: event.target.value }))
+                  }
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Select patient</option>
+                  {localPatients.map((patient) => (
+                    <option key={patient.id} value={patient.id}>
+                      {patient.full_name} — {patient.uhid}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Blood group *">
+                <select
+                  value={bloodForm.bloodGroup}
+                  onChange={(event) =>
+                    setBloodForm((current) => ({ ...current, bloodGroup: event.target.value }))
+                  }
+                  style={styles.input}
+                  required
+                >
+                  {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((group) => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Units required *">
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  step="1"
+                  value={bloodForm.units}
+                  onChange={(event) =>
+                    setBloodForm((current) => ({ ...current, units: event.target.value }))
+                  }
+                  style={styles.input}
+                  required
+                />
+              </Field>
+
+              <Field label="Urgency *">
+                <select
+                  value={bloodForm.urgency}
+                  onChange={(event) =>
+                    setBloodForm((current) => ({ ...current, urgency: event.target.value }))
+                  }
+                  style={styles.input}
+                >
+                  <option>Routine</option>
+                  <option>Urgent</option>
+                  <option>Emergency</option>
+                </select>
+              </Field>
+
+              <Field label="Clinical notes" style={{ gridColumn: '1 / -1' }}>
+                <textarea
+                  value={bloodForm.notes}
+                  onChange={(event) =>
+                    setBloodForm((current) => ({ ...current, notes: event.target.value }))
+                  }
+                  style={styles.textarea}
+                  maxLength={1000}
+                  placeholder="Add relevant request details"
+                />
+              </Field>
+            </div>
+          </form>
+        </ModalShell>
+      )}
     </div>
   );
 }
+
+export { BookRescheduleView };
