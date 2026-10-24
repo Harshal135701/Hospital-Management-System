@@ -245,7 +245,6 @@ export const AppShell = ({
           id: 'clinical',
           label: 'Clinical Desk',
           icon: Stethoscope,
-          badge: '5 Ops',
           subItems: [
             { id: 'clinical:consultation', label: 'Doctor Consultation Desk' },
             { id: 'clinical:vitals', label: 'Vitals Recording & Physical Examination' },
@@ -258,53 +257,49 @@ export const AppShell = ({
           id: 'daycare',
           label: 'Day Care',
           icon: Bed,
-          badge: '4 Ops',
           subItems: [
-            { id: 'daycare:8.1', label: '8.1 Admission & Procedure' },
-            { id: 'daycare:8.2', label: '8.2 Chair & Bed Allocation' },
-            { id: 'daycare:8.3', label: '8.3 Procedure Monitoring' },
-            { id: 'daycare:8.4', label: '8.4 Discharge Summary' }
+            { id: 'daycare:8.1', label: 'Admission & Procedure' },
+            { id: 'daycare:8.2', label: 'Chair & Bed Allocation' },
+            { id: 'daycare:8.3', label: 'Procedure Monitoring' },
+            { id: 'daycare:8.4', label: 'Discharge Summary' }
           ]
         },
         {
           id: 'dietary',
           label: 'Diet & Nutrition',
           icon: Utensils,
-          badge: '4 Ops',
           subItems: [
-            { id: 'dietary:9.1', label: '9.1 Nutritional Assessment' },
-            { id: 'dietary:9.2', label: '9.2 Patient Diet Ordering' },
-            { id: 'dietary:9.3', label: '9.3 Kitchen Batch Production' },
-            { id: 'dietary:9.4', label: '9.4 Ward Meal Delivery' }
+            { id: 'dietary:9.1', label: 'Nutritional Assessment' },
+            { id: 'dietary:9.2', label: 'Patient Diet Ordering' },
+            { id: 'dietary:9.3', label: 'Kitchen Batch Production' },
+            { id: 'dietary:9.4', label: 'Ward Meal Delivery' }
           ]
         },
         {
           id: 'emr',
           label: 'EMR Records',
           icon: FileSpreadsheet,
-          badge: '5 Ops',
           subItems: [
-            { id: 'emr:12.1', label: '12.1 Patient Timeline' },
-            { id: 'emr:12.2', label: '12.2 Prescription Studio' },
-            { id: 'emr:12.3', label: '12.3 ICD-10 Diagnoses' },
-            { id: 'emr:12.4', label: '12.4 Encounters Browser' },
-            { id: 'emr:12.5', label: '12.5 Clinical Documents' }
+            { id: 'emr:12.1', label: 'Patient Timeline' },
+            { id: 'emr:12.2', label: 'Prescription Studio' },
+            { id: 'emr:12.3', label: 'ICD-10 Diagnoses' },
+            { id: 'emr:12.4', label: 'Encounters Browser' },
+            { id: 'emr:12.5', label: 'Clinical Documents' }
           ]
         },
         {
           id: 'bloodbank',
           label: 'Blood Bank',
           icon: Droplet,
-          badge: '7 Ops',
           highlight: true,
           subItems: [
-            { id: 'bloodbank:donors', label: '5.1 Donors & Screening' },
-            { id: 'bloodbank:collection', label: '5.2 Bag Collection & Barcodes' },
-            { id: 'bloodbank:inventory', label: '5.3 Inventory & Cold Chain' },
-            { id: 'bloodbank:serology', label: '5.4 Serology & Safe Release' },
-            { id: 'bloodbank:requisitions', label: '5.5 Requisitions & Crossmatch' },
-            { id: 'bloodbank:handover', label: '5.6 Issue & Handover Dispatch' },
-            { id: 'bloodbank:audit', label: '5.7 Immutable Audit Trail' }
+            { id: 'bloodbank:donors', label: 'Donors & Screening' },
+            { id: 'bloodbank:collection', label: 'Bag Collection & Barcodes' },
+            { id: 'bloodbank:inventory', label: 'Inventory & Cold Chain' },
+            { id: 'bloodbank:serology', label: 'Serology & Safe Release' },
+            { id: 'bloodbank:requisitions', label: 'Requisitions & Crossmatch' },
+            { id: 'bloodbank:handover', label: 'Issue & Handover Dispatch' },
+            { id: 'bloodbank:audit', label: 'Immutable Audit Trail' }
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
