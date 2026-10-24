@@ -25,7 +25,6 @@ import {
   Lock,
   User,
   Receipt,
-  Layers,
   Egg,
   Siren,
   RotateCcw,
@@ -34,7 +33,9 @@ import {
   Check,
   Copy,
   Utensils,
-  FileSpreadsheet
+  FileSpreadsheet,
+  HeartPulse,
+  Archive
 } from 'lucide-react';
 import { Button, Modal, Badge } from '../common/UIPrimitives';
 import { useHospitalState } from '../../context/HospitalStateContext';
@@ -108,6 +109,7 @@ export const AppShell = ({
   const [expandedSectionsManual, setExpandedSectionsManual] = useState({});
   const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({});
   const [expandedBillingGroups, setExpandedBillingGroups] = useState({});
+  const [expandedSubmodules, setExpandedSubmodules] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
   // Auto-expand current active module accordion while collapsing inactive ones to prevent sidebar clutter
@@ -117,8 +119,8 @@ export const AppShell = ({
 
     let activeSectionId = baseRoute;
     if (baseRoute === 'insurance') activeSectionId = 'credit-billing';
-    if (baseRoute === 'ivf') activeSectionId = 'embryology';
     if (baseRoute === 'diet') activeSectionId = 'dietary';
+    if (baseRoute === 'lab') activeSectionId = 'laboratory';
     if (baseRoute === 'submodule') {
       const parts = currentRoute.split(':');
       const subId = parts[1] || '';
@@ -130,10 +132,22 @@ export const AppShell = ({
       else if (subId.startsWith('10.') || subId === '10.0') activeSectionId = 'embryology';
       else if (subId.startsWith('11.')) activeSectionId = 'emergency';
       else if (subId.startsWith('12.')) activeSectionId = 'emr';
+      else if (subId.startsWith('18.')) activeSectionId = 'ivf';
+      else if (subId.startsWith('19.')) activeSectionId = 'laboratory';
+      else if (subId.startsWith('20.')) activeSectionId = 'mrd';
+      else if (subId.startsWith('21.')) activeSectionId = 'nursing';
+      else if (subId.startsWith('22.')) activeSectionId = 'opd';
     }
 
     // Keep only the active module expanded by default so sidebar doesn't get cluttered with multiple open accordions
     setExpandedSectionsManual({ [activeSectionId]: true });
+
+    // Auto-expand Level 2 submodule if present
+    const routeParts = currentRoute.split(':');
+    if (routeParts.length >= 2) {
+      const subIdKey = `${activeSectionId}:${routeParts[1]}`;
+      setExpandedSubmodules({ [subIdKey]: true });
+    }
 
     if (activeSectionId === 'billing') {
       const parts = currentRoute.split(':');
@@ -302,10 +316,262 @@ export const AppShell = ({
             { id: 'bloodbank:audit', label: 'Immutable Audit Trail' }
           ]
         },
+        {
+          id: 'ivf',
+          label: 'IVF',
+          icon: HeartPulse,
+          subItems: [
+            {
+              id: 'ivf:18.1',
+              label: 'Couple Registration & Consent',
+              subsubItems: [
+                { id: 'ivf:18.1:18.1.1', label: 'Registration & Bonded Identifier' },
+                { id: 'ivf:18.1:18.1.2', label: 'Legal ART Consent Verification' },
+                { id: 'ivf:18.1:18.1.3', label: 'Pre-Treatment Serology Screening' }
+              ]
+            },
+            {
+              id: 'ivf:18.2',
+              label: 'Controlled Ovarian Stimulation',
+              subsubItems: [
+                { id: 'ivf:18.2:18.2.1', label: 'Stimulation Protocol & Dosage' },
+                { id: 'ivf:18.2:18.2.2', label: 'Hormonal Surge Monitoring (E2/P4)' },
+                { id: 'ivf:18.2:18.2.3', label: 'Medication Dispense Schedule' }
+              ]
+            },
+            {
+              id: 'ivf:18.3',
+              label: 'Bilateral Follicular USG',
+              subsubItems: [
+                { id: 'ivf:18.3:18.3.1', label: 'TVS Folliculometry' },
+                { id: 'ivf:18.3:18.3.2', label: 'Bilateral Ovary Follicle Grid' },
+                { id: 'ivf:18.3:18.3.3', label: 'Endometrial Thickness & Grading' }
+              ]
+            },
+            {
+              id: 'ivf:18.4',
+              label: 'Ovulatory Trigger & OPU',
+              subsubItems: [
+                { id: 'ivf:18.4:18.4.1', label: 'Trigger Administration Clock' },
+                { id: 'ivf:18.4:18.4.2', label: '35-36h OPU Surgery Slot' },
+                { id: 'ivf:18.4:18.4.3', label: 'Anesthesia & Pre-Op Clearance' }
+              ]
+            },
+            {
+              id: 'ivf:18.5',
+              label: 'Pregnancy Outcome & Beta-hCG',
+              subsubItems: [
+                { id: 'ivf:18.5:18.5.1', label: 'Luteal Phase Support Tracking' },
+                { id: 'ivf:18.5:18.5.2', label: 'Day 14 Serum Beta-hCG Testing' },
+                { id: 'ivf:18.5:18.5.3', label: 'Gestational Sac Ultrasound' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'laboratory',
+          label: 'Laboratory',
+          icon: FlaskConical,
+          subItems: [
+            {
+              id: 'laboratory:19.1',
+              label: 'Test Requisition & Billing',
+              subsubItems: [
+                { id: 'laboratory:19.1:19.1.1', label: 'Order Intake & Walk-in' },
+                { id: 'laboratory:19.1:19.1.2', label: 'Billing & Ledger Routing' },
+                { id: 'laboratory:19.1:19.1.3', label: 'LIS Accession Worklist' }
+              ]
+            },
+            {
+              id: 'laboratory:19.2',
+              label: 'Phlebotomy & Tube Barcoding',
+              subsubItems: [
+                { id: 'laboratory:19.2:19.2.1', label: 'Phlebotomy Queue & Chair' },
+                { id: 'laboratory:19.2:19.2.2', label: 'Color-Coded Tube Barcodes' },
+                { id: 'laboratory:19.2:19.2.3', label: 'Specimen Draw Allocation' },
+                { id: 'laboratory:19.2:19.2.4', label: 'Collection Timestamp Verification' }
+              ]
+            },
+            {
+              id: 'laboratory:19.3',
+              label: 'Instrument Interfacing',
+              subsubItems: [
+                { id: 'laboratory:19.3:19.3.1', label: 'Specimen Bench Check-in' },
+                { id: 'laboratory:19.3:19.3.2', label: 'ASTM / HL7 Profile Query' },
+                { id: 'laboratory:19.3:19.3.3', label: 'Analytical Run & Raw Data' }
+              ]
+            },
+            {
+              id: 'laboratory:19.4',
+              label: 'Result Entry & Panic Alerts',
+              subsubItems: [
+                { id: 'laboratory:19.4:19.4.1', label: 'Automated & Manual Result Entry' },
+                { id: 'laboratory:19.4:19.4.2', label: 'Reference Interval Validation' },
+                { id: 'laboratory:19.4:19.4.3', label: 'Abnormal High / Low Flags' },
+                { id: 'laboratory:19.4:19.4.4', label: 'Life-Threatening Panic Alerts' }
+              ]
+            },
+            {
+              id: 'laboratory:19.5',
+              label: 'Pathologist Authorization',
+              subsubItems: [
+                { id: 'laboratory:19.5:19.5.1', label: 'Historical Trend & Flag Review' },
+                { id: 'laboratory:19.5:19.5.2', label: 'Clinical Interpretation Remarks' },
+                { id: 'laboratory:19.5:19.5.3', label: 'Digital Signature & Authorization' },
+                { id: 'laboratory:19.5:19.5.4', label: 'Multi-Channel EMR Publishing' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'mrd',
+          label: 'MRD',
+          icon: Archive,
+          subItems: [
+            {
+              id: 'mrd:20.1',
+              label: 'Physical Archival & Tracking',
+              subsubItems: [
+                { id: 'mrd:20.1:20.1.1', label: '48h Inpatient File Inward' },
+                { id: 'mrd:20.1:20.1.2', label: 'File Completeness Inspection' },
+                { id: 'mrd:20.1:20.1.3', label: 'Physical Coordinate Assignment' },
+                { id: 'mrd:20.1:20.1.4', label: 'Permanent Record Room Index' }
+              ]
+            },
+            {
+              id: 'mrd:20.2',
+              label: 'ICD-10 & CPT Clinical Coding',
+              subsubItems: [
+                { id: 'mrd:20.2:20.2.1', label: 'Operative & Discharge Review' },
+                { id: 'mrd:20.2:20.2.2', label: 'Primary Cause ICD-10-CM' },
+                { id: 'mrd:20.2:20.2.3', label: 'Surgical Procedure CPT Mapping' },
+                { id: 'mrd:20.2:20.2.4', label: 'Morbidity Statistics & Indexing' }
+              ]
+            },
+            {
+              id: 'mrd:20.3',
+              label: 'Birth & Death Registration',
+              subsubItems: [
+                { id: 'mrd:20.3:20.3.1', label: 'Obstetric Birth Intimation' },
+                { id: 'mrd:20.3:20.3.2', label: 'Form 4 / 4A Cause of Death' }
+              ]
+            },
+            {
+              id: 'mrd:20.4',
+              label: 'File Checkout & Audit Lending',
+              subsubItems: [
+                { id: 'mrd:20.4:20.4.1', label: 'Requisition & Subpoena Intake' },
+                { id: 'mrd:20.4:20.4.2', label: 'Checkout Logging & Deadlines' },
+                { id: 'mrd:20.4:20.4.3', label: 'Overdue Loan Tracking & Alerts' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'nursing',
+          label: 'Nursing',
+          icon: HeartPulse,
+          subItems: [
+            {
+              id: 'nursing:21.1',
+              label: 'Ward Nursing Workstation',
+              subsubItems: [
+                { id: 'nursing:21.1:21.1.1', label: 'Assigned Wing Shift Dashboard' },
+                { id: 'nursing:21.1:21.1.2', label: 'Bedside Vital Alerts & Census' },
+                { id: 'nursing:21.1:21.1.3', label: 'Active Care Plan Launcher' }
+              ]
+            },
+            {
+              id: 'nursing:21.2',
+              label: 'Vitals & Intake-Output',
+              subsubItems: [
+                { id: 'nursing:21.2:21.2.1', label: 'Bedside Scheduled Vitals' },
+                { id: 'nursing:21.2:21.2.2', label: 'Fluid Intake Logging' },
+                { id: 'nursing:21.2:21.2.3', label: 'Fluid Output Logging' },
+                { id: 'nursing:21.2:21.2.4', label: '24h Cumulative Fluid Balance' }
+              ]
+            },
+            {
+              id: 'nursing:21.3',
+              label: 'Medication Administration (MAR)',
+              subsubItems: [
+                { id: 'nursing:21.3:21.3.1', label: 'Shift Scheduled Medication Grid' },
+                { id: 'nursing:21.3:21.3.2', label: 'Wristband & Barcode Verification' },
+                { id: 'nursing:21.3:21.3.3', label: 'Administered Electronic Time' },
+                { id: 'nursing:21.3:21.3.4', label: 'Withheld Dose & Reason' }
+              ]
+            },
+            {
+              id: 'nursing:21.4',
+              label: 'Doctor Order Execution',
+              subsubItems: [
+                { id: 'nursing:21.4:21.4.1', label: 'Real-time Inpatient Order Queue' },
+                { id: 'nursing:21.4:21.4.2', label: 'Bedside Execution Sign-off' }
+              ]
+            },
+            {
+              id: 'nursing:21.5',
+              label: 'Shift Handover Notes',
+              subsubItems: [
+                { id: 'nursing:21.5:21.5.1', label: 'Shift End Summary Compilation' },
+                { id: 'nursing:21.5:21.5.2', label: 'Outgoing Nurse SBAR Notes' },
+                { id: 'nursing:21.5:21.5.3', label: 'Incoming Nurse Acceptance' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'opd',
+          label: 'OPD',
+          icon: Stethoscope,
+          subItems: [
+            {
+              id: 'opd:22.1',
+              label: 'OPD Clinic Desk Dashboard',
+              subsubItems: [
+                { id: 'opd:22.1:22.1.1', label: 'Specialty Session Activation' },
+                { id: 'opd:22.1:22.1.2', label: 'Doctor Roster & Room Assign' },
+                { id: 'opd:22.1:22.1.3', label: 'Clinic Flow & Wait Telemetry' }
+              ]
+            },
+            {
+              id: 'opd:22.2',
+              label: 'Patient Arrival & Check-in',
+              subsubItems: [
+                { id: 'opd:22.2:22.2.1', label: 'Reception Desk Check-in' },
+                { id: 'opd:22.2:22.2.2', label: 'Arrival Status Flip' }
+              ]
+            },
+            {
+              id: 'opd:22.3',
+              label: 'Consultation Queue',
+              subsubItems: [
+                { id: 'opd:22.3:22.3.1', label: 'Live Queue Pacing' },
+                { id: 'opd:22.3:22.3.2', label: 'Emergency & Senior Priority' },
+                { id: 'opd:22.3:22.3.3', label: 'Cabin Waiting Count Display' }
+              ]
+            },
+            {
+              id: 'opd:22.4',
+              label: 'OPD Visit Slip Printout',
+              subsubItems: [
+                { id: 'opd:22.4:22.4.1', label: 'Automated Visit Slip Gen' },
+                { id: 'opd:22.4:22.4.2', label: 'Barcode & Token Slip Printing' }
+              ]
+            },
+            {
+              id: 'opd:22.5',
+              label: 'Follow-up Tracking',
+              subsubItems: [
+                { id: 'opd:22.5:22.5.1', label: 'Review Date Scheduling' },
+                { id: 'opd:22.5:22.5.2', label: 'Recall SMS & WhatsApp' }
+              ]
+            }
+          ]
+        },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
         { id: 'departments', label: 'Departments & Wards', icon: Building2 },
-        { id: 'rooms', label: 'Beds & Inpatient', icon: Bed },
-        { id: 'lab', label: 'Laboratory', icon: FlaskConical }
+        { id: 'rooms', label: 'Beds & Inpatient', icon: Bed }
       ]
     },
     {
@@ -1099,8 +1365,12 @@ export const AppShell = ({
                           }}
                         >
                           {item.subItems.map((sub) => {
+                            const hasSubsub = Boolean(sub.subsubItems && sub.subsubItems.length > 0);
+                            const isSubExpanded = Boolean(expandedSubmodules[sub.id]);
+
                             const isSubActive = (() => {
                               if (currentRoute === sub.id) return true;
+                              if (typeof currentRoute === 'string' && currentRoute.startsWith(sub.id + ':')) return true;
                               if (sub.id === 'clinical:consultation' && currentRoute === 'clinical') return true;
                               if (sub.id === 'daycare:8.1' && currentRoute === 'daycare') return true;
                               if (typeof currentRoute === 'string' && sub.id.startsWith('daycare:') && currentRoute === `submodule:${sub.id.replace('daycare:', '')}`) return true;
@@ -1115,8 +1385,150 @@ export const AppShell = ({
                               if (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) return true;
                               if (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) return true;
                               if (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`)) return true;
+                              if (typeof currentRoute === 'string') {
+                                const parts = currentRoute.split(':');
+                                const subParts = sub.id.split(':');
+                                if (subParts.length >= 2 && parts[0] === subParts[0] && parts[1] === subParts[1]) return true;
+                                if (parts[0] === 'submodule' && parts[1] && subParts[1] === parts[1]) return true;
+                              }
                               return false;
                             })();
+
+                            if (hasSubsub) {
+                              return (
+                                <div key={sub.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '4px 6px',
+                                      borderRadius: 'var(--radius-sm)',
+                                      backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                      color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                      fontSize: '0.78rem',
+                                      fontWeight: isSubActive ? '600' : '500',
+                                      transition: 'all 0.12s ease'
+                                    }}
+                                    className="group-tree-row"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleSelectNav(sub.subsubItems[0]?.id || sub.id);
+                                        setExpandedSubmodules({ [sub.id]: true });
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        padding: 0,
+                                        textAlign: 'left',
+                                        color: 'inherit',
+                                        fontWeight: 'inherit',
+                                        fontSize: 'inherit',
+                                        cursor: 'pointer',
+                                        flex: 1,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}
+                                      title={sub.label}
+                                    >
+                                      {sub.label}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedSubmodules(prev => ({
+                                          ...prev,
+                                          [sub.id]: !isSubExpanded
+                                        }));
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        padding: '2px',
+                                        color: 'var(--color-text-muted)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        flexShrink: 0
+                                      }}
+                                      title={isSubExpanded ? `Collapse ${sub.label}` : `Expand ${sub.label}`}
+                                      aria-label={isSubExpanded ? `Collapse ${sub.label}` : `Expand ${sub.label}`}
+                                    >
+                                      {isSubExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                    </button>
+                                  </div>
+
+                                  {/* Level 3 items with circular bullets */}
+                                  {isSubExpanded && (
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '1px',
+                                        marginLeft: '8px',
+                                        paddingLeft: '8px',
+                                        borderLeft: '1px solid var(--color-border-subtle)',
+                                        marginTop: '2px',
+                                        marginBottom: '4px'
+                                      }}
+                                    >
+                                      {sub.subsubItems.map((subsub) => {
+                                        const isSubsubActive =
+                                          currentRoute === subsub.id ||
+                                          (typeof currentRoute === 'string' && (
+                                            currentRoute.endsWith(`:${subsub.id.split(':').pop()}`) ||
+                                            currentRoute === `submodule:${subsub.id.split(':').pop()}`
+                                          ));
+
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={subsub.id}
+                                            onClick={() => handleSelectNav(subsub.id)}
+                                            className={`nav-subitem ${isSubsubActive ? 'nav-subitem-active' : ''}`}
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '8px',
+                                              width: '100%',
+                                              textAlign: 'left',
+                                              padding: '4px 6px',
+                                              borderRadius: 'var(--radius-sm)',
+                                              backgroundColor: isSubsubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                              color: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                              fontWeight: isSubsubActive ? '600' : '400',
+                                              fontSize: '0.73rem',
+                                              border: 'none',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.12s ease'
+                                            }}
+                                            title={subsub.label}
+                                          >
+                                            <span
+                                              style={{
+                                                width: '4px',
+                                                height: '4px',
+                                                borderRadius: '50%',
+                                                backgroundColor: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                                flexShrink: 0
+                                              }}
+                                            />
+                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                              {subsub.label}
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+
                             return (
                               <button
                                 type="button"

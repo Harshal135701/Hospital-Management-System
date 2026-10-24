@@ -18,6 +18,11 @@ import { DietView } from './components/diet/DietView';
 import { EmrView } from './components/emr/EmrView';
 import { EmbryologyView } from './components/embryology/EmbryologyView';
 import { EmergencyView } from './components/emergency/EmergencyView';
+import { IvfView } from './components/ivf/IvfView';
+import { LaboratoryView } from './components/laboratory/LaboratoryView';
+import { MrdView } from './components/mrd/MrdView';
+import { NursingView } from './components/nursing/NursingView';
+import { OpdView } from './components/opd/OpdView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -45,6 +50,10 @@ const VALID_ROUTE_BASES = new Set([
   'emr',
   'embryology',
   'ivf',
+  'laboratory',
+  'mrd',
+  'nursing',
+  'opd',
   'emergency',
   'submodule',
   'doctors',
@@ -91,10 +100,10 @@ export function App() {
   }, [currentRoute]);
 
   const renderCurrentView = () => {
-    const routeBase = typeof currentRoute === 'string' ? currentRoute.split(':')[0] : currentRoute;
-    const routeSubtab = typeof currentRoute === 'string' && currentRoute.includes(':')
-      ? currentRoute.slice(currentRoute.indexOf(':') + 1)
-      : null;
+    const routeParts = typeof currentRoute === 'string' ? currentRoute.split(':') : [];
+    const routeBase = routeParts[0] || currentRoute;
+    const routeSubtab = routeParts[1] || null;
+    const routeSubsubtab = routeParts[2] || null;
 
     switch (routeBase) {
       case 'dashboard':
@@ -130,8 +139,23 @@ export function App() {
         return <EmrView initialSubtab={routeSubtab || '12.1'} onNavigate={setCurrentRoute} />;
 
       case 'embryology':
-      case 'ivf':
         return <EmbryologyView initialSubtab={routeSubtab || 'overview'} onNavigate={setCurrentRoute} />;
+
+      case 'ivf':
+        return <IvfView initialSubtab={routeSubtab || '18.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'laboratory':
+      case 'lab':
+        return <LaboratoryView initialSubtab={routeSubtab || '19.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'mrd':
+        return <MrdView initialSubtab={routeSubtab || '20.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'nursing':
+        return <NursingView initialSubtab={routeSubtab || '21.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'opd':
+        return <OpdView initialSubtab={routeSubtab || '22.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
 
       case 'emergency':
         return <EmergencyView initialSubtab={routeSubtab || '11.1'} onNavigate={setCurrentRoute} />;
@@ -160,6 +184,21 @@ export function App() {
         }
         if (routeSubtab && routeSubtab.startsWith('12.')) {
           return <EmrView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('18.') || routeSubtab === '18')) {
+          return <IvfView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('19.') || routeSubtab === '19')) {
+          return <LaboratoryView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('20.') || routeSubtab === '20')) {
+          return <MrdView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('21.') || routeSubtab === '21')) {
+          return <NursingView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('22.') || routeSubtab === '22')) {
+          return <OpdView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
         }
         const sub = SUBMODULES.find(s => s.id === routeSubtab) || SUBMODULES[0];
         return (
@@ -192,17 +231,6 @@ export function App() {
           <WardsView
             onBack={() => setCurrentRoute('dashboard')}
             onNavigate={setCurrentRoute}
-          />
-        );
-
-      case 'lab':
-        return (
-          <PlaceholderView
-            title="Diagnostic Laboratory & Pathology"
-            subtitle="Phlebotomy collection tubes, biochemical analyzers, and diagnostic reporting workbenches."
-            icon={FlaskConical}
-            imageKey="diagnosticLab"
-            onBack={() => setCurrentRoute('dashboard')}
           />
         );
 
