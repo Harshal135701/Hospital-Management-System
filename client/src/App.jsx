@@ -19,6 +19,7 @@ import { EmrView } from './components/emr/EmrView';
 import { EmbryologyView } from './components/embryology/EmbryologyView';
 import { EmergencyView } from './components/emergency/EmergencyView';
 import { FinanceView } from './components/finance/FinanceView';
+import { FixedAssetView } from './components/fixed-asset/FixedAssetView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -53,6 +54,7 @@ const VALID_ROUTE_BASES = new Set([
   'departments',
   'rooms',
   'lab',
+  'fixed-asset',
   'reports',
   'settings'
 ]);
@@ -63,7 +65,7 @@ function getInitialRoute() {
   if (typeof window === 'undefined') return DEFAULT_ROUTE;
   try {
     const saved = window.sessionStorage?.getItem(NAVIGATION_STORAGE_KEY) ||
-                  window.localStorage?.getItem(NAVIGATION_STORAGE_KEY);
+      window.localStorage?.getItem(NAVIGATION_STORAGE_KEY);
     if (saved && typeof saved === 'string') {
       const base = saved.split(':')[0];
       if (VALID_ROUTE_BASES.has(base)) {
@@ -140,6 +142,9 @@ export function App() {
 
       case 'finance':
         return <FinanceView initialSubtab={routeSubtab || '13.1'} onNavigate={setCurrentRoute} />;
+
+      case 'fixed-asset':
+        return <FixedAssetView initialSubtab={routeSubtab || '14.1'} onNavigate={setCurrentRoute} />;
 
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
@@ -241,14 +246,14 @@ export function App() {
   return (
     <AuthProvider>
       <HospitalStateProvider>
-      <AppShell
-        currentRoute={currentRoute}
-        onNavigate={setCurrentRoute}
-      >
-        {renderCurrentView()}
-      </AppShell>
+        <AppShell
+          currentRoute={currentRoute}
+          onNavigate={setCurrentRoute}
+        >
+          {renderCurrentView()}
+        </AppShell>
 
-      <LoginModal />
+        <LoginModal />
       </HospitalStateProvider>
     </AuthProvider>
   );

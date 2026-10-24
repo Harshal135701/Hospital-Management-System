@@ -33,7 +33,8 @@ import {
   Database,
   Landmark,
   Check,
-  Copy
+  Copy,
+  Package,
 } from 'lucide-react';
 import { Button, Modal, Badge } from '../common/UIPrimitives';
 import { useHospitalState } from '../../context/HospitalStateContext';
@@ -237,6 +238,21 @@ export const AppShell = ({
             { id: 'finance:13.5', label: 'Profit & Loss / Balance Sheet' }
           ]
         },
+
+        {
+          id: 'fixed-asset',
+          label: 'Fixed Asset',
+          icon: Package,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'fixed-asset:14.1', label: 'Asset Master & Barcode Tagging' },
+            { id: 'fixed-asset:14.2', label: 'AMC / CMC Contracts & Warranties' },
+            { id: 'fixed-asset:14.3', label: 'Preventive Maintenance Scheduling' },
+            { id: 'fixed-asset:14.4', label: 'Breakdown Reporting & Work Ticket' },
+            { id: 'fixed-asset:14.5', label: 'Asset Depreciation Calculation' }
+          ]
+        },
+
         {
           id: 'embryology',
           label: 'Embryology',
@@ -760,7 +776,7 @@ export const AppShell = ({
                               currentRoute === `appointments:group:${group.id}` ||
                               (typeof currentRoute === 'string' &&
                                 (currentRoute.startsWith(`appointments:${group.id}.`) ||
-                                 currentRoute.startsWith(`appointments:submodule:${group.id}.`)));
+                                  currentRoute.startsWith(`appointments:submodule:${group.id}.`)));
 
                             return (
                               <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
@@ -923,7 +939,7 @@ export const AppShell = ({
                             const isGroupActive =
                               typeof currentRoute === 'string' &&
                               (currentRoute === `billing:group:${group.id}` ||
-                               groupSubmodules.some(s => currentRoute === `billing:${s.id}`));
+                                groupSubmodules.some(s => currentRoute === `billing:${s.id}`));
 
                             return (
                               <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1634,8 +1650,8 @@ export const AppShell = ({
                   {storageWarning.type === 'PERSISTENCE_FAILED'
                     ? 'Storage Write Warning: Persistence Paused'
                     : storageWarning.type === 'STORAGE_UNAVAILABLE'
-                    ? 'Local Storage Unavailable: Memory-Only Mode'
-                    : 'Storage Recovery Activated: Clean Demo State Loaded'}
+                      ? 'Local Storage Unavailable: Memory-Only Mode'
+                      : 'Storage Recovery Activated: Clean Demo State Loaded'}
                 </div>
                 <div style={{ fontSize: 'var(--font-size-xs)', color: '#B45309', marginTop: '1px' }}>
                   {storageWarning.message}
@@ -1670,18 +1686,18 @@ export const AppShell = ({
                 <button
                   type="button"
                   onClick={() => setIsQuarantineInspectModalOpen(true)}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: '600',
-                  color: '#92400E',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid #FCD34D',
-                  borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer'
-                }}
-              >
-                Inspect Quarantined Data
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    color: '#92400E',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #FCD34D',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Inspect Quarantined Data
                 </button>
               )}
               <button
