@@ -12,6 +12,7 @@ import { DietView } from '../diet/DietView';
 import { EmrView } from '../emr/EmrView';
 import { EmbryologyView } from '../embryology/EmbryologyView';
 import { EmergencyView } from '../emergency/EmergencyView';
+import { FinanceView } from '../finance/FinanceView';
 import { SubmodulesView } from './SubmodulesView';
 import { MODULE_GROUPS, SUBMODULES } from './submoduleRegistry';
 
@@ -159,6 +160,15 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
         if (activeSubmodule.id.startsWith('12.')) {
           return (
             <EmrView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 13: Finance & Accounting
+        if (activeSubmodule.id.startsWith('13.')) {
+          return (
+            <FinanceView
               initialSubtab={activeSubmodule.id}
               onNavigate={handleSelectSubmodule}
             />

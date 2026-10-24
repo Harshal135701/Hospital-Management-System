@@ -31,6 +31,7 @@ import {
   RotateCcw,
   AlertTriangle,
   Database,
+  Landmark,
   Check,
   Copy
 } from 'lucide-react';
@@ -144,6 +145,13 @@ export const AppShell = ({
     }
   }, [currentRoute]);
 
+  // Auto-expand Finance when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'finance' || currentRoute.startsWith('finance:') || currentRoute.startsWith('submodule:13.'))) {
+      setExpandedSectionsManual(prev => ({ ...prev, finance: true }));
+    }
+  }, [currentRoute]);
+
   // Auto-expand active group in Appointment hierarchy when currentRoute changes
   useEffect(() => {
     if (typeof currentRoute === 'string' && (currentRoute === 'appointments' || currentRoute.startsWith('appointments:'))) {
@@ -214,6 +222,19 @@ export const AppShell = ({
             { id: 'credit-billing:7.3', label: '7.3 Claim Dossiers' },
             { id: 'credit-billing:7.4', label: '7.4 Co-Pay & Deductibles' },
             { id: 'credit-billing:7.5', label: '7.5 TPA Reconciliation' }
+          ]
+        },
+        {
+          id: 'finance',
+          label: 'Finance',
+          icon: Landmark,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'finance:13.1', label: 'Chart of Accounts & GL' },
+            { id: 'finance:13.2', label: 'Debit / Credit Vouchers' },
+            { id: 'finance:13.3', label: 'Doctor Payout & Share' },
+            { id: 'finance:13.4', label: 'Bank Reconciliation' },
+            { id: 'finance:13.5', label: 'Profit & Loss / Balance Sheet' }
           ]
         },
         {
@@ -1057,6 +1078,8 @@ export const AppShell = ({
                               currentRoute === sub.id ||
                               (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
                               (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') ||
+                              (sub.id === 'finance:13.1' && (currentRoute === 'finance' || currentRoute === 'finance:overview')) ||
+                              (typeof currentRoute === 'string' && sub.id.startsWith('finance:') && (currentRoute === `submodule:${sub.id.replace('finance:', '')}` || currentRoute === `appointments:${sub.id.replace('finance:', '')}`)) ||
                               (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) ||
                               (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) ||
                               (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) ||
@@ -1397,6 +1420,8 @@ export const AppShell = ({
                           handleSelectNav(`embryology:${sub.id}`);
                         } else if (sub.id.startsWith('11.')) {
                           handleSelectNav(`emergency:${sub.id}`);
+                        } else if (sub.id.startsWith('13.')) {
+                          handleSelectNav(`finance:${sub.id}`);
                         } else {
                           handleSelectNav(`submodule:${sub.id}`);
                         }

@@ -18,6 +18,7 @@ import { DietView } from './components/diet/DietView';
 import { EmrView } from './components/emr/EmrView';
 import { EmbryologyView } from './components/embryology/EmbryologyView';
 import { EmergencyView } from './components/emergency/EmergencyView';
+import { FinanceView } from './components/finance/FinanceView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -46,6 +47,7 @@ const VALID_ROUTE_BASES = new Set([
   'embryology',
   'ivf',
   'emergency',
+  'finance',
   'submodule',
   'doctors',
   'departments',
@@ -136,6 +138,9 @@ export function App() {
       case 'emergency':
         return <EmergencyView initialSubtab={routeSubtab || '11.1'} onNavigate={setCurrentRoute} />;
 
+      case 'finance':
+        return <FinanceView initialSubtab={routeSubtab || '13.1'} onNavigate={setCurrentRoute} />;
+
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -157,6 +162,9 @@ export function App() {
         }
         if (routeSubtab && routeSubtab.startsWith('12.')) {
           return <EmrView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('13.')) {
+          return <FinanceView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         const sub = SUBMODULES.find(s => s.id === routeSubtab) || SUBMODULES[0];
         return (
