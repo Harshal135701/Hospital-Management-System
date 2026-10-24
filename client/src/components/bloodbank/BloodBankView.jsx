@@ -175,6 +175,115 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
     coldChainVerified: true
   });
 
+  // Cold Chain Sensor Log Modal State (Submodule 5.3)
+  const [isTemperatureModalOpen, setIsTemperatureModalOpen] = useState(false);
+  const [temperatureForm, setTemperatureForm] = useState({
+    storage_unit_code: 'REF-01',
+    storage_unit_type: 'blood_refrigerator',
+    recorded_temperature_c: '4.0',
+    target_min_temp_c: '2.0',
+    target_max_temp_c: '6.0',
+    agitator_operational: true,
+    recorded_by_name: 'Sr. Suresh P. (Blood Bank Tech)',
+    corrective_action: ''
+  });
+
+  const handleSaveTemperatureLog = (e) => {
+    e.preventDefault();
+    const tempVal = parseFloat(temperatureForm.recorded_temperature_c) || 4.0;
+    const minVal = parseFloat(temperatureForm.target_min_temp_c) || 2.0;
+    const maxVal = parseFloat(temperatureForm.target_max_temp_c) || 6.0;
+    const alertRaised = tempVal < minVal || tempVal > maxVal;
+
+    const newLog = {
+      id: `temp-${Date.now()}`,
+      recorded_at: new Date().toISOString(),
+      storage_unit_code: temperatureForm.storage_unit_code,
+      storage_unit_type: temperatureForm.storage_unit_type,
+      recorded_temperature_c: tempVal,
+      target_min_temp_c: minVal,
+      target_max_temp_c: maxVal,
+      agitator_operational: temperatureForm.agitator_operational,
+      alert_raised: alertRaised,
+      recorded_by_name: temperatureForm.recorded_by_name,
+      corrective_action: alertRaised ? (temperatureForm.corrective_action || 'Temperature excursion logged, backup cooling activated.') : null
+    };
+
+    setTemperatureLogs(prev => [newLog, ...prev]);
+    setIsTemperatureModalOpen(false);
+  };
+
+  // Serology TTI Screening Modal State (Submodule 5.4)
+  const [isSerologyModalOpen, setIsSerologyModalOpen] = useState(false);
+  const [selectedSerologyTarget, setSelectedSerologyTarget] = useState(null);
+  const [serologyForm, setSerologyForm] = useState({
+    technician1_group: 'O Positive',
+    technician2_group: 'O Positive',
+    concur: true,
+    hiv_result: 'non_reactive',
+    hbv_result: 'non_reactive',
+    hcv_result: 'non_reactive',
+    syphilis_result: 'non_reactive',
+    malaria_result: 'non_reactive',
+    release_decision: 'approved_for_release',
+    pathologist_notes: 'All 5 mandatory TTI markers non-reactive. Safe release verified.'
+  });
+
+  const handleOpenSerologyModal = (sero) => {
+    setSelectedSerologyTarget(sero);
+    setSerologyForm({
+      technician1_group: sero.blood_group_claimed || 'O Positive',
+      technician2_group: sero.blood_group_claimed || 'O Positive',
+      concur: true,
+      hiv_result: 'non_reactive',
+      hbv_result: 'non_reactive',
+      hcv_result: 'non_reactive',
+      syphilis_result: 'non_reactive',
+      malaria_result: 'non_reactive',
+      release_decision: 'approved_for_release',
+      pathologist_notes: 'All 5 mandatory TTI markers non-reactive. Dual-technician grouping matches.'
+    });
+    setIsSerologyModalOpen(true);
+  };
+
+  const handleSaveSerologyResult = (e) => {
+    e.preventDefault();
+    if (!selectedSerologyTarget) return;
+
+    const ttiArray = [
+      { name: 'hiv_1_2', label: 'HIV 1 & 2', result: serologyForm.hiv_result, method: '4th Gen ELISA' },
+      { name: 'hepatitis_b', label: 'Hepatitis B (HBsAg)', result: serologyForm.hbv_result, method: 'Chemiluminescence (CLIA)' },
+      { name: 'hepatitis_c', label: 'Hepatitis C (Anti-HCV)', result: serologyForm.hcv_result, method: 'Chemiluminescence (CLIA)' },
+      { name: 'syphilis', label: 'Syphilis (VDRL / RPR)', result: serologyForm.syphilis_result, method: 'RPR Flocculation' },
+      { name: 'malaria', label: 'Malaria Antigen / Smear', result: serologyForm.malaria_result, method: 'Dual Antigen RDT' }
+    ];
+
+    setSerologyWorkbenches(prev => prev.map(s => {
+      if (s.donation_number === selectedSerologyTarget.donation_number) {
+        return {
+          ...s,
+          dual_grouping: {
+            determined_group: serologyForm.technician1_group,
+            technician1: 'Sr. Suresh P. (Tech 1)',
+            technician2: 'Sr. Deepa K. (Tech 2)',
+            concur: serologyForm.concur,
+            verified: true
+          },
+          tti_tests: ttiArray,
+          release_authorization: {
+            status: serologyForm.release_decision,
+            authorized_by: 'Dr. Jayant Mukherjee (MD Pathology)',
+            authorized_at: new Date().toISOString(),
+            notes: serologyForm.pathologist_notes
+          }
+        };
+      }
+      return s;
+    }));
+
+    setIsSerologyModalOpen(false);
+  };
+
   const loadBloodBankData = async () => {
     if (!TokenManager.getToken()) {
       setIsLoading(false);
@@ -1190,6 +1299,17 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
           </Card>
 
           {/* Storage Unit Cold Chain Telemetry & Sensor Logs */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setIsTemperatureModalOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={14} />
+              <span>Record Cold Chain Sensor Log</span>
+            </Button>
+          </div>
           <Card
             title="Storage Unit Cold Chain Telemetry & Sensor Logs"
             subtitle="Genuine temperature logs recorded in blood_storage_temperature_logs schema"
@@ -1433,6 +1553,15 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
                           <Badge variant={releaseBadgeVariant}>
                             {releaseBadgeLabel}
                           </Badge>
+                          <Button
+                            size="xs"
+                            variant="primary"
+                            onClick={() => handleOpenSerologyModal(sero)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <CheckSquare size={13} />
+                            <span>Record TTI & Dual Grouping</span>
+                          </Button>
                         </div>
                       </div>
 
@@ -2625,6 +2754,261 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
             </Button>
             <Button variant="primary" type="submit">
               Submit Blood Requisition
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Storage Unit Cold Chain Temperature Sensor Modal */}
+      <Modal
+        isOpen={isTemperatureModalOpen}
+        onClose={() => setIsTemperatureModalOpen(false)}
+        title="Record Storage Unit Cold Chain Temperature Reading"
+      >
+        <form onSubmit={handleSaveTemperatureLog} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Storage Unit Code"
+              required
+              value={temperatureForm.storage_unit_code}
+              onChange={(e) => {
+                const code = e.target.value;
+                let type = 'blood_refrigerator';
+                let min = '2.0';
+                let max = '6.0';
+                let agit = false;
+                if (code.startsWith('FRZ-01')) {
+                  type = 'plasma_freezer';
+                  min = '-35.0';
+                  max = '-25.0';
+                } else if (code.startsWith('AGIT')) {
+                  type = 'platelet_agitator';
+                  min = '20.0';
+                  max = '24.0';
+                  agit = true;
+                } else if (code.startsWith('FRZ-02')) {
+                  type = 'cryo_freezer';
+                  min = '-40.0';
+                  max = '-30.0';
+                }
+                setTemperatureForm({
+                  ...temperatureForm,
+                  storage_unit_code: code,
+                  storage_unit_type: type,
+                  target_min_temp_c: min,
+                  target_max_temp_c: max,
+                  agitator_operational: agit
+                });
+              }}
+              options={[
+                { value: 'REF-01', label: 'REF-01: Main Blood Bank Walk-In Refrigerator (2°C - 6°C)' },
+                { value: 'FRZ-01', label: 'FRZ-01: Ultra-Low Plasma Deep Freezer (-35°C - -25°C)' },
+                { value: 'AGIT-01', label: 'AGIT-01: Helmer Platelet Agitator Chamber (20°C - 24°C)' },
+                { value: 'FRZ-02', label: 'FRZ-02: Cryoprecipitate Storage Unit (-40°C - -30°C)' }
+              ]}
+            />
+            <Input
+              label="Storage Unit Type"
+              value={temperatureForm.storage_unit_type.replace(/_/g, ' ')}
+              disabled
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+            <Input
+              label="Recorded Temp (°C)"
+              required
+              type="number"
+              step="0.1"
+              value={temperatureForm.recorded_temperature_c}
+              onChange={(e) => setTemperatureForm({ ...temperatureForm, recorded_temperature_c: e.target.value })}
+            />
+            <Input
+              label="Target Min Temp (°C)"
+              value={temperatureForm.target_min_temp_c}
+              disabled
+            />
+            <Input
+              label="Target Max Temp (°C)"
+              value={temperatureForm.target_max_temp_c}
+              disabled
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-bg-pale-aqua)' }}>
+            <input
+              type="checkbox"
+              id="agitator_status"
+              checked={temperatureForm.agitator_operational}
+              onChange={(e) => setTemperatureForm({ ...temperatureForm, agitator_operational: e.target.checked })}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            <label htmlFor="agitator_status" style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--color-primary-teal)', cursor: 'pointer' }}>
+              Agitator / Circulation Motor Operational & Oscillating Normally
+            </label>
+          </div>
+
+          <Input
+            label="Staff Technician / Sensor Operator"
+            required
+            value={temperatureForm.recorded_by_name}
+            onChange={(e) => setTemperatureForm({ ...temperatureForm, recorded_by_name: e.target.value })}
+          />
+
+          <Input
+            label="Corrective Action (if out of range excursion)"
+            placeholder="e.g. Compressor calibrated, secondary cold pack circulation activated"
+            value={temperatureForm.corrective_action}
+            onChange={(e) => setTemperatureForm({ ...temperatureForm, corrective_action: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsTemperatureModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Save Temperature Log
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Serology TTI Screening & Dual Grouping Verification Modal */}
+      <Modal
+        isOpen={isSerologyModalOpen}
+        onClose={() => setIsSerologyModalOpen(false)}
+        title={`Serology TTI Screen & Dual Grouping: ${selectedSerologyTarget?.donation_number || ''}`}
+      >
+        <form onSubmit={handleSaveSerologyResult} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', fontSize: '0.8rem', color: '#991B1B' }}>
+            <strong>Mandatory Safety Gate:</strong> All 5 TTI infection markers must be Non-Reactive, and forward/reverse grouping between Technicians 1 & 2 must concur before release approval.
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Technician 1 ABO/Rh Group"
+              required
+              value={serologyForm.technician1_group}
+              onChange={(e) => setSerologyForm({ ...serologyForm, technician1_group: e.target.value })}
+              options={[
+                { value: 'O Positive', label: 'O Positive (O+)' },
+                { value: 'O Negative', label: 'O Negative (O-)' },
+                { value: 'A Positive', label: 'A Positive (A+)' },
+                { value: 'A Negative', label: 'A Negative (A-)' },
+                { value: 'B Positive', label: 'B Positive (B+)' },
+                { value: 'B Negative', label: 'B Negative (B-)' },
+                { value: 'AB Positive', label: 'AB Positive (AB+)' },
+                { value: 'AB Negative', label: 'AB Negative (AB-)' }
+              ]}
+            />
+            <Select
+              label="Technician 2 ABO/Rh Group"
+              required
+              value={serologyForm.technician2_group}
+              onChange={(e) => setSerologyForm({ ...serologyForm, technician2_group: e.target.value })}
+              options={[
+                { value: 'O Positive', label: 'O Positive (O+)' },
+                { value: 'O Negative', label: 'O Negative (O-)' },
+                { value: 'A Positive', label: 'A Positive (A+)' },
+                { value: 'A Negative', label: 'A Negative (A-)' },
+                { value: 'B Positive', label: 'B Positive (B+)' },
+                { value: 'B Negative', label: 'B Negative (B-)' },
+                { value: 'AB Positive', label: 'AB Positive (AB+)' },
+                { value: 'AB Negative', label: 'AB Negative (AB-)' }
+              ]}
+            />
+          </div>
+
+          <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px' }}>
+            <h4 style={{ margin: '0 0 10px', fontSize: '0.85rem', fontWeight: '700', color: 'var(--color-primary-teal)' }}>
+              5-Pathogen Mandatory Transfusion-Transmissible Infection (TTI) Screen
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+              <Select
+                label="HIV 1 & 2 (4th Gen ELISA)"
+                value={serologyForm.hiv_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, hiv_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Hepatitis B (HBsAg CLIA)"
+                value={serologyForm.hbv_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, hbv_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Hepatitis C (Anti-HCV CLIA)"
+                value={serologyForm.hcv_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, hcv_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Syphilis (VDRL/RPR)"
+                value={serologyForm.syphilis_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, syphilis_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Malaria (Dual Ag / Smear)"
+                value={serologyForm.malaria_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, malaria_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Release Authorization Decision"
+              required
+              value={serologyForm.release_decision}
+              onChange={(e) => setSerologyForm({ ...serologyForm, release_decision: e.target.value })}
+              options={[
+                { value: 'approved_for_release', label: '✓ Approved for Safe Release' },
+                { value: 'quarantined_for_retest', label: '⚠ Quarantined for Retest' },
+                { value: 'rejected', label: '✕ Rejected (Biohazard Protocol Incinerate)' }
+              ]}
+            />
+            <Input
+              label="Authorizing Consultant Pathologist"
+              value="Dr. Jayant Mukherjee (MD Pathology, Reg #KMC-41908)"
+              disabled
+            />
+          </div>
+
+          <Input
+            label="Pathologist Release Remarks"
+            required
+            value={serologyForm.pathologist_notes}
+            onChange={(e) => setSerologyForm({ ...serologyForm, pathologist_notes: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsSerologyModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Sign & Commit Serology Findings
             </Button>
           </div>
         </form>

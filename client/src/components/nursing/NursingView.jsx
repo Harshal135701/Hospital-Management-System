@@ -18,7 +18,7 @@ import {
   Thermometer,
   Check
 } from 'lucide-react';
-import { Card, Button, Badge, Modal } from '../common/UIPrimitives';
+import { Card, Button, Badge, Modal, Input, Select } from '../common/UIPrimitives';
 
 const NURSING_SUBMODULES = [
   {
@@ -370,6 +370,67 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
     isSignedOff: false
   });
 
+  // Additional Interactive Modals
+  const [isCarePlanModalOpen, setIsCarePlanModalOpen] = useState(false);
+  const [isFluidModalOpen, setIsFluidModalOpen] = useState(false);
+  const [isMarAdminModalOpen, setIsMarAdminModalOpen] = useState(false);
+  const [selectedMarItem, setSelectedMarItem] = useState(null);
+  const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
+  const [isDoctorOrderModalOpen, setIsDoctorOrderModalOpen] = useState(false);
+  const [isSbarModalOpen, setIsSbarModalOpen] = useState(false);
+
+  // Form states
+  const [carePlanForm, setCarePlanForm] = useState({
+    fallRisk: 'High (Morse 65)',
+    diet: 'NPO (Nil Per Os)',
+    hydrationGoal: 'IV Maintenance @ 80 ml/hr NS + 5% Dextrose',
+    drainProtocol: 'Foley catheter gravity bag to be emptied Q6H. Observe wound drain volume.',
+    precautions: 'Bed rails elevated x4. Deep vein thrombosis (DVT) stockings worn continuously.',
+    nurse: 'Sr. Priya M.'
+  });
+
+  const [fluidForm, setFluidForm] = useState({
+    category: 'Intake',
+    route: 'IV Electrolyte Infusion 250ml',
+    amount: '250',
+    time: '14:00',
+    colorNotes: 'Clear normal fluid'
+  });
+
+  const [marAdminForm, setMarAdminForm] = useState({
+    action: 'administer',
+    barcodeVerified: true,
+    nurseName: 'Sr. Priya M.',
+    withheldReason: ''
+  });
+
+  const [newMedForm, setNewMedForm] = useState({
+    patientUhid: 'UHID-89211',
+    medication: 'Inj. Meropenem 1g IV',
+    route: 'IV Piggyback over 30m',
+    frequency: 'TDS (08:00, 14:00, 20:00)',
+    scheduledTime: '14:00 PM',
+    doctor: 'Dr. S. K. Roy'
+  });
+
+  const [doctorOrderForm, setDoctorOrderForm] = useState({
+    bed: 'Bed 201-A',
+    doctor: 'Dr. S. K. Roy',
+    orderType: 'Nursing Intervention',
+    description: 'Sterile surgical site dressing change with Betadine & Aquacel Ag gauze.',
+    priority: 'Urgent'
+  });
+
+  const [sbarForm, setSbarForm] = useState({
+    shift: 'Day Shift (07:00 - 15:00)',
+    situation: 'Total 18 Beds occupied. 2 critical post-op recoveries. 1 STAT blood transfusion pending for Bed 201-A.',
+    background: 'Bed 201-A (Rohan Mehra) Post-Op Day 2 Pancreatitis, low Hb (8.2 g/dL), Foley and Ryle tube in situ. Bed 203-A (Arjun Verma) Dengue platelet count stable at 48k.',
+    assessment: 'Bed 201-A pain controlled at 4/10 with IV analgesic. Drain output 150ml clear. Sunita Sharma (202-B) mobilized without dizziness.',
+    recommendation: 'Complete PRBC transfusion for Bed 201-A before 17:00. Check evening electrolytes for Bed 203-A at 18:00. Monitor TKR drain for Bed 202-B.',
+    outgoingNurse: 'Sr. Priya Mohan (Emp #RN-4029)',
+    incomingNurse: 'Sr. Sunaina Iyer (Emp #RN-3882)'
+  });
+
   const [notificationMsg, setNotificationMsg] = useState(null);
 
   const showNotification = (msg) => {
@@ -427,6 +488,132 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
     }
     setShowVitalsModal(false);
     showNotification(`Bedside vitals & pain score logged for ${selectedPatient?.name} (${selectedPatient?.bed}).`);
+  };
+
+  const handleSaveCarePlan = (e) => {
+    e.preventDefault();
+    if (selectedPatient) {
+      setPatients(prev => prev.map(p => {
+        if (p.uhid === selectedPatient.uhid) {
+          return {
+            ...p,
+            fallRisk: carePlanForm.fallRisk,
+            diet: carePlanForm.diet,
+            nurse: carePlanForm.nurse
+          };
+        }
+        return p;
+      }));
+    }
+    setIsCarePlanModalOpen(false);
+    showNotification(`Care Plan updated for ${selectedPatient?.name}: ${carePlanForm.diet}, Fall Risk: ${carePlanForm.fallRisk}`);
+  };
+
+  const handleSaveFluid = (e) => {
+    e.preventDefault();
+    const amountNum = parseInt(fluidForm.amount, 10) || 0;
+    const isIntake = fluidForm.category === 'Intake';
+    const newEntry = {
+      time: fluidForm.time,
+      type: fluidForm.category,
+      route: fluidForm.route,
+      amount: amountNum,
+      balance: isIntake ? `+${amountNum} ml` : `-${amountNum} ml`
+    };
+    setFluidLogs([newEntry, ...fluidLogs]);
+    if (selectedPatient) {
+      setPatients(prev => prev.map(p => {
+        if (p.uhid === selectedPatient.uhid) {
+          return {
+            ...p,
+            intake: isIntake ? p.intake + amountNum : p.intake,
+            output: !isIntake ? p.output + amountNum : p.output
+          };
+        }
+        return p;
+      }));
+    }
+    setIsFluidModalOpen(false);
+    showNotification(`Fluid ${fluidForm.category} (${amountNum} ml) recorded via ${fluidForm.route}.`);
+  };
+
+  const handleSaveMarAdmin = (e) => {
+    e.preventDefault();
+    if (!selectedMarItem) return;
+    const isWithhold = marAdminForm.action === 'withhold';
+    setMarRecords(prev => prev.map(m => {
+      if (m.id === selectedMarItem.id) {
+        return {
+          ...m,
+          status: isWithhold ? 'Withheld' : 'Administered',
+          adminBy: `${marAdminForm.nurseName} (${marAdminForm.barcodeVerified ? 'Dual-Scanned' : 'Manual'})`,
+          adminTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          barcodeVerified: marAdminForm.barcodeVerified,
+          withheldReason: isWithhold ? marAdminForm.withheldReason : undefined
+        };
+      }
+      return m;
+    }));
+    setIsMarAdminModalOpen(false);
+    showNotification(`Medication ${selectedMarItem.id} marked as ${isWithhold ? 'Withheld' : 'Administered'}.`);
+  };
+
+  const handleSaveNewMed = (e) => {
+    e.preventDefault();
+    const targetPat = patients.find(p => p.uhid === newMedForm.patientUhid) || selectedPatient;
+    const newRecord = {
+      id: `MAR-00${marRecords.length + 1}`,
+      patientUhid: targetPat.uhid,
+      patientName: targetPat.name,
+      bed: targetPat.bed.replace('Bed ', ''),
+      medication: newMedForm.medication,
+      route: newMedForm.route,
+      frequency: newMedForm.frequency,
+      scheduledTime: newMedForm.scheduledTime,
+      status: 'Due Soon',
+      adminBy: '-',
+      adminTime: '-',
+      barcodeVerified: false
+    };
+    setMarRecords([newRecord, ...marRecords]);
+    setIsNewMedModalOpen(false);
+    showNotification(`Scheduled medication order added to MAR: ${newRecord.medication} for ${targetPat.name}`);
+  };
+
+  const handleSaveDoctorOrder = (e) => {
+    e.preventDefault();
+    const newOrd = {
+      id: `ORD-${doctorOrders.length + 7705}`,
+      bed: doctorOrderForm.bed,
+      patient: patients.find(p => p.bed === doctorOrderForm.bed)?.name || 'Inpatient',
+      doctor: doctorOrderForm.doctor,
+      orderType: doctorOrderForm.orderType,
+      description: doctorOrderForm.description,
+      priority: doctorOrderForm.priority,
+      timePlaced: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'Pending',
+      executedBy: null,
+      execTimestamp: null
+    };
+    setDoctorOrders([newOrd, ...doctorOrders]);
+    setIsDoctorOrderModalOpen(false);
+    showNotification(`CPOE Doctor Order placed: ${newOrd.id} (${newOrd.orderType})`);
+  };
+
+  const handleSaveSbar = (e) => {
+    e.preventDefault();
+    setSbarNotes({
+      ...sbarNotes,
+      shift: sbarForm.shift,
+      situation: sbarForm.situation,
+      background: sbarForm.background,
+      assessment: sbarForm.assessment,
+      recommendation: sbarForm.recommendation,
+      outgoingNurse: sbarForm.outgoingNurse,
+      incomingNurse: sbarForm.incomingNurse
+    });
+    setIsSbarModalOpen(false);
+    showNotification(`SBAR Shift Handover observations updated for ${sbarForm.shift}.`);
   };
 
   const currentSubmodule = NURSING_SUBMODULES.find(s => s.id === activeSubtab);
@@ -726,9 +913,28 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                     Active Care Plan & Bedside Protocol: {selectedPatient.name} ({selectedPatient.bed})
                   </h3>
                 </div>
-                <span className="text-xs font-mono text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                  Fall Risk: {selectedPatient.fallRisk}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    Fall Risk: {selectedPatient.fallRisk}
+                  </span>
+                  <Button
+                    variant="primary"
+                    size="xs"
+                    onClick={() => {
+                      setCarePlanForm({
+                        fallRisk: selectedPatient.fallRisk,
+                        diet: selectedPatient.diet,
+                        hydrationGoal: 'IV Maintenance @ 80 ml/hr NS + 5% Dextrose',
+                        drainProtocol: 'Foley catheter gravity bag to be emptied Q6H.',
+                        precautions: 'Bed rails elevated x4. DVT stockings worn.',
+                        nurse: selectedPatient.nurse
+                      });
+                      setIsCarePlanModalOpen(true);
+                    }}
+                  >
+                    Edit Care Plan
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
@@ -786,17 +992,7 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <Button
                 variant="primary"
                 size="xs"
-                onClick={() => {
-                  const newEntry = {
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    type: 'Intake',
-                    route: 'IV Electrolyte Infusion 250ml',
-                    amount: 250,
-                    balance: '+650 ml'
-                  };
-                  setFluidLogs([newEntry, ...fluidLogs]);
-                  showNotification('New fluid intake charted successfully.');
-                }}
+                onClick={() => setIsFluidModalOpen(true)}
               >
                 + Add Fluid Entry
               </Button>
@@ -941,6 +1137,13 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-mono font-semibold border border-slate-200">
                 20:00
               </span>
+              <Button
+                variant="primary"
+                size="xs"
+                onClick={() => setIsNewMedModalOpen(true)}
+              >
+                + Add Medication
+              </Button>
             </div>
           </div>
 
@@ -1021,7 +1224,16 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                           <Button
                             variant="primary"
                             size="xs"
-                            onClick={() => handleAdministerMedication(m.id)}
+                            onClick={() => {
+                              setSelectedMarItem(m);
+                              setMarAdminForm({
+                                action: 'administer',
+                                barcodeVerified: true,
+                                nurseName: 'Sr. Priya M.',
+                                withheldReason: ''
+                              });
+                              setIsMarAdminModalOpen(true);
+                            }}
                             className="flex items-center gap-1"
                           >
                             <QrCode size={12} />
@@ -1031,17 +1243,14 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
                             variant="outline"
                             size="xs"
                             onClick={() => {
-                              const reason = prompt('Enter clinical justification for withholding dose:');
-                              if (reason) {
-                                setMarRecords(prev => prev.map(rec => rec.id === m.id ? {
-                                  ...rec,
-                                  status: 'Withheld',
-                                  adminBy: 'Sr. Priya M.',
-                                  adminTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                  withheldReason: reason
-                                } : rec));
-                                showNotification(`Dose ${m.id} marked as Withheld.`);
-                              }
+                              setSelectedMarItem(m);
+                              setMarAdminForm({
+                                action: 'withhold',
+                                barcodeVerified: false,
+                                nurseName: 'Sr. Priya M.',
+                                withheldReason: 'Clinical hold: Patient NPO & BP systolic < 100.'
+                              });
+                              setIsMarAdminModalOpen(true);
                             }}
                           >
                             Withhold
@@ -1078,6 +1287,13 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <span className="px-2.5 py-1 rounded bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
                 1 STAT Transfusion Order Pending
               </span>
+              <Button
+                variant="primary"
+                size="xs"
+                onClick={() => setIsDoctorOrderModalOpen(true)}
+              >
+                + New Doctor Order
+              </Button>
             </div>
           </div>
 
@@ -1180,6 +1396,24 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded">
                 Shift: {sbarNotes.shift}
               </span>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => {
+                  setSbarForm({
+                    shift: sbarNotes.shift,
+                    situation: sbarNotes.situation,
+                    background: sbarNotes.background,
+                    assessment: sbarNotes.assessment,
+                    recommendation: sbarNotes.recommendation,
+                    outgoingNurse: sbarNotes.outgoingNurse,
+                    incomingNurse: sbarNotes.incomingNurse
+                  });
+                  setIsSbarModalOpen(true);
+                }}
+              >
+                Edit SBAR Observations
+              </Button>
             </div>
           </div>
 
@@ -1375,6 +1609,595 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
               </Button>
               <Button type="submit" variant="primary" size="sm">
                 Save & Record Vitals
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 1. Inpatient Care Plan Modal */}
+      {isCarePlanModalOpen && (
+        <Modal
+          isOpen={isCarePlanModalOpen}
+          onClose={() => setIsCarePlanModalOpen(false)}
+          title={`Update Bedside Care Plan - ${selectedPatient?.name} (${selectedPatient?.bed})`}
+          size="md"
+        >
+          <form onSubmit={handleSaveCarePlan} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Fall Risk Assessment</label>
+                <select
+                  value={carePlanForm.fallRisk}
+                  onChange={(e) => setCarePlanForm({ ...carePlanForm, fallRisk: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="High (Morse 65)">High (Morse 65 - Yellow Wristband)</option>
+                  <option value="Moderate (Morse 35)">Moderate (Morse 35)</option>
+                  <option value="Low (Morse 10)">Low (Morse 10)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Prescribed Diet</label>
+                <select
+                  value={carePlanForm.diet}
+                  onChange={(e) => setCarePlanForm({ ...carePlanForm, diet: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="NPO (Nil Per Os)">NPO (Nil Per Os)</option>
+                  <option value="Diabetic Soft Diet">Diabetic Soft Diet</option>
+                  <option value="Clear Fluids Only">Clear Fluids Only</option>
+                  <option value="Normal Regular Diet">Normal Regular Diet</option>
+                  <option value="Low Sodium Renal Diet">Low Sodium Renal Diet</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Hydration & IV Fluid Goal</label>
+              <input
+                type="text"
+                required
+                value={carePlanForm.hydrationGoal}
+                onChange={(e) => setCarePlanForm({ ...carePlanForm, hydrationGoal: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Drain & Catheter Protocol</label>
+              <textarea
+                rows={2}
+                value={carePlanForm.drainProtocol}
+                onChange={(e) => setCarePlanForm({ ...carePlanForm, drainProtocol: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Safety Precautions & Mobility</label>
+              <textarea
+                rows={2}
+                value={carePlanForm.precautions}
+                onChange={(e) => setCarePlanForm({ ...carePlanForm, precautions: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Primary Nurse</label>
+              <input
+                type="text"
+                required
+                value={carePlanForm.nurse}
+                onChange={(e) => setCarePlanForm({ ...carePlanForm, nurse: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsCarePlanModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Save Care Plan
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 2. Fluid Intake / Output Modal */}
+      {isFluidModalOpen && (
+        <Modal
+          isOpen={isFluidModalOpen}
+          onClose={() => setIsFluidModalOpen(false)}
+          title={`Record Fluid Balance - ${selectedPatient?.name} (${selectedPatient?.bed})`}
+          size="md"
+        >
+          <form onSubmit={handleSaveFluid} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
+                <select
+                  value={fluidForm.category}
+                  onChange={(e) => setFluidForm({ ...fluidForm, category: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Intake">Fluid Intake (+)</option>
+                  <option value="Output">Fluid Output / Excretion (-)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Time Recorded</label>
+                <input
+                  type="text"
+                  required
+                  value={fluidForm.time}
+                  onChange={(e) => setFluidForm({ ...fluidForm, time: e.target.value })}
+                  placeholder="e.g. 14:00"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Route / Source</label>
+                <select
+                  value={fluidForm.route}
+                  onChange={(e) => setFluidForm({ ...fluidForm, route: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {fluidForm.category === 'Intake' ? (
+                    <>
+                      <option value="IV Electrolyte Infusion 250ml">IV Electrolyte Infusion 250ml</option>
+                      <option value="IV Normal Saline 0.9% 500ml">IV Normal Saline 0.9% 500ml</option>
+                      <option value="Oral Water / Fluids 200ml">Oral Water / Fluids 200ml</option>
+                      <option value="Ryle Tube Enteral Feed 250ml">Ryle Tube Enteral Feed 250ml</option>
+                      <option value="IV Antibiotic Infusion 100ml">IV Antibiotic Infusion 100ml</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Foley Catheter Clear Straw">Foley Catheter Clear Straw</option>
+                      <option value="Surgical Wound Drain (Jackson-Pratt)">Surgical Wound Drain (Jackson-Pratt)</option>
+                      <option value="Nasogastric Decompression Aspirate">Nasogastric Decompression Aspirate</option>
+                      <option value="Spontaneous Voiding">Spontaneous Voiding</option>
+                    </>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Volume (ml)</label>
+                <input
+                  type="number"
+                  required
+                  min="5"
+                  max="5000"
+                  value={fluidForm.amount}
+                  onChange={(e) => setFluidForm({ ...fluidForm, amount: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Color / Clarity / Clinical Notes</label>
+              <input
+                type="text"
+                value={fluidForm.colorNotes}
+                onChange={(e) => setFluidForm({ ...fluidForm, colorNotes: e.target.value })}
+                placeholder="e.g. Clear pale straw, no sediment"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsFluidModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Save Fluid Chart
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 3. Electronic Medication Administration (eMAR) Modal */}
+      {isMarAdminModalOpen && selectedMarItem && (
+        <Modal
+          isOpen={isMarAdminModalOpen}
+          onClose={() => setIsMarAdminModalOpen(false)}
+          title={`BCMA Medication Administration - ${selectedMarItem.id}`}
+          size="md"
+        >
+          <form onSubmit={handleSaveMarAdmin} className="space-y-4">
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Patient:</span>
+                <span className="text-xs font-bold text-slate-800">{selectedMarItem.patientName} ({selectedMarItem.patientUhid})</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Bed Location:</span>
+                <span className="text-xs font-semibold text-slate-700">Bed {selectedMarItem.bed}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Drug & Route:</span>
+                <span className="text-xs font-bold text-teal-800">{selectedMarItem.medication} • {selectedMarItem.route}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Scheduled Slot:</span>
+                <span className="text-xs font-mono font-medium text-slate-700">{selectedMarItem.scheduledTime} ({selectedMarItem.frequency})</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Administration Action</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMarAdminForm({ ...marAdminForm, action: 'administer' })}
+                  className={`py-2 px-3 text-xs font-semibold rounded-md border text-center transition-colors ${
+                    marAdminForm.action === 'administer'
+                      ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  Administer Dose
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMarAdminForm({ ...marAdminForm, action: 'withhold' })}
+                  className={`py-2 px-3 text-xs font-semibold rounded-md border text-center transition-colors ${
+                    marAdminForm.action === 'withhold'
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  Withhold / Hold Dose
+                </button>
+              </div>
+            </div>
+
+            {marAdminForm.action === 'administer' ? (
+              <div className="p-3 rounded-lg border border-teal-100 bg-teal-50/50 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={marAdminForm.barcodeVerified}
+                    onChange={(e) => setMarAdminForm({ ...marAdminForm, barcodeVerified: e.target.checked })}
+                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                  />
+                  <span className="text-xs font-medium text-slate-800">
+                    Dual Barcode Verified (Patient 2D Wristband + Medication Unit Dose)
+                  </span>
+                </label>
+                <p className="text-[11px] text-teal-700 pl-6">
+                  Confirms 5 Rights: Right Patient, Right Drug, Right Dose, Right Route, Right Time.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-semibold text-rose-700 mb-1">Clinical Justification for Withholding</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={marAdminForm.withheldReason}
+                  onChange={(e) => setMarAdminForm({ ...marAdminForm, withheldReason: e.target.value })}
+                  placeholder="e.g. Systolic BP < 90 mmHg, patient nauseous, or NPO prior to surgery"
+                  className="w-full px-3 py-2 text-xs border border-rose-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Administering Nurse Sign-off</label>
+              <input
+                type="text"
+                required
+                value={marAdminForm.nurseName}
+                onChange={(e) => setMarAdminForm({ ...marAdminForm, nurseName: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsMarAdminModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant={marAdminForm.action === 'withhold' ? 'destructive' : 'primary'}
+                size="sm"
+              >
+                {marAdminForm.action === 'withhold' ? 'Confirm Withhold' : 'Sign & Complete MAR'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 4. Add Medication Order to MAR Modal */}
+      {isNewMedModalOpen && (
+        <Modal
+          isOpen={isNewMedModalOpen}
+          onClose={() => setIsNewMedModalOpen(false)}
+          title="Add Scheduled Inpatient Medication"
+          size="md"
+        >
+          <form onSubmit={handleSaveNewMed} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Inpatient</label>
+                <select
+                  value={newMedForm.patientUhid}
+                  onChange={(e) => setNewMedForm({ ...newMedForm, patientUhid: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {patients.map(p => (
+                    <option key={p.uhid} value={p.uhid}>{p.bed} - {p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Prescribing Doctor</label>
+                <input
+                  type="text"
+                  required
+                  value={newMedForm.doctor}
+                  onChange={(e) => setNewMedForm({ ...newMedForm, doctor: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Medication Name & Strength</label>
+              <input
+                type="text"
+                required
+                value={newMedForm.medication}
+                onChange={(e) => setNewMedForm({ ...newMedForm, medication: e.target.value })}
+                placeholder="e.g. Inj. Meropenem 1g IV"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Route</label>
+                <select
+                  value={newMedForm.route}
+                  onChange={(e) => setNewMedForm({ ...newMedForm, route: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="IV Piggyback over 30m">IV Piggyback over 30m</option>
+                  <option value="IV Push Slow">IV Push Slow</option>
+                  <option value="Oral / Enteral">Oral / Enteral</option>
+                  <option value="Subcutaneous">Subcutaneous</option>
+                  <option value="IM Injection">IM Injection</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Frequency</label>
+                <select
+                  value={newMedForm.frequency}
+                  onChange={(e) => setNewMedForm({ ...newMedForm, frequency: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="TDS (08:00, 14:00, 20:00)">TDS (Q8H)</option>
+                  <option value="BD (08:00, 20:00)">BD (Q12H)</option>
+                  <option value="OD (08:00 AM)">OD (Once Daily)</option>
+                  <option value="STAT (Once)">STAT (Immediate)</option>
+                  <option value="Q4H PRN">Q4H PRN</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Next Slot</label>
+                <input
+                  type="text"
+                  required
+                  value={newMedForm.scheduledTime}
+                  onChange={(e) => setNewMedForm({ ...newMedForm, scheduledTime: e.target.value })}
+                  placeholder="e.g. 14:00 PM"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsNewMedModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Add to eMAR
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 5. CPOE Doctor Order Modal */}
+      {isDoctorOrderModalOpen && (
+        <Modal
+          isOpen={isDoctorOrderModalOpen}
+          onClose={() => setIsDoctorOrderModalOpen(false)}
+          title="Place Inpatient CPOE Doctor Order"
+          size="md"
+        >
+          <form onSubmit={handleSaveDoctorOrder} className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Bed / Patient</label>
+                <select
+                  value={doctorOrderForm.bed}
+                  onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, bed: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {patients.map(p => (
+                    <option key={p.bed} value={p.bed}>{p.bed} - {p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Attending Doctor</label>
+                <input
+                  type="text"
+                  required
+                  value={doctorOrderForm.doctor}
+                  onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, doctor: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Priority</label>
+                <select
+                  value={doctorOrderForm.priority}
+                  onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, priority: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Urgent">Urgent</option>
+                  <option value="STAT">STAT (Emergency)</option>
+                  <option value="Routine">Routine</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Order Category</label>
+              <select
+                value={doctorOrderForm.orderType}
+                onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, orderType: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              >
+                <option value="Nursing Intervention">Nursing Intervention</option>
+                <option value="Blood Transfusion">Blood Transfusion</option>
+                <option value="Diagnostic Investigation">Diagnostic Investigation</option>
+                <option value="Physiotherapy / Mobilization">Physiotherapy / Mobilization</option>
+                <option value="Dietary Order">Dietary Order</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Instructions & Orders</label>
+              <textarea
+                required
+                rows={3}
+                value={doctorOrderForm.description}
+                onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, description: e.target.value })}
+                placeholder="Specific clinical steps, monitoring parameters, or transfusion requirements"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsDoctorOrderModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Transmit Order
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 6. SBAR Shift Handover Modal */}
+      {isSbarModalOpen && (
+        <Modal
+          isOpen={isSbarModalOpen}
+          onClose={() => setIsSbarModalOpen(false)}
+          title="Compose / Edit SBAR Shift Handover"
+          size="lg"
+        >
+          <form onSubmit={handleSaveSbar} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Duty Shift</label>
+              <select
+                value={sbarForm.shift}
+                onChange={(e) => setSbarForm({ ...sbarForm, shift: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              >
+                <option value="Day Shift (07:00 - 15:00)">Day Shift (07:00 - 15:00)</option>
+                <option value="Evening Shift (15:00 - 23:00)">Evening Shift (15:00 - 23:00)</option>
+                <option value="Night Shift (23:00 - 07:00)">Night Shift (23:00 - 07:00)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-rose-700 mb-1">S - Situation (Census & Immediate Risks)</label>
+              <textarea
+                required
+                rows={2}
+                value={sbarForm.situation}
+                onChange={(e) => setSbarForm({ ...sbarForm, situation: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-amber-700 mb-1">B - Background (Clinical History & Pre-existing)</label>
+              <textarea
+                required
+                rows={2}
+                value={sbarForm.background}
+                onChange={(e) => setSbarForm({ ...sbarForm, background: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-teal-700 mb-1">A - Assessment (Current Findings & Response to Rx)</label>
+              <textarea
+                required
+                rows={2}
+                value={sbarForm.assessment}
+                onChange={(e) => setSbarForm({ ...sbarForm, assessment: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-indigo-700 mb-1">R - Recommendation (Pending Labs, Transfusions, Action Plan)</label>
+              <textarea
+                required
+                rows={2}
+                value={sbarForm.recommendation}
+                onChange={(e) => setSbarForm({ ...sbarForm, recommendation: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Relieving Nurse (Sign-off)</label>
+                <input
+                  type="text"
+                  required
+                  value={sbarForm.outgoingNurse}
+                  onChange={(e) => setSbarForm({ ...sbarForm, outgoingNurse: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Taking Over Nurse (Acknowledgement)</label>
+                <input
+                  type="text"
+                  required
+                  value={sbarForm.incomingNurse}
+                  onChange={(e) => setSbarForm({ ...sbarForm, incomingNurse: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsSbarModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Save & Sign Handover
               </Button>
             </div>
           </form>

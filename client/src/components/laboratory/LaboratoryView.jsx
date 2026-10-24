@@ -14,7 +14,7 @@ import {
   RefreshCw,
   Phone
 } from 'lucide-react';
-import { Card, Button, Badge } from '../common/UIPrimitives';
+import { Card, Button, Badge, Modal, Input, Select } from '../common/UIPrimitives';
 
 const LAB_SUBMODULES = [
   {
@@ -113,7 +113,8 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
   };
 
   // Mock Lab Accession Samples
-  const [samples, _setSamples] = useState([
+  // Mock Lab Accession Samples
+  const [samples, setSamples] = useState([
     {
       barcode: 'LAB-2026-90412',
       patientName: 'Arjun Rampal',
@@ -156,9 +157,157 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
   const [selectedSample, setSelectedSample] = useState(samples[1]);
   const [toastMessage, setToastMessage] = useState('');
 
+  const [resultsList, setResultsList] = useState([
+    { param: 'Serum Potassium (K+)', val: '6.8 mEq/L', range: '3.5 - 5.1 mEq/L', flag: 'H (Critical High)', panic: true },
+    { param: 'Serum Sodium (Na+)', val: '138 mEq/L', range: '135 - 145 mEq/L', flag: 'Normal', panic: false },
+    { param: 'Serum Creatinine', val: '2.1 mg/dL', range: '0.7 - 1.3 mg/dL', flag: 'H (Elevated)', panic: false },
+    { param: 'Blood Urea Nitrogen (BUN)', val: '42 mg/dL', range: '7 - 20 mg/dL', flag: 'H (High)', panic: false }
+  ]);
+
+  // Modals
+  const [isRequisitionModalOpen, setIsRequisitionModalOpen] = useState(false);
+  const [isPhlebotomyModalOpen, setIsPhlebotomyModalOpen] = useState(false);
+  const [isInstrumentModalOpen, setIsInstrumentModalOpen] = useState(false);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [isPathologistModalOpen, setIsPathologistModalOpen] = useState(false);
+
+  // Forms
+  const [requisitionForm, setRequisitionForm] = useState({
+    patientName: '',
+    uhid: '',
+    ageGender: '45y / F',
+    doctor: 'Dr. V. Singhal (Cardiology)',
+    testPanel: 'Comprehensive Metabolic Panel (CMP) + CBC',
+    specimen: 'Gold Gel (SST) + Lavender EDTA',
+    billingMode: 'OPD Walk-in Paid (UPI)',
+    urgency: 'Routine (Standard TAT)'
+  });
+
+  const [phlebotomyForm, setPhlebotomyForm] = useState({
+    chairNo: 'Chair #2 (Main Phlebotomy Suite)',
+    tubeTypes: 'Gold Gel (SST Tube) + Lavender EDTA',
+    volumeDrawn: '5 mL',
+    fastingStatus: 'Fasting >= 8 Hours Confirmed',
+    operator: 'Sr. Suresh P. (Phlebotomy Tech #4)'
+  });
+
+  const [instrumentForm, setInstrumentForm] = useState({
+    analyzer: 'Roche Cobas 6000 (ASTM Interfaced)',
+    rackCupPosition: 'Rack #04 • Cup #12',
+    testProfile: 'Biochemistry / Electrolytes Dual Run',
+    priority: 'Normal Batch'
+  });
+
+  const [resultForm, setResultForm] = useState({
+    param: 'Serum Potassium (K+)',
+    val: '6.8',
+    unit: 'mEq/L',
+    range: '3.5 - 5.1 mEq/L',
+    flag: 'H (Critical High)',
+    isPanic: true,
+    escalationNote: 'Repeat sample verified on secondary channel. Hemolysis absent.'
+  });
+
+  const [pathologistForm, setPathologistForm] = useState({
+    remark: 'Marked hyperkalemia (K+ 6.8 mEq/L) co-existing with azotemia. Delta check confirmed. Critical panic communicated verbally to attending physician.',
+    deltaCheckPassed: true,
+    verbalPanicCommunicated: true,
+    doctorNotified: 'Dr. Ananya Sen (Nephrology)',
+    digitalPin: '****'
+  });
+
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 4500);
+  };
+
+  const handleSaveRequisition = (e) => {
+    e.preventDefault();
+    if (!requisitionForm.patientName) {
+      alert('Please enter patient name.');
+      return;
+    }
+    const newBarcode = `LAB-2026-90${samples.length + 415}`;
+    const newSample = {
+      barcode: newBarcode,
+      patientName: requisitionForm.patientName,
+      uhid: requisitionForm.uhid || `UHID-2026-0${samples.length + 820}`,
+      ageGender: requisitionForm.ageGender,
+      testPanel: requisitionForm.testPanel,
+      tubeType: requisitionForm.specimen,
+      status: 'Intake Registered (Pending Draw)',
+      phlebotomist: 'Queue Assigned',
+      analyzer: 'Roche Cobas 6000 (ASTM Interfaced)',
+      hasPanic: false
+    };
+    setSamples([newSample, ...samples]);
+    setSelectedSample(newSample);
+    setIsRequisitionModalOpen(false);
+    triggerToast(`Test Requisition Created: ${newSample.barcode} for ${newSample.patientName}`);
+  };
+
+  const handleSavePhlebotomy = (e) => {
+    e.preventDefault();
+    const updated = {
+      ...selectedSample,
+      status: 'Collected',
+      phlebotomist: `${phlebotomyForm.operator} (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`,
+      tubeType: phlebotomyForm.tubeTypes
+    };
+    setSamples(samples.map(s => s.barcode === selectedSample.barcode ? updated : s));
+    setSelectedSample(updated);
+    setIsPhlebotomyModalOpen(false);
+    triggerToast(`Phlebotomy draw confirmed for ${selectedSample.barcode}: ${phlebotomyForm.tubeTypes} (${phlebotomyForm.fastingStatus})`);
+  };
+
+  const handleSaveInstrument = (e) => {
+    e.preventDefault();
+    const updated = {
+      ...selectedSample,
+      status: 'Analytical Run Active (ASTM)',
+      analyzer: instrumentForm.analyzer
+    };
+    setSamples(samples.map(s => s.barcode === selectedSample.barcode ? updated : s));
+    setSelectedSample(updated);
+    setIsInstrumentModalOpen(false);
+    triggerToast(`Dispatched ${selectedSample.barcode} to ${instrumentForm.analyzer} at ${instrumentForm.rackCupPosition}`);
+  };
+
+  const handleSaveResult = (e) => {
+    e.preventDefault();
+    const newRow = {
+      param: resultForm.param,
+      val: `${resultForm.val} ${resultForm.unit}`,
+      range: resultForm.range,
+      flag: resultForm.flag,
+      panic: resultForm.isPanic
+    };
+    const updatedList = [newRow, ...resultsList.filter(r => r.param !== resultForm.param)];
+    setResultsList(updatedList);
+
+    const hasAnyPanic = updatedList.some(r => r.panic);
+    const updatedSample = {
+      ...selectedSample,
+      status: hasAnyPanic ? 'Result Entered (Panic Alert)' : 'Result Entered (Normal)',
+      hasPanic: hasAnyPanic,
+      panicParam: hasAnyPanic ? `${resultForm.param}: ${resultForm.val} ${resultForm.unit} (${resultForm.flag})` : undefined
+    };
+    setSamples(samples.map(s => s.barcode === selectedSample.barcode ? updatedSample : s));
+    setSelectedSample(updatedSample);
+    setIsResultModalOpen(false);
+    triggerToast(`Quantitative result saved for ${resultForm.param}: ${resultForm.val} ${resultForm.unit} [Flag: ${resultForm.flag}]`);
+  };
+
+  const handleSavePathologist = (e) => {
+    e.preventDefault();
+    const updatedSample = {
+      ...selectedSample,
+      status: 'Verified & Digitally Authorized'
+    };
+    setSamples(samples.map(s => s.barcode === selectedSample.barcode ? updatedSample : s));
+    setSelectedSample(updatedSample);
+    setIsPathologistModalOpen(false);
+    triggerToast(`Report authorized by Dr. Jayant Mukherjee (Reg #KMC-41908). Pushed to EMR & Patient Portal.`);
   };
 
   return (
@@ -362,18 +511,25 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
 
       {/* Dynamic Submodule Views */}
       {activeSubtab === '19.1' && (
-        <Card title="19.1 Test Requisition & Billing Intake">
+        <Card
+          title="19.1 Test Requisition & Billing Intake"
+          action={
+            <Button size="sm" variant="primary" icon={Plus} onClick={() => setIsRequisitionModalOpen(true)}>
+              New Walk-in Order
+            </Button>
+          }
+        >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
             <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: '#FAFCFC' }}>
               <h4 style={{ margin: '0 0 10px', fontWeight: '700', fontSize: '0.92rem', color: 'var(--color-primary-teal)' }}>
-                Order Intake Channels
+                Order Intake Channels & Active Requisitions
               </h4>
               <p style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', margin: '0 0 12px' }}>
                 Electronic provider orders route instantly from Outpatient Consultation Desk or Inpatient EMR. Direct walk-in requisitions generate immediate cashier invoices.
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <Button size="xs" variant="primary" icon={Plus}>New Walk-in Order</Button>
-                <Button size="xs" variant="outline" icon={RefreshCw}>Sync CPOE Orders (14 Pending)</Button>
+                <Button size="xs" variant="primary" icon={Plus} onClick={() => setIsRequisitionModalOpen(true)}>New Walk-in Order</Button>
+                <Button size="xs" variant="outline" icon={RefreshCw} onClick={() => triggerToast('Synced 14 pending CPOE inpatient orders')}>Sync CPOE Orders (14 Pending)</Button>
               </div>
             </div>
 
@@ -401,7 +557,14 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
       )}
 
       {activeSubtab === '19.2' && (
-        <Card title="19.2 Phlebotomy & Color-Coded Tube Barcoding">
+        <Card
+          title="19.2 Phlebotomy & Color-Coded Tube Barcoding"
+          action={
+            <Button size="sm" variant="primary" icon={Tag} onClick={() => setIsPhlebotomyModalOpen(true)}>
+              Record Phlebotomy Draw
+            </Button>
+          }
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
               <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1.5px solid #8B5CF6', backgroundColor: '#FAF5FF' }}>
@@ -428,15 +591,26 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <Button size="sm" variant="outline" icon={Printer}>Print Thermal Tube Barcodes</Button>
-              <Button size="sm" variant="primary" icon={CheckCircle2} onClick={() => triggerToast('Phlebotomy sample status marked COLLECTED with timestamp')}>Mark Draw Completed</Button>
+              <Button size="sm" variant="outline" icon={Printer} onClick={() => triggerToast(`Thermal barcodes printed for ${selectedSample.barcode}`)}>
+                Print Thermal Tube Barcodes
+              </Button>
+              <Button size="sm" variant="primary" icon={CheckCircle2} onClick={() => setIsPhlebotomyModalOpen(true)}>
+                Record Phlebotomy Draw
+              </Button>
             </div>
           </div>
         </Card>
       )}
 
       {activeSubtab === '19.3' && (
-        <Card title="19.3 Automated Instrument Worklist & ASTM/HL7 Gateway">
+        <Card
+          title="19.3 Automated Instrument Worklist & ASTM/HL7 Gateway"
+          action={
+            <Button size="sm" variant="primary" icon={Sliders} onClick={() => setIsInstrumentModalOpen(true)}>
+              Dispatch Instrument Run
+            </Button>
+          }
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', backgroundColor: 'var(--color-bg-pale-aqua)', borderRadius: 'var(--radius-md)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -462,14 +636,16 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
               </thead>
               <tbody>
                 {samples.map((s, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--color-border-subtle)', backgroundColor: selectedSample.barcode === s.barcode ? 'var(--color-bg-pale-aqua)' : 'transparent' }}>
                     <td style={{ padding: '8px 12px', fontWeight: '700', color: 'var(--color-primary-teal)' }}>{s.barcode}</td>
                     <td style={{ padding: '8px 12px' }}>{s.patientName} ({s.uhid})</td>
                     <td style={{ padding: '8px 12px' }}>{s.analyzer}</td>
                     <td style={{ padding: '8px 12px' }}><Badge variant="teal">ASTM Query Handshake OK</Badge></td>
                     <td style={{ padding: '8px 12px', fontWeight: '600' }}>{s.status}</td>
                     <td style={{ padding: '8px 12px' }}>
-                      <Button size="xs" variant="outline" onClick={() => setSelectedSample(s)}>Inspect</Button>
+                      <Button size="xs" variant={selectedSample.barcode === s.barcode ? 'primary' : 'outline'} onClick={() => setSelectedSample(s)}>
+                        Inspect
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -480,7 +656,14 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
       )}
 
       {activeSubtab === '19.4' && (
-        <Card title="19.4 Quantitative Result Entry & Panic Telemetry Grid">
+        <Card
+          title="19.4 Quantitative Result Entry & Panic Telemetry Grid"
+          action={
+            <Button size="sm" variant="primary" icon={Plus} onClick={() => setIsResultModalOpen(true)}>
+              Enter Test Result
+            </Button>
+          }
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -503,12 +686,7 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { param: 'Serum Potassium (K+)', val: '6.8 mEq/L', range: '3.5 - 5.1 mEq/L', flag: 'H (Critical High)', panic: true },
-                  { param: 'Serum Sodium (Na+)', val: '138 mEq/L', range: '135 - 145 mEq/L', flag: 'Normal', panic: false },
-                  { param: 'Serum Creatinine', val: '2.1 mg/dL', range: '0.7 - 1.3 mg/dL', flag: 'H (Elevated)', panic: false },
-                  { param: 'Blood Urea Nitrogen (BUN)', val: '42 mg/dL', range: '7 - 20 mg/dL', flag: 'H (High)', panic: false }
-                ].map((row, i) => (
+                {resultsList.map((row, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid var(--color-border-subtle)', backgroundColor: row.panic ? '#FEF2F2' : 'transparent' }}>
                     <td style={{ padding: '10px 12px', fontWeight: '700' }}>{row.param}</td>
                     <td style={{ padding: '10px 12px', fontWeight: '800', color: row.panic ? '#DC2626' : 'var(--color-text-primary)' }}>{row.val}</td>
@@ -534,24 +712,22 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
       )}
 
       {activeSubtab === '19.5' && (
-        <Card title="19.5 Pathologist Electronic Verification & Authorization Gate">
+        <Card
+          title="19.5 Pathologist Electronic Verification & Authorization Gate"
+          action={
+            <Button size="sm" variant="primary" icon={ShieldCheck} onClick={() => setIsPathologistModalOpen(true)}>
+              Authorize & Sign Report
+            </Button>
+          }
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: '#FAFCFC' }}>
               <h4 style={{ margin: '0 0 8px', fontWeight: '700', fontSize: '0.92rem', color: 'var(--color-primary-teal)' }}>
                 Consultant Pathologist Diagnostic Remark
               </h4>
-              <textarea
-                defaultValue="Marked hyperkalemia (K+ 6.8 mEq/L) noted with co-existing azotemia. Sample re-run twice on Cobas 6000 and confirmed. No gross hemolysis visible in serum. Panic value communicated verbally to Attending Nephrologist at 09:12 AM."
-                rows={3}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-border)',
-                  fontSize: '0.82rem',
-                  fontFamily: 'inherit'
-                }}
-              />
+              <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
+                {pathologistForm.remark}
+              </p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
@@ -559,12 +735,14 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
                 Digital Signing Certificate: <strong>Dr. Jayant Mukherjee (MD Pathology, Reg #KMC-41908)</strong>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <Button size="sm" variant="outline" icon={Eye}>Preview Report PDF</Button>
+                <Button size="sm" variant="outline" icon={Eye} onClick={() => triggerToast(`Report preview generated for ${selectedSample.barcode}`)}>
+                  Preview Report PDF
+                </Button>
                 <Button
                   size="sm"
                   variant="primary"
                   icon={ShieldCheck}
-                  onClick={() => triggerToast('Report Authorized & Signed! Released to EMR and WhatsApp notification sent.')}
+                  onClick={() => setIsPathologistModalOpen(true)}
                 >
                   Authorize & Sign Report
                 </Button>
@@ -573,6 +751,396 @@ export function LaboratoryView({ initialSubtab = '19.1', initialSubsubtab = null
           </div>
         </Card>
       )}
+
+      {/* MODAL 1: Diagnostic Test Requisition & Billing Intake */}
+      <Modal
+        isOpen={isRequisitionModalOpen}
+        onClose={() => setIsRequisitionModalOpen(false)}
+        title="Diagnostic Test Requisition & Billing Intake"
+        subtitle="Order intake for Outpatient Walk-in & Inpatient CPOE routing"
+      >
+        <form onSubmit={handleSaveRequisition} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '12px' }}>
+            <Input
+              label="Patient Full Name"
+              required
+              placeholder="e.g. Anand Mahindra"
+              value={requisitionForm.patientName}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, patientName: e.target.value })}
+            />
+            <Input
+              label="Patient UHID (Optional)"
+              placeholder="UHID-2026-..."
+              value={requisitionForm.uhid}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, uhid: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Input
+              label="Age / Gender"
+              required
+              placeholder="e.g. 52y / M"
+              value={requisitionForm.ageGender}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, ageGender: e.target.value })}
+            />
+            <Select
+              label="Ordering Physician"
+              value={requisitionForm.doctor}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, doctor: e.target.value })}
+              options={[
+                'Dr. V. Singhal (Cardiology)',
+                'Dr. N. Joshi (Internal Medicine)',
+                'Dr. Ananya Sen (Nephrology)',
+                'Dr. S. K. Roy (Gastroenterology)',
+                'OPD Direct Walk-in (Self)'
+              ]}
+            />
+          </div>
+
+          <Select
+            label="Diagnostic Test Panel"
+            required
+            value={requisitionForm.testPanel}
+            onChange={(e) => setRequisitionForm({ ...requisitionForm, testPanel: e.target.value })}
+            options={[
+              'Comprehensive Metabolic Panel (CMP) + CBC',
+              'Serum Electrolytes + Cardiac Troponin-I',
+              'Lipid Profile + HbA1c Glycated Hemoglobin',
+              'Liver Function Tests (LFT Complete)',
+              'Kidney Function Tests (KFT / RFT)',
+              'Thyroid Panel (FT3, FT4, TSH Ultra)',
+              'Coagulation Screen (PT/INR + aPTT)'
+            ]}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Select
+              label="Specimen Tube Requirement"
+              value={requisitionForm.specimen}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, specimen: e.target.value })}
+              options={[
+                'Gold Gel (SST) + Lavender EDTA',
+                'Gold Gel (SST) + Green Heparin',
+                'Lavender EDTA + Grey Fluoride',
+                'Light Blue (Sodium Citrate)',
+                'Sterile Urine Cup'
+              ]}
+            />
+            <Select
+              label="Clinical Urgency"
+              value={requisitionForm.urgency}
+              onChange={(e) => setRequisitionForm({ ...requisitionForm, urgency: e.target.value })}
+              options={[
+                'Routine (Standard TAT 4h)',
+                'Urgent (TAT 2h)',
+                'STAT Emergency Panic (TAT 30m)'
+              ]}
+            />
+          </div>
+
+          <Select
+            label="Billing & Ledger Allocation"
+            value={requisitionForm.billingMode}
+            onChange={(e) => setRequisitionForm({ ...requisitionForm, billingMode: e.target.value })}
+            options={[
+              'OPD Walk-in Paid (UPI / POS Settlement)',
+              'IPD Bed Ledger Chargeable',
+              'TPA / Cashless Corporate Insurance'
+            ]}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsRequisitionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Register Requisition & Issue Barcode
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL 2: Phlebotomy Specimen Draw & Barcode Allocation */}
+      <Modal
+        isOpen={isPhlebotomyModalOpen}
+        onClose={() => setIsPhlebotomyModalOpen(false)}
+        title={`Phlebotomy Specimen Draw: ${selectedSample.barcode}`}
+        subtitle={`Patient: ${selectedSample.patientName} (${selectedSample.uhid})`}
+      >
+        <form onSubmit={handleSavePhlebotomy} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Select
+              label="Collection Chair"
+              value={phlebotomyForm.chairNo}
+              onChange={(e) => setPhlebotomyForm({ ...phlebotomyForm, chairNo: e.target.value })}
+              options={[
+                'Chair #1 (Phlebotomy Suite A)',
+                'Chair #2 (Main Phlebotomy Suite)',
+                'Chair #3 (Fast Track)',
+                'Bedside Inpatient Mobile Cart'
+              ]}
+            />
+            <Select
+              label="Fasting Verification Gate"
+              value={phlebotomyForm.fastingStatus}
+              onChange={(e) => setPhlebotomyForm({ ...phlebotomyForm, fastingStatus: e.target.value })}
+              options={[
+                'Fasting >= 8 Hours Confirmed',
+                'Post-Prandial (2h Post Meal)',
+                'Random Sample (Non-Fasting Allowed)'
+              ]}
+            />
+          </div>
+
+          <Input
+            label="Tubes Drawn & Allocated"
+            required
+            value={phlebotomyForm.tubeTypes}
+            onChange={(e) => setPhlebotomyForm({ ...phlebotomyForm, tubeTypes: e.target.value })}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Input
+              label="Total Specimen Volume Drawn"
+              value={phlebotomyForm.volumeDrawn}
+              onChange={(e) => setPhlebotomyForm({ ...phlebotomyForm, volumeDrawn: e.target.value })}
+            />
+            <Input
+              label="Phlebotomy Technician ID"
+              required
+              value={phlebotomyForm.operator}
+              onChange={(e) => setPhlebotomyForm({ ...phlebotomyForm, operator: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsPhlebotomyModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Confirm Draw & Timestamp
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL 3: Instrument Worklist Dispatch */}
+      <Modal
+        isOpen={isInstrumentModalOpen}
+        onClose={() => setIsInstrumentModalOpen(false)}
+        title={`Instrument Worklist Interfacing: ${selectedSample.barcode}`}
+      >
+        <form onSubmit={handleSaveInstrument} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <Select
+            label="Target Clinical Analyzer"
+            value={instrumentForm.analyzer}
+            onChange={(e) => setInstrumentForm({ ...instrumentForm, analyzer: e.target.value })}
+            options={[
+              'Roche Cobas 6000 (ASTM Interfaced)',
+              'Abbott Architect i2000SR',
+              'Bio-Rad D-10 HPLC',
+              'Sysmex XN-1000 Automated Hematology'
+            ]}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Input
+              label="Rack & Cup Coordinate"
+              required
+              value={instrumentForm.rackCupPosition}
+              onChange={(e) => setInstrumentForm({ ...instrumentForm, rackCupPosition: e.target.value })}
+            />
+            <Select
+              label="Interfacing Priority"
+              value={instrumentForm.priority}
+              onChange={(e) => setInstrumentForm({ ...instrumentForm, priority: e.target.value })}
+              options={['Normal Batch', 'STAT High Priority Emergency', 'Quality Control (QC) Pre-Check']}
+            />
+          </div>
+
+          <Input
+            label="Analytical Profile"
+            value={instrumentForm.testProfile}
+            onChange={(e) => setInstrumentForm({ ...instrumentForm, testProfile: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsInstrumentModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Dispatch to Instrument Worklist
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL 4: Quantitative Result Entry & Panic Flag */}
+      <Modal
+        isOpen={isResultModalOpen}
+        onClose={() => setIsResultModalOpen(false)}
+        title={`Analyte Quantitative Result: ${selectedSample.barcode}`}
+        subtitle={`Patient: ${selectedSample.patientName}`}
+      >
+        <form onSubmit={handleSaveResult} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '12px' }}>
+            <Select
+              label="Analyte / Parameter"
+              value={resultForm.param}
+              onChange={(e) => setResultForm({ ...resultForm, param: e.target.value })}
+              options={[
+                'Serum Potassium (K+)',
+                'Serum Sodium (Na+)',
+                'Serum Creatinine',
+                'Blood Urea Nitrogen (BUN)',
+                'Fasting Blood Glucose',
+                'Troponin-I High Sensitivity',
+                'Hemoglobin (Hb)',
+                'Platelet Count'
+              ]}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              <Input
+                label="Value"
+                required
+                value={resultForm.val}
+                onChange={(e) => setResultForm({ ...resultForm, val: e.target.value })}
+              />
+              <Input
+                label="Unit"
+                required
+                value={resultForm.unit}
+                onChange={(e) => setResultForm({ ...resultForm, unit: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Input
+              label="Biological Reference Range"
+              value={resultForm.range}
+              onChange={(e) => setResultForm({ ...resultForm, range: e.target.value })}
+            />
+            <Select
+              label="Flag & Interpretation"
+              value={resultForm.flag}
+              onChange={(e) => setResultForm({ ...resultForm, flag: e.target.value, isPanic: e.target.value.includes('Critical') })}
+              options={[
+                'Normal',
+                'H (Elevated)',
+                'L (Low)',
+                'H (Critical High)',
+                'L (Critical Low)'
+              ]}
+            />
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', padding: '10px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: resultForm.isPanic ? '#FEF2F2' : '#F8FAFA', border: resultForm.isPanic ? '1px solid #FECACA' : '1px solid var(--color-border)' }}>
+            <input
+              type="checkbox"
+              checked={resultForm.isPanic}
+              onChange={(e) => setResultForm({ ...resultForm, isPanic: e.target.checked })}
+            />
+            <span style={{ fontWeight: resultForm.isPanic ? '700' : '500', color: resultForm.isPanic ? '#DC2626' : 'inherit' }}>
+              Arm Critical Life-Threatening Panic Value Alert (Fires emergency Doctor push call)
+            </span>
+          </label>
+
+          <Input
+            label="Analytical Quality / Escalation Remarks"
+            value={resultForm.escalationNote}
+            onChange={(e) => setResultForm({ ...resultForm, escalationNote: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsResultModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Commit Result to LIS
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL 5: Pathologist Electronic Verification & Sign-off */}
+      <Modal
+        isOpen={isPathologistModalOpen}
+        onClose={() => setIsPathologistModalOpen(false)}
+        title={`Pathologist Digital Authorization: ${selectedSample.barcode}`}
+      >
+        <form onSubmit={handleSavePathologist} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
+              Consultant Pathologist Diagnostic Remark *
+            </label>
+            <textarea
+              required
+              rows={3}
+              value={pathologistForm.remark}
+              onChange={(e) => setPathologistForm({ ...pathologistForm, remark: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: 'var(--radius-md)',
+                border: '1.5px solid var(--color-border)',
+                fontSize: '0.84rem',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+
+          <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px', backgroundColor: '#FAFCFC' }}>
+            <h4 style={{ margin: '0 0 8px', fontSize: '0.82rem', fontWeight: '700', color: 'var(--color-primary-teal)' }}>
+              Mandatory Release Checkpoints
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={pathologistForm.deltaCheckPassed}
+                  onChange={(e) => setPathologistForm({ ...pathologistForm, deltaCheckPassed: e.target.checked })}
+                />
+                <span>Delta Check & Baseline Historical Concordance Verified</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={pathologistForm.verbalPanicCommunicated}
+                  onChange={(e) => setPathologistForm({ ...pathologistForm, verbalPanicCommunicated: e.target.checked })}
+                />
+                <span>Verbal panic value alert personally communicated to treating physician</span>
+              </label>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '12px' }}>
+            <Input
+              label="Attending Doctor Notified"
+              value={pathologistForm.doctorNotified}
+              onChange={(e) => setPathologistForm({ ...pathologistForm, doctorNotified: e.target.value })}
+            />
+            <Input
+              label="Digital Signing PIN"
+              type="password"
+              required
+              value={pathologistForm.digitalPin}
+              onChange={(e) => setPathologistForm({ ...pathologistForm, digitalPin: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsPathologistModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Sign Certificate & Release Report
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
+export default LaboratoryView;

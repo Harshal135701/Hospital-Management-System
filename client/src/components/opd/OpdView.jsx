@@ -16,9 +16,11 @@ import {
   MessageSquare,
   AlertTriangle,
   BadgeCheck,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  SlidersHorizontal
 } from 'lucide-react';
-import { Card, Button, Modal } from '../common/UIPrimitives';
+import { Card, Button, Modal, Badge, Input, Select } from '../common/UIPrimitives';
 
 const OPD_SUBMODULES = [
   {
@@ -112,7 +114,7 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
   };
 
   // Mock State for Clinics and Cabins
-  const [clinicRooms] = useState([
+  const [clinicRooms, setClinicRooms] = useState([
     {
       cabin: 'Cabin 101',
       specialty: 'Internal Medicine',
@@ -263,6 +265,140 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
   const showNotification = (msg) => {
     setNotificationMsg(msg);
     setTimeout(() => setNotificationMsg(null), 3500);
+  };
+
+  // Interactive Modal Visibility States
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [isQueueActionModalOpen, setIsQueueActionModalOpen] = useState(false);
+  const [selectedQueueItem, setSelectedQueueItem] = useState(null);
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [selectedFollowUpItem, setSelectedFollowUpItem] = useState(null);
+
+  // Form States
+  const [sessionForm, setSessionForm] = useState({
+    cabin: 'Cabin 105',
+    specialty: 'Pediatrics & Neonatology',
+    doctor: 'Dr. Anita Desai',
+    shift: 'Morning (09:00 - 13:00)',
+    tokenCapacity: '30',
+    fee: '800'
+  });
+
+  const [checkInForm, setCheckInForm] = useState({
+    uhid: 'UHID-89407',
+    patientName: 'Kavita Sundaram',
+    age: '34',
+    gender: 'Female',
+    phone: '+91 98207 78901',
+    doctor: 'Dr. N. Joshi',
+    specialty: 'Internal Medicine',
+    cabin: 'Cabin 101',
+    category: 'General',
+    fee: '₹800 (Paid - UPI)'
+  });
+
+  const [queueActionForm, setQueueActionForm] = useState({
+    category: 'Emergency / STAT',
+    cabin: 'Cabin 101',
+    notes: 'Severe chest discomfort and dyspnea; urgent ECG required.'
+  });
+
+  const [followUpForm, setFollowUpForm] = useState({
+    uhid: 'UHID-89401',
+    patientName: 'Anil Deshmukh',
+    doctor: 'Dr. N. Joshi',
+    interval: '7 Days Post-Consult',
+    dueDate: '2026-10-31',
+    channels: {
+      whatsapp: true,
+      sms: true,
+      ivrCall: false
+    },
+    instructions: 'Review fasting blood sugar & serum creatinine. Continue Tab Metformin 500mg BD.'
+  });
+
+  const handleSaveSession = (e) => {
+    e.preventDefault();
+    const newRoom = {
+      cabin: sessionForm.cabin,
+      specialty: sessionForm.specialty,
+      doctor: sessionForm.doctor,
+      shift: sessionForm.shift,
+      status: 'Ready for Next',
+      currentPatient: '-',
+      waitingCount: 0,
+      avgConsultTime: '12 min'
+    };
+    setClinicRooms(prev => {
+      const idx = prev.findIndex(r => r.cabin === sessionForm.cabin);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = newRoom;
+        return updated;
+      }
+      return [...prev, newRoom];
+    });
+    setIsSessionModalOpen(false);
+    showNotification(`Clinic Session activated: ${sessionForm.doctor} in ${sessionForm.cabin} (${sessionForm.specialty}).`);
+  };
+
+  const handleSaveCheckIn = (e) => {
+    e.preventDefault();
+    const nextTokenNum = opdVisits.length + 1;
+    const tokenNo = `T-${nextTokenNum < 10 ? '0' + nextTokenNum : nextTokenNum}`;
+    const newVisit = {
+      tokenNo,
+      uhid: checkInForm.uhid,
+      patientName: checkInForm.patientName,
+      age: parseInt(checkInForm.age, 10) || 30,
+      gender: checkInForm.gender,
+      phone: checkInForm.phone,
+      doctor: checkInForm.doctor,
+      specialty: checkInForm.specialty,
+      cabin: checkInForm.cabin,
+      category: checkInForm.category,
+      checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'Waiting in Lobby',
+      fee: checkInForm.fee,
+      followUpDate: 'Pending'
+    };
+    setOpdVisits([newVisit, ...opdVisits]);
+    setClinicRooms(prev => prev.map(r => r.cabin === checkInForm.cabin ? { ...r, waitingCount: r.waitingCount + 1 } : r));
+    setIsCheckInModalOpen(false);
+    showNotification(`Token ${tokenNo} generated for ${checkInForm.patientName}. Routed to ${checkInForm.cabin}.`);
+  };
+
+  const handleSaveQueueAction = (e) => {
+    e.preventDefault();
+    if (!selectedQueueItem) return;
+    setOpdVisits(prev => prev.map(v => {
+      if (v.tokenNo === selectedQueueItem.tokenNo) {
+        return {
+          ...v,
+          category: queueActionForm.category,
+          cabin: queueActionForm.cabin
+        };
+      }
+      return v;
+    }));
+    setIsQueueActionModalOpen(false);
+    showNotification(`Token ${selectedQueueItem.tokenNo} updated: Priority ${queueActionForm.category}, routed to ${queueActionForm.cabin}.`);
+  };
+
+  const handleSaveFollowUp = (e) => {
+    e.preventDefault();
+    setOpdVisits(prev => prev.map(v => {
+      if (v.uhid === followUpForm.uhid || (selectedFollowUpItem && v.tokenNo === selectedFollowUpItem.tokenNo)) {
+        return {
+          ...v,
+          followUpDate: followUpForm.dueDate
+        };
+      }
+      return v;
+    }));
+    setIsFollowUpModalOpen(false);
+    showNotification(`Follow-up review scheduled for ${followUpForm.patientName} on ${followUpForm.dueDate} via WhatsApp/SMS.`);
   };
 
   const handleCheckInPatient = (tokenNo) => {
@@ -474,6 +610,32 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
       {/* Main Content Areas based on Submodule */}
       {activeSubtab === '22.1' && (
         <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-lg border border-[var(--color-border-subtle)] shadow-xs">
+            <div>
+              <h2 className="text-sm font-bold text-slate-800">Specialty Clinic Cabin Roster & Live Sessions</h2>
+              <p className="text-xs text-slate-500">Active consulting suites, doctor duty assignments, and real-time waiting load</p>
+            </div>
+            <Button
+              variant="primary"
+              size="xs"
+              onClick={() => {
+                setSessionForm({
+                  cabin: 'Cabin 105',
+                  specialty: 'Pediatrics & Neonatology',
+                  doctor: 'Dr. Anita Desai',
+                  shift: 'Morning (09:00 - 13:00)',
+                  tokenCapacity: '30',
+                  fee: '800'
+                });
+                setIsSessionModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus size={13} />
+              <span>+ Activate Clinic Session</span>
+            </Button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {clinicRooms.map((rm) => (
               <Card key={rm.cabin} className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
@@ -586,9 +748,32 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 <input
                   type="text"
                   placeholder="Filter token, UHID or name..."
-                  className="pl-8 pr-3 py-1.5 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-lg w-52 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-teal)]"
+                  className="pl-8 pr-3 py-1.5 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-teal)]"
                 />
               </div>
+              <Button
+                variant="primary"
+                size="xs"
+                onClick={() => {
+                  setCheckInForm({
+                    uhid: `UHID-8940${opdVisits.length + 1}`,
+                    patientName: '',
+                    age: '32',
+                    gender: 'Female',
+                    phone: '+91 98200 00000',
+                    doctor: 'Dr. N. Joshi',
+                    specialty: 'Internal Medicine',
+                    cabin: 'Cabin 101',
+                    category: 'General',
+                    fee: '₹800 (Paid - UPI)'
+                  });
+                  setIsCheckInModalOpen(true);
+                }}
+                className="flex items-center gap-1 shadow-xs"
+              >
+                <Plus size={13} />
+                <span>+ Patient Check-in</span>
+              </Button>
             </div>
           </div>
 
@@ -710,6 +895,22 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                             )}
                           </>
                         )}
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => {
+                            setSelectedQueueItem(v);
+                            setQueueActionForm({
+                              category: v.category,
+                              cabin: v.cabin,
+                              notes: 'Patient priority triage review / cabin reassignment.'
+                            });
+                            setIsQueueActionModalOpen(true);
+                          }}
+                          title="Triage Priority & Cabin Transfer"
+                        >
+                          Triage
+                        </Button>
                         <Button
                           variant="secondary"
                           size="xs"
@@ -852,15 +1053,38 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                 Automated SMS & WhatsApp reminders dispatched 48h prior to doctor consultation review dates
               </p>
             </div>
-            <Button
-              variant="primary"
-              size="xs"
-              onClick={() => showNotification('Batch SMS & WhatsApp reminders dispatched to all 24 due patients.')}
-              className="flex items-center gap-1.5"
-            >
-              <Send size={13} />
-              <span>Broadcast Due Reminders</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="xs"
+                onClick={() => {
+                  setSelectedFollowUpItem(opdVisits[0]);
+                  setFollowUpForm({
+                    uhid: opdVisits[0]?.uhid || 'UHID-89401',
+                    patientName: opdVisits[0]?.patientName || 'Anil Deshmukh',
+                    doctor: opdVisits[0]?.doctor || 'Dr. N. Joshi',
+                    interval: '7 Days Post-Consult',
+                    dueDate: '2026-10-31',
+                    channels: { whatsapp: true, sms: true, ivrCall: false },
+                    instructions: 'Review fasting blood sugar & serum creatinine. Continue Tab Metformin 500mg BD.'
+                  });
+                  setIsFollowUpModalOpen(true);
+                }}
+                className="flex items-center gap-1 shadow-xs"
+              >
+                <Plus size={13} />
+                <span>+ Schedule Follow-up</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => showNotification('Batch SMS & WhatsApp reminders dispatched to all 24 due patients.')}
+                className="flex items-center gap-1.5"
+              >
+                <Send size={13} />
+                <span>Broadcast Due Reminders</span>
+              </Button>
+            </div>
           </div>
 
           <div className="mt-4 overflow-x-auto">
@@ -907,15 +1131,36 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
                       </div>
                     </td>
                     <td className="py-3 px-3 text-right">
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        onClick={() => handleSendReminder(v.tokenNo, v.phone)}
-                        className="flex items-center gap-1 ml-auto"
-                      >
-                        <Send size={11} />
-                        <span>Send Now</span>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1.5 ml-auto">
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => {
+                            setSelectedFollowUpItem(v);
+                            setFollowUpForm({
+                              uhid: v.uhid,
+                              patientName: v.patientName,
+                              doctor: v.doctor,
+                              interval: '7 Days Post-Consult',
+                              dueDate: '2026-10-31',
+                              channels: { whatsapp: true, sms: true, ivrCall: false },
+                              instructions: `Review follow-up recovery for ${v.patientName}. Attending physician: ${v.doctor}.`
+                            });
+                            setIsFollowUpModalOpen(true);
+                          }}
+                        >
+                          Schedule
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => handleSendReminder(v.tokenNo, v.phone)}
+                          className="flex items-center gap-1"
+                        >
+                          <Send size={11} />
+                          <span>Send Now</span>
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -966,6 +1211,483 @@ export function OpdView({ initialSubtab = '22.1', initialSubsubtab = null, onNav
               <span>Print Slip</span>
             </Button>
           </div>
+        </Modal>
+      )}
+
+      {/* 1. Activate Clinic Session Modal */}
+      {isSessionModalOpen && (
+        <Modal
+          isOpen={isSessionModalOpen}
+          onClose={() => setIsSessionModalOpen(false)}
+          title="Activate Specialty Clinic Session & Cabin Allocation"
+          size="md"
+        >
+          <form onSubmit={handleSaveSession} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Cabin Suite</label>
+                <select
+                  value={sessionForm.cabin}
+                  onChange={(e) => setSessionForm({ ...sessionForm, cabin: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Cabin 101">Cabin 101</option>
+                  <option value="Cabin 102">Cabin 102</option>
+                  <option value="Cabin 103">Cabin 103</option>
+                  <option value="Cabin 104">Cabin 104</option>
+                  <option value="Cabin 105">Cabin 105 (Specialty Suite)</option>
+                  <option value="Cabin 106">Cabin 106 (VIP / Daycare)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Specialty</label>
+                <select
+                  value={sessionForm.specialty}
+                  onChange={(e) => setSessionForm({ ...sessionForm, specialty: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Internal Medicine">Internal Medicine</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Orthopedics & Joint">Orthopedics & Joint</option>
+                  <option value="Gynecology & ART">Gynecology & ART</option>
+                  <option value="Pediatrics & Neonatology">Pediatrics & Neonatology</option>
+                  <option value="General Surgery">General Surgery</option>
+                  <option value="Dermatology">Dermatology</option>
+                  <option value="ENT / Otorhinolaryngology">ENT / Otorhinolaryngology</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Consultant Physician Name</label>
+              <input
+                type="text"
+                required
+                value={sessionForm.doctor}
+                onChange={(e) => setSessionForm({ ...sessionForm, doctor: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Session Shift</label>
+                <select
+                  value={sessionForm.shift}
+                  onChange={(e) => setSessionForm({ ...sessionForm, shift: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Morning (09:00 - 13:00)">Morning (09:00 - 13:00)</option>
+                  <option value="Afternoon (13:30 - 17:30)">Afternoon (13:30 - 17:30)</option>
+                  <option value="Evening (18:00 - 21:00)">Evening (18:00 - 21:00)</option>
+                  <option value="Full Day (09:00 - 17:00)">Full Day (09:00 - 17:00)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Token Cap</label>
+                <input
+                  type="number"
+                  required
+                  min="5"
+                  max="100"
+                  value={sessionForm.tokenCapacity}
+                  onChange={(e) => setSessionForm({ ...sessionForm, tokenCapacity: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Fee (₹)</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={sessionForm.fee}
+                  onChange={(e) => setSessionForm({ ...sessionForm, fee: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsSessionModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Activate Clinic Session
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 2. Patient Arrival & Reception Check-In Modal */}
+      {isCheckInModalOpen && (
+        <Modal
+          isOpen={isCheckInModalOpen}
+          onClose={() => setIsCheckInModalOpen(false)}
+          title="OPD Reception Desk: Patient Check-In & Token Issuance"
+          size="md"
+        >
+          <form onSubmit={handleSaveCheckIn} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">UHID</label>
+                <input
+                  type="text"
+                  required
+                  value={checkInForm.uhid}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, uhid: e.target.value })}
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Patient Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Kavita Sundaram"
+                  value={checkInForm.patientName}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, patientName: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Age</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  max="120"
+                  value={checkInForm.age}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, age: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Gender</label>
+                <select
+                  value={checkInForm.gender}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, gender: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  required
+                  value={checkInForm.phone}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Department / Specialty</label>
+                <select
+                  value={checkInForm.specialty}
+                  onChange={(e) => {
+                    const spec = e.target.value;
+                    const matchedRoom = clinicRooms.find(r => r.specialty.includes(spec) || spec.includes(r.specialty));
+                    setCheckInForm({
+                      ...checkInForm,
+                      specialty: spec,
+                      cabin: matchedRoom?.cabin || checkInForm.cabin,
+                      doctor: matchedRoom?.doctor || checkInForm.doctor
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Internal Medicine">Internal Medicine</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Orthopedics">Orthopedics</option>
+                  <option value="Gynecology & ART">Gynecology & ART</option>
+                  <option value="Pediatrics & Neonatology">Pediatrics & Neonatology</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Cabin & Doctor</label>
+                <select
+                  value={checkInForm.cabin}
+                  onChange={(e) => {
+                    const cab = e.target.value;
+                    const rm = clinicRooms.find(r => r.cabin === cab);
+                    setCheckInForm({
+                      ...checkInForm,
+                      cabin: cab,
+                      doctor: rm?.doctor || checkInForm.doctor,
+                      specialty: rm?.specialty || checkInForm.specialty
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {clinicRooms.map(r => (
+                    <option key={r.cabin} value={r.cabin}>{r.cabin} - {r.doctor} ({r.specialty})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Priority Classification</label>
+                <select
+                  value={checkInForm.category}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, category: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="General">General OPD</option>
+                  <option value="Senior Citizen">Senior Citizen Priority</option>
+                  <option value="Emergency / STAT">Emergency / STAT Triage</option>
+                  <option value="Physically Challenged">Physically Challenged</option>
+                  <option value="Follow-up">Review Follow-up</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Consultation Billing Status</label>
+                <select
+                  value={checkInForm.fee}
+                  onChange={(e) => setCheckInForm({ ...checkInForm, fee: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="₹800 (Paid - UPI)">₹800 (Paid - UPI / QR)</option>
+                  <option value="₹800 (Paid - Cash)">₹800 (Paid - Cash)</option>
+                  <option value="₹1,000 (Paid - Card)">₹1,000 (Paid - Card)</option>
+                  <option value="Exempt / Staff">Exempt / Hospital Staff</option>
+                  <option value="Unpaid (Pay at Counter)">Unpaid (Pay at Counter)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsCheckInModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Complete Check-In & Generate Token
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 3. Queue Action & Priority Escalation Modal */}
+      {isQueueActionModalOpen && selectedQueueItem && (
+        <Modal
+          isOpen={isQueueActionModalOpen}
+          onClose={() => setIsQueueActionModalOpen(false)}
+          title={`Triage & Priority Management: Token ${selectedQueueItem.tokenNo}`}
+          size="md"
+        >
+          <form onSubmit={handleSaveQueueAction} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Patient:</span>
+                <span className="font-bold text-slate-800">{selectedQueueItem.patientName} ({selectedQueueItem.uhid})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Current Assigned Suite:</span>
+                <span className="font-semibold text-teal-800">{selectedQueueItem.cabin} • {selectedQueueItem.doctor}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Current Priority:</span>
+                <span className="font-mono font-medium text-slate-700">{selectedQueueItem.category}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Escalate / Change Priority</label>
+                <select
+                  value={queueActionForm.category}
+                  onChange={(e) => setQueueActionForm({ ...queueActionForm, category: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="Emergency / STAT">Emergency / STAT (Top of Queue)</option>
+                  <option value="Senior Citizen">Senior Citizen Priority</option>
+                  <option value="General">General Routine</option>
+                  <option value="Fast Track">Fast Track Review</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Transfer Cabin Suite</label>
+                <select
+                  value={queueActionForm.cabin}
+                  onChange={(e) => setQueueActionForm({ ...queueActionForm, cabin: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {clinicRooms.map(r => (
+                    <option key={r.cabin} value={r.cabin}>{r.cabin} - {r.doctor}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Triage Rationale</label>
+              <textarea
+                required
+                rows={2}
+                value={queueActionForm.notes}
+                onChange={(e) => setQueueActionForm({ ...queueActionForm, notes: e.target.value })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsQueueActionModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Apply Queue Update
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 4. Follow-up Tracking & Multi-Channel Recall Modal */}
+      {isFollowUpModalOpen && (
+        <Modal
+          isOpen={isFollowUpModalOpen}
+          onClose={() => setIsFollowUpModalOpen(false)}
+          title={`Schedule Consultation Follow-Up - ${followUpForm.patientName}`}
+          size="md"
+        >
+          <form onSubmit={handleSaveFollowUp} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Patient UHID & Name</label>
+                <select
+                  value={followUpForm.uhid}
+                  onChange={(e) => {
+                    const uh = e.target.value;
+                    const pat = opdVisits.find(v => v.uhid === uh);
+                    setFollowUpForm({
+                      ...followUpForm,
+                      uhid: uh,
+                      patientName: pat?.patientName || '',
+                      doctor: pat?.doctor || followUpForm.doctor
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {opdVisits.map(v => (
+                    <option key={v.uhid} value={v.uhid}>{v.uhid} - {v.patientName}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Attending Physician</label>
+                <input
+                  type="text"
+                  required
+                  value={followUpForm.doctor}
+                  onChange={(e) => setFollowUpForm({ ...followUpForm, doctor: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Review Interval</label>
+                <select
+                  value={followUpForm.interval}
+                  onChange={(e) => setFollowUpForm({ ...followUpForm, interval: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="3 Days Post-Op">3 Days Post-Op Evaluation</option>
+                  <option value="7 Days Post-Consult">7 Days Post-Consult</option>
+                  <option value="14 Days Post-Consult">14 Days Post-Consult</option>
+                  <option value="1 Month Chronic Care">1 Month Chronic Care</option>
+                  <option value="3 Months Routine Review">3 Months Routine Review</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Scheduled Review Date</label>
+                <input
+                  type="date"
+                  required
+                  value={followUpForm.dueDate}
+                  onChange={(e) => setFollowUpForm({ ...followUpForm, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-2">Automated Multi-Channel Recalls (48h & 24h prior)</label>
+              <div className="flex items-center gap-4 text-xs">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={followUpForm.channels.whatsapp}
+                    onChange={(e) => setFollowUpForm({
+                      ...followUpForm,
+                      channels: { ...followUpForm.channels, whatsapp: e.target.checked }
+                    })}
+                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                  />
+                  <span>WhatsApp Message</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={followUpForm.channels.sms}
+                    onChange={(e) => setFollowUpForm({
+                      ...followUpForm,
+                      channels: { ...followUpForm.channels, sms: e.target.checked }
+                    })}
+                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                  />
+                  <span>SMS Alert</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={followUpForm.channels.ivrCall}
+                    onChange={(e) => setFollowUpForm({
+                      ...followUpForm,
+                      channels: { ...followUpForm.channels, ivrCall: e.target.checked }
+                    })}
+                    className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                  />
+                  <span>Voice IVR Call</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Review Instructions & Reports Required</label>
+              <textarea
+                required
+                rows={3}
+                value={followUpForm.instructions}
+                onChange={(e) => setFollowUpForm({ ...followUpForm, instructions: e.target.value })}
+                placeholder="Specific blood investigations, imaging or fasting protocol to follow before visit"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsFollowUpModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Save & Schedule Recall
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>
