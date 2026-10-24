@@ -42,6 +42,7 @@ import { useHospitalState } from '../../context/HospitalStateContext';
 import { useAuth } from '../../context/AuthContext';
 import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
 import { BILLING_GROUPS } from '../billing/billingConstants';
+import sarjiLogo from '../../assets/sarji-logo.png';
 
 export const AppShell = ({
   currentRoute,
@@ -610,8 +611,8 @@ export const AppShell = ({
       <aside
         style={{
           width: effectiveCollapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)',
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid var(--color-border)',
+          backgroundColor: '#0A4174',
+          borderRight: '1px solid rgba(73, 118, 159, 0.4)',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
@@ -627,43 +628,46 @@ export const AppShell = ({
         {/* Brand Header */}
         <div
           style={{
-            height: 'var(--topbar-height)',
-            padding: effectiveCollapsed ? '0 12px' : '0 16px',
+            minHeight: '74px',
+            padding: effectiveCollapsed ? '10px 8px' : '10px 12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: effectiveCollapsed ? 'center' : 'space-between',
-            borderBottom: '1px solid var(--color-border-subtle)',
-            backgroundColor: '#FFFFFF',
+            borderBottom: '1px solid rgba(73, 118, 159, 0.35)',
+            backgroundColor: '#0A4174',
             flexShrink: 0
           }}
         >
           {!effectiveCollapsed ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                <div
+              {/* White Logo Container Box as in Photo 1 */}
+              <div
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '8px',
+                  padding: '4px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #FFFFFF',
+                  minWidth: 0,
+                  flex: 1,
+                  marginRight: '8px',
+                  height: '48px',
+                  overflow: 'hidden'
+                }}
+              >
+                <img
+                  src={sarjiLogo}
+                  alt="Sarji Group of Hospitals"
                   style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-primary-teal)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFFFFF',
-                    boxShadow: '0 2px 6px rgba(8, 127, 140, 0.25)',
-                    flexShrink: 0
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    display: 'block'
                   }}
-                >
-                  <Activity size={19} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.98rem', color: 'var(--color-primary-teal)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                    MedicsPrime
-                  </div>
-                  <div style={{ fontSize: '0.65rem', fontWeight: '500', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Hospital Management
-                  </div>
-                </div>
+                />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <button
@@ -677,9 +681,9 @@ export const AppShell = ({
                     width: '28px',
                     height: '28px',
                     borderRadius: 'var(--radius-sm)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: '#FFFFFF',
+                    color: '#FFFFFF',
+                    border: '1px solid #49769F',
+                    backgroundColor: 'rgba(73, 118, 159, 0.35)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
@@ -699,8 +703,9 @@ export const AppShell = ({
                     width: '28px',
                     height: '28px',
                     borderRadius: 'var(--radius-sm)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
+                    color: '#FFFFFF',
+                    border: '1px solid #49769F',
+                    backgroundColor: 'rgba(73, 118, 159, 0.35)',
                     cursor: 'pointer'
                   }}
                   title="Close navigation"
@@ -711,22 +716,32 @@ export const AppShell = ({
               </div>
             </>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <div
                 style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-primary-teal)',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  backgroundColor: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#FFFFFF',
-                  boxShadow: '0 2px 6px rgba(8, 127, 140, 0.25)'
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                  padding: '3px',
+                  overflow: 'hidden'
                 }}
-                title="MedicsPrime Hospital Management"
+                title="Sarji Group of Hospitals"
               >
-                <Activity size={18} />
+                <img
+                  src={sarjiLogo}
+                  alt="Sarji"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'left center'
+                  }}
+                />
               </div>
               <button
                 type="button"
@@ -739,9 +754,9 @@ export const AppShell = ({
                   width: '24px',
                   height: '24px',
                   borderRadius: 'var(--radius-sm)',
-                  color: 'var(--color-text-secondary)',
-                  border: 'none',
-                  backgroundColor: 'transparent',
+                  color: '#FFFFFF',
+                  border: '1px solid #49769F',
+                  backgroundColor: 'rgba(73, 118, 159, 0.35)',
                   cursor: 'pointer'
                 }}
                 title="Expand sidebar"
@@ -754,14 +769,14 @@ export const AppShell = ({
         </div>
 
         {/* Hospital Identity Header */}
-        <div style={{ padding: effectiveCollapsed ? '8px 10px 4px' : '10px 12px 4px', flexShrink: 0 }}>
+        <div style={{ padding: effectiveCollapsed ? '8px 8px 4px' : '10px 12px 4px', flexShrink: 0 }}>
           {!effectiveCollapsed ? (
             <div
               style={{
                 padding: '8px 10px',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
+                backgroundColor: 'rgba(73, 118, 159, 0.25)',
                 borderRadius: 'var(--radius-md)',
-                border: '1px solid rgba(8, 127, 140, 0.15)',
+                border: '1px solid #49769F',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -774,62 +789,63 @@ export const AppShell = ({
                     width: '7px',
                     height: '7px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--color-success)',
-                    flexShrink: 0
+                    backgroundColor: '#10B981',
+                    flexShrink: 0,
+                    boxShadow: '0 0 6px #10B981'
                   }}
                 />
                 <div style={{ minWidth: 0 }}>
                   <div
                     style={{
                       fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: 'var(--color-primary-teal)',
+                      fontWeight: '700',
+                      color: '#FFFFFF',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    Apex Central Hospital
+                    Sarji Group of Hospitals
                   </div>
                   <div
                     style={{
                       fontSize: '0.65rem',
-                      color: 'var(--color-text-secondary)',
+                      color: '#D1E4F5',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    Main Clinical Campus
+                    Trusted empathy in healthcare
                   </div>
                 </div>
               </div>
-              <ShieldCheck size={14} color="var(--color-primary-teal)" style={{ flexShrink: 0 }} />
+              <ShieldCheck size={14} color="#FFFFFF" style={{ flexShrink: 0 }} />
             </div>
           ) : (
             <div
               style={{
                 width: '100%',
                 height: '34px',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
+                backgroundColor: 'rgba(73, 118, 159, 0.25)',
                 borderRadius: 'var(--radius-md)',
-                border: '1px solid rgba(8, 127, 140, 0.15)',
+                border: '1px solid #49769F',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '4px'
               }}
-              title="Apex Central Hospital • Main Clinical Campus"
+              title="Sarji Group of Hospitals • Trusted empathy in healthcare"
             >
               <div
                 style={{
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--color-success)'
+                  backgroundColor: '#10B981'
                 }}
               />
-              <ShieldCheck size={14} color="var(--color-primary-teal)" />
+              <ShieldCheck size={14} color="#FFFFFF" />
             </div>
           )}
         </div>
@@ -843,9 +859,9 @@ export const AppShell = ({
                   style={{
                     fontSize: '0.68rem',
                     fontWeight: '700',
-                    color: 'var(--color-text-muted)',
+                    color: '#8CB1D4',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.08em',
                     padding: '8px 10px 4px',
                     textAlign: 'left'
                   }}
@@ -857,7 +873,7 @@ export const AppShell = ({
                   <div
                     style={{
                       height: '1px',
-                      backgroundColor: 'var(--color-border-subtle)',
+                      backgroundColor: 'rgba(73, 118, 159, 0.35)',
                       margin: '6px 6px 8px'
                     }}
                   />
@@ -940,13 +956,13 @@ export const AppShell = ({
                           padding: effectiveCollapsed ? '8px 0' : '8px 10px',
                           minHeight: '38px',
                           borderRadius: 'var(--radius-md)',
-                          backgroundColor: isItemActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                          color: isItemActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                          backgroundColor: isItemActive ? '#49769F' : 'transparent',
+                          color: '#FFFFFF',
                           fontWeight: isItemActive ? '600' : '500',
                           fontSize: 'var(--font-size-sm)',
                           border: '1px solid',
-                          borderColor: isItemActive ? 'rgba(8, 127, 140, 0.2)' : 'transparent',
-                          boxShadow: isItemActive && !effectiveCollapsed ? 'inset 3px 0 0 var(--color-primary-teal)' : 'none',
+                          borderColor: isItemActive ? 'rgba(255, 255, 255, 0.35)' : 'transparent',
+                          boxShadow: isItemActive && !effectiveCollapsed ? 'inset 3px 0 0 #FFFFFF' : 'none',
                           transition: 'background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease',
                           position: 'relative',
                           cursor: 'pointer'
@@ -964,7 +980,7 @@ export const AppShell = ({
                         >
                           <Icon
                             size={18}
-                            color={isItemActive ? 'var(--color-primary-teal)' : 'currentColor'}
+                            color={isItemActive ? '#FFFFFF' : '#D1E4F5'}
                             style={{ flexShrink: 0 }}
                           />
                           {!effectiveCollapsed && (
@@ -988,10 +1004,10 @@ export const AppShell = ({
                               flexShrink: 0,
                               padding: '2px 7px',
                               fontSize: '0.68rem',
-                              fontWeight: '600',
+                              fontWeight: '700',
                               borderRadius: 'var(--radius-full)',
-                              backgroundColor: isItemActive ? 'var(--color-primary-teal)' : '#EEF2F2',
-                              color: isItemActive ? '#FFFFFF' : 'var(--color-text-secondary)',
+                              backgroundColor: isItemActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.45)',
+                              color: isItemActive ? '#0A4174' : '#FFFFFF',
                               lineHeight: 1.3
                             }}
                           >
@@ -1003,7 +1019,7 @@ export const AppShell = ({
                           <span
                             style={{
                               marginLeft: 'auto',
-                              color: 'var(--color-text-secondary)',
+                              color: isItemActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
                               display: 'flex',
                               alignItems: 'center'
                             }}
@@ -1021,7 +1037,7 @@ export const AppShell = ({
                               width: '6px',
                               height: '6px',
                               borderRadius: '50%',
-                              backgroundColor: isItemActive ? 'var(--color-primary-teal)' : 'var(--color-aqua-accent)'
+                              backgroundColor: '#FFFFFF'
                             }}
                           />
                         )}
@@ -1037,11 +1053,11 @@ export const AppShell = ({
                             marginTop: '3px',
                             marginLeft: '10px',
                             paddingLeft: '8px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: '360px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
-                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                            scrollbarColor: '#49769F transparent'
                           }}
                         >
                           {MODULE_GROUPS.map((group) => {
@@ -1063,8 +1079,8 @@ export const AppShell = ({
                                     justifyContent: 'space-between',
                                     padding: '5px 8px',
                                     borderRadius: 'var(--radius-sm)',
-                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
                                     fontSize: '0.76rem',
                                     fontWeight: isGroupActive ? '600' : '500',
                                     transition: 'all 0.12s ease'
@@ -1111,7 +1127,7 @@ export const AppShell = ({
                                       background: 'none',
                                       border: 'none',
                                       padding: '2px',
-                                      color: 'var(--color-text-muted)',
+                                      color: 'rgba(255, 255, 255, 0.7)',
                                       cursor: 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -1133,7 +1149,7 @@ export const AppShell = ({
                                       gap: '1px',
                                       marginLeft: '8px',
                                       paddingLeft: '8px',
-                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                       marginTop: '2px',
                                       marginBottom: '4px'
                                     }}
@@ -1157,8 +1173,8 @@ export const AppShell = ({
                                             textAlign: 'left',
                                             padding: '4px 6px',
                                             borderRadius: 'var(--radius-sm)',
-                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                             fontWeight: isSubActive ? '600' : '400',
                                             fontSize: '0.73rem',
                                             border: 'none',
@@ -1173,7 +1189,7 @@ export const AppShell = ({
                                               width: '4px',
                                               height: '4px',
                                               borderRadius: '50%',
-                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                               flexShrink: 0
                                             }}
                                           />
@@ -1201,11 +1217,11 @@ export const AppShell = ({
                             marginTop: '3px',
                             marginLeft: '10px',
                             paddingLeft: '8px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: '360px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
-                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                            scrollbarColor: '#49769F transparent'
                           }}
                         >
                           {BILLING_GROUPS.map((group) => {
@@ -1226,8 +1242,8 @@ export const AppShell = ({
                                     justifyContent: 'space-between',
                                     padding: '5px 8px',
                                     borderRadius: 'var(--radius-sm)',
-                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
                                     fontSize: '0.76rem',
                                     fontWeight: isGroupActive ? '600' : '500',
                                     transition: 'all 0.12s ease'
@@ -1272,7 +1288,7 @@ export const AppShell = ({
                                       background: 'none',
                                       border: 'none',
                                       padding: '2px',
-                                      color: 'var(--color-text-muted)',
+                                      color: 'rgba(255, 255, 255, 0.7)',
                                       cursor: 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -1293,7 +1309,7 @@ export const AppShell = ({
                                       gap: '1px',
                                       marginLeft: '8px',
                                       paddingLeft: '8px',
-                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                       marginTop: '2px',
                                       marginBottom: '4px'
                                     }}
@@ -1317,8 +1333,8 @@ export const AppShell = ({
                                             textAlign: 'left',
                                             padding: '4px 6px',
                                             borderRadius: 'var(--radius-sm)',
-                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                             fontWeight: isSubActive ? '600' : '400',
                                             fontSize: '0.73rem',
                                             border: 'none',
@@ -1332,7 +1348,7 @@ export const AppShell = ({
                                               width: '4px',
                                               height: '4px',
                                               borderRadius: '50%',
-                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                               flexShrink: 0
                                             }}
                                           />
@@ -1360,7 +1376,7 @@ export const AppShell = ({
                             marginTop: '2px',
                             marginLeft: '12px',
                             paddingLeft: '14px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: 'none'
                           }}
                         >
@@ -1404,8 +1420,8 @@ export const AppShell = ({
                                       justifyContent: 'space-between',
                                       padding: '4px 6px',
                                       borderRadius: 'var(--radius-sm)',
-                                      backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                      color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                      backgroundColor: isSubActive ? '#49769F' : 'transparent',
+                                      color: isSubActive ? '#FFFFFF' : '#D1E4F5',
                                       fontSize: '0.78rem',
                                       fontWeight: isSubActive ? '600' : '500',
                                       transition: 'all 0.12s ease'
@@ -1449,7 +1465,7 @@ export const AppShell = ({
                                         background: 'none',
                                         border: 'none',
                                         padding: '2px',
-                                        color: 'var(--color-text-muted)',
+                                        color: 'rgba(255, 255, 255, 0.7)',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -1471,7 +1487,7 @@ export const AppShell = ({
                                         gap: '1px',
                                         marginLeft: '8px',
                                         paddingLeft: '8px',
-                                        borderLeft: '1px solid var(--color-border-subtle)',
+                                        borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                         marginTop: '2px',
                                         marginBottom: '4px'
                                       }}
@@ -1498,8 +1514,8 @@ export const AppShell = ({
                                               textAlign: 'left',
                                               padding: '4px 6px',
                                               borderRadius: 'var(--radius-sm)',
-                                              backgroundColor: isSubsubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                              color: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                              backgroundColor: isSubsubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                              color: isSubsubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                               fontWeight: isSubsubActive ? '600' : '400',
                                               fontSize: '0.73rem',
                                               border: 'none',
@@ -1513,7 +1529,7 @@ export const AppShell = ({
                                                 width: '4px',
                                                 height: '4px',
                                                 borderRadius: '50%',
-                                                backgroundColor: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                                backgroundColor: isSubsubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                                 flexShrink: 0
                                               }}
                                             />
@@ -1543,8 +1559,8 @@ export const AppShell = ({
                                   textAlign: 'left',
                                   padding: '6px 8px',
                                   borderRadius: 'var(--radius-sm)',
-                                  backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                  color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                  backgroundColor: isSubActive ? '#49769F' : 'transparent',
+                                  color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)',
                                   fontWeight: isSubActive ? '600' : '400',
                                   fontSize: '0.8rem',
                                   border: 'none',
@@ -1557,7 +1573,7 @@ export const AppShell = ({
                                     width: '5px',
                                     height: '5px',
                                     borderRadius: '50%',
-                                    backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                    backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                     flexShrink: 0
                                   }}
                                 />
@@ -1581,8 +1597,8 @@ export const AppShell = ({
         <div
           style={{
             padding: effectiveCollapsed ? '10px 8px' : '12px 14px',
-            borderTop: '1px solid var(--color-border-subtle)',
-            backgroundColor: '#FFFFFF',
+            borderTop: '1px solid rgba(73, 118, 159, 0.4)',
+            backgroundColor: '#07294A',
             display: 'flex',
             alignItems: 'center',
             justifyContent: effectiveCollapsed ? 'center' : 'space-between',
@@ -1598,14 +1614,15 @@ export const AppShell = ({
                       width: '32px',
                       height: '32px',
                       borderRadius: 'var(--radius-full)',
-                      backgroundColor: 'var(--color-primary-teal)',
+                      backgroundColor: '#49769F',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontWeight: '600',
+                      fontWeight: '700',
                       fontSize: '0.8rem',
-                      flexShrink: 0
+                      flexShrink: 0,
+                      border: '1.5px solid #FFFFFF'
                     }}
                   >
                     {user.full_name ? user.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'ST'}
@@ -1615,7 +1632,7 @@ export const AppShell = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         fontWeight: '600',
-                        color: 'var(--color-text-primary)',
+                        color: '#FFFFFF',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1627,7 +1644,7 @@ export const AppShell = ({
                     <div
                       style={{
                         fontSize: '0.68rem',
-                        color: 'var(--color-text-secondary)',
+                        color: '#A0C4E4',
                         textTransform: 'capitalize',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -1643,7 +1660,7 @@ export const AppShell = ({
                   <button
                     type="button"
                     onClick={() => openLoginModal()}
-                    style={{ color: 'var(--color-text-muted)', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+                    style={{ color: '#D1E4F5', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
                     title="Switch Staff Account"
                     aria-label="Switch Staff Account"
                   >
@@ -1652,7 +1669,7 @@ export const AppShell = ({
                   <button
                     type="button"
                     onClick={logout}
-                    style={{ color: 'var(--color-error)', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+                    style={{ color: '#F87171', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
                     title="Sign out"
                     aria-label="Sign out"
                   >
@@ -1668,14 +1685,14 @@ export const AppShell = ({
                   width: '34px',
                   height: '34px',
                   borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--color-primary-teal)',
+                  backgroundColor: '#49769F',
                   color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: '600',
+                  fontWeight: '700',
                   fontSize: '0.8rem',
-                  border: 'none',
+                  border: '1.5px solid #FFFFFF',
                   cursor: 'pointer'
                 }}
                 title={`${user.full_name} (${user.role ? user.role.replace(/_/g, ' ') : 'Staff'}) • Click to switch user`}
@@ -1686,15 +1703,15 @@ export const AppShell = ({
             )
           ) : (
             !effectiveCollapsed ? (
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left' }}>
                   <div
                     style={{
                       width: '28px',
                       height: '28px',
                       borderRadius: 'var(--radius-full)',
-                      backgroundColor: '#E2E8F0',
-                      color: 'var(--color-text-muted)',
+                      backgroundColor: 'rgba(73, 118, 159, 0.35)',
+                      color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1704,23 +1721,36 @@ export const AppShell = ({
                     <Lock size={14} />
                   </div>
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                    <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: '#FFFFFF' }}>
                       Not Signed In
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#A0C4E4' }}>
                       Public Terminal
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  icon={LogIn}
+                <button
+                  type="button"
                   onClick={() => openLoginModal()}
-                  style={{ width: '100%', padding: '6px 12px' }}
+                  style={{
+                    width: '100%',
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    backgroundColor: '#49769F',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
                 >
+                  <LogIn size={14} />
                   Staff Login
-                </Button>
+                </button>
               </div>
             ) : (
               <button
@@ -1730,12 +1760,12 @@ export const AppShell = ({
                   width: '34px',
                   height: '34px',
                   borderRadius: 'var(--radius-full)',
-                  backgroundColor: '#E2E8F0',
-                  color: 'var(--color-text-muted)',
+                  backgroundColor: 'rgba(73, 118, 159, 0.35)',
+                  color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: 'none',
+                  border: '1px solid #49769F',
                   cursor: 'pointer'
                 }}
                 title="Staff Login"
@@ -2396,28 +2426,32 @@ export const AppShell = ({
           outline: none;
         }
         .nav-item:hover {
-          background-color: var(--color-bg-soft-cyan) !important;
-          color: var(--color-text-primary) !important;
+          background-color: rgba(73, 118, 159, 0.4) !important;
+          color: #FFFFFF !important;
         }
         .nav-item-active:hover {
-          background-color: var(--color-bg-pale-aqua) !important;
-          color: var(--color-primary-teal) !important;
+          background-color: #49769F !important;
+          color: #FFFFFF !important;
+        }
+        .group-tree-row:hover {
+          background-color: rgba(73, 118, 159, 0.35) !important;
+          color: #FFFFFF !important;
         }
         .nav-subitem {
           outline: none;
         }
         .nav-subitem:hover {
-          background-color: var(--color-bg-soft-cyan) !important;
-          color: var(--color-text-primary) !important;
+          background-color: rgba(73, 118, 159, 0.35) !important;
+          color: #FFFFFF !important;
         }
         .nav-subitem-active:hover {
-          background-color: var(--color-bg-pale-aqua) !important;
-          color: var(--color-primary-teal) !important;
+          background-color: #49769F !important;
+          color: #FFFFFF !important;
         }
         .desktop-collapse-btn:hover {
-          background-color: var(--color-bg-pale-aqua) !important;
-          color: var(--color-primary-teal) !important;
-          border-color: rgba(8, 127, 140, 0.3) !important;
+          background-color: #49769F !important;
+          color: #FFFFFF !important;
+          border-color: #FFFFFF !important;
         }
         @media (max-width: 900px) {
           .app-sidebar {
