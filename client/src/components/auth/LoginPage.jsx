@@ -10,7 +10,11 @@ import {
   Sparkles,
   ArrowRight,
   PhoneCall,
-  Clock
+  Clock,
+  Building2,
+  CheckCircle2,
+  HelpCircle,
+  User
 } from 'lucide-react';
 import { Button, Badge, Modal } from '../common/UIPrimitives';
 import { useAuth } from '../../context/AuthContext';
@@ -18,10 +22,18 @@ import { PRESET_PERSONAS, IS_DEV_MODE } from '../../constants/personas';
 import sarjiHospitalBg from '../../assets/sarji-hospital-building.png';
 import sarjiLogo from '../../assets/sarji-logo.png';
 
+const HOSPITAL_BRANCHES = [
+  { id: 'main', name: 'Sarji Super Speciality Hospital — Main Campus (Shivamogga)' },
+  { id: 'multispeciality', name: 'Sarji Multi Speciality Hospital — Tilak Nagar' },
+  { id: 'diagnostics', name: 'Sarji Diagnostic & Imaging Institute — Shivamogga' },
+  { id: 'womens_care', name: 'Sarji Fertility & Women Care Centre — Shivamogga' }
+];
+
 export function LoginPage({ onLoginSuccess }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('main');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +42,7 @@ export function LoginPage({ onLoginSuccess }) {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const formRef = useRef(null);
 
-  // Set default dev persona on initial mount for rapid evaluation
+  // Set default dev persona on initial mount for rapid evaluation in dev mode
   useEffect(() => {
     if (IS_DEV_MODE && PRESET_PERSONAS.length > 0) {
       const defaultP = PRESET_PERSONAS[0];
@@ -79,9 +91,9 @@ export function LoginPage({ onLoginSuccess }) {
       if (err.status === 401) {
         setErrorMessage('Invalid institutional credentials. Please check your staff email and password.');
       } else if (err.status === 403) {
-        setErrorMessage(err.message || 'Account access is restricted or temporarily locked.');
+        setErrorMessage(err.message || 'Account access is restricted or temporarily locked. Please contact Hospital IT.');
       } else {
-        setErrorMessage(err.message || 'Authentication failed. Please verify your connection or use a preset persona.');
+        setErrorMessage(err.message || 'Authentication service unavailable. Please check your network connection.');
       }
     } finally {
       setIsSubmitting(false);
@@ -98,7 +110,7 @@ export function LoginPage({ onLoginSuccess }) {
         onLoginSuccess();
       }
     } catch (err) {
-      console.warn('[LoginPage] Demo bypass failed:', err);
+      console.warn('[LoginPage] Demo access fallback:', err);
       if (typeof onLoginSuccess === 'function') {
         onLoginSuccess();
       }
@@ -121,22 +133,23 @@ export function LoginPage({ onLoginSuccess }) {
         backgroundPosition: 'center center',
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
-        fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)',
+        fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif",
         color: '#FFFFFF',
         overflowX: 'hidden'
       }}
     >
-      {/* Toned Down Soft Translucent Overlay: Keeps the hospital exterior building sharp, bright and fully visible */}
+      {/* Subtle Healthcare Gradient Scrim Overlay:
+          Balances hospital architecture visibility with high contrast readability for login form */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(180deg, rgba(10, 65, 116, 0.28) 0%, rgba(0, 0, 0, 0.10) 35%, rgba(0, 0, 0, 0.15) 70%, rgba(10, 65, 116, 0.35) 100%)',
+          background: 'linear-gradient(135deg, rgba(10, 45, 80, 0.62) 0%, rgba(10, 65, 116, 0.40) 45%, rgba(10, 35, 65, 0.68) 100%)',
           zIndex: 1
         }}
       />
 
-      {/* Top Header Bar */}
+      {/* Top Enterprise Header */}
       <header
         style={{
           position: 'relative',
@@ -145,13 +158,14 @@ export function LoginPage({ onLoginSuccess }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.22)',
-          backgroundColor: 'rgba(10, 65, 116, 0.55)',
-          backdropFilter: 'blur(8px)',
-          gap: '16px'
+          backgroundColor: 'rgba(10, 65, 116, 0.65)',
+          backdropFilter: 'blur(8px)'
         }}
       >
-        {/* Left: Brand Identity with White Logo Box */}
+        {/* Brand Identity with White Logo Container */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
           <div
             style={{
@@ -160,7 +174,7 @@ export function LoginPage({ onLoginSuccess }) {
               padding: '4px 10px',
               display: 'flex',
               alignItems: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
               height: '42px',
               flexShrink: 0
             }}
@@ -172,27 +186,27 @@ export function LoginPage({ onLoginSuccess }) {
             />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: '800', letterSpacing: '0.02em', color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '0.96rem', fontWeight: '800', letterSpacing: '0.02em', color: '#FFFFFF', whiteSpace: 'nowrap' }}>
               Sarji Super Speciality Hospital
             </div>
             <div
               style={{
-                fontSize: '0.78rem',
-                color: '#EBF3FA',
+                fontSize: '0.76rem',
+                color: '#D1E4F5',
                 fontWeight: '500',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis'
               }}
-              title="ಸರ್ಜಿ ಸೂಪರ್ ಸ್ಪೆಷಾಲಿಟಿ ಆಸ್ಪತ್ರೆ — ರೋಗಿಗಳ ವಿಶ್ವಾಸ, ಶ್ರೇಷ್ಠ ಚಿಕಿತ್ಸೆ ಮತ್ತು ಕರುಣಾಪೂರ್ವಕ ಆರೈಕೆ."
+              title="Patient Trust, Clinical Excellence and Compassionate Care"
             >
-              ಸರ್ಜಿ ಸೂಪರ್ ಸ್ಪೆಷಾಲಿಟಿ ಆಸ್ಪತ್ರೆ — ರೋಗಿಗಳ ವಿಶ್ವಾಸ, ಶ್ರೇಷ್ಠ ಚಿಕಿತ್ಸೆ ಮತ್ತು ಕರುಣಾಪೂರ್ವಕ ಆರೈಕೆ.
+              Patient Trust, Clinical Excellence and Compassionate Care
             </div>
           </div>
         </div>
 
-        {/* Right: Hospital Help & Telemetry */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+        {/* Emergency Helpline & Telemetry */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#EBF3FA' }}>
             <span
               style={{
@@ -204,7 +218,7 @@ export function LoginPage({ onLoginSuccess }) {
                 display: 'inline-block'
               }}
             />
-            <span style={{ fontWeight: '600' }}>24x7 Emergency</span>
+            <span style={{ fontWeight: '600' }}>24x7 Emergency Services</span>
           </div>
 
           <div
@@ -226,7 +240,7 @@ export function LoginPage({ onLoginSuccess }) {
         </div>
       </header>
 
-      {/* Main Center Area: Focused Login Form */}
+      {/* Main Center Area: Professional Hospital Staff Login Portal */}
       <main
         style={{
           position: 'relative',
@@ -242,84 +256,61 @@ export function LoginPage({ onLoginSuccess }) {
           margin: '0 auto'
         }}
       >
-        {/* Hospital Name & Motto Card Header */}
+        {/* Enterprise Login Card */}
         <div
           style={{
-            width: '100%',
-            marginBottom: '16px',
-            textAlign: 'center',
-            backgroundColor: 'rgba(10, 65, 116, 0.70)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '10px 16px',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
-          }}
-        >
-          <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#FFFFFF', marginBottom: '2px' }}>
-            ಸರ್ಜಿ ಸೂಪರ್ ಸ್ಪೆಷಾಲಿಟಿ ಆಸ್ಪತ್ರೆ — ರೋಗಿಗಳ ವಿಶ್ವಾಸ, ಶ್ರೇಷ್ಠ ಚಿಕಿತ್ಸೆ ಮತ್ತು ಕರುಣಾಪೂರ್ವಕ ಆರೈಕೆ.
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#CBDDEE' }}>
-            Sarji Super Speciality Hospital • Tertiary Care Centre, Shivamogga
-          </div>
-        </div>
-
-        {/* Floating Glassmorphic Login Card */}
-        <div
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            backgroundColor: '#FFFFFF',
             borderRadius: '16px',
-            padding: '30px 28px',
-            boxShadow: '0 20px 50px rgba(0, 15, 35, 0.45)',
-            border: '1px solid rgba(255, 255, 255, 0.9)',
-            color: 'var(--color-text-primary, #1E293B)',
-            width: '100%',
-            backdropFilter: 'blur(12px)'
+            padding: '32px 30px',
+            boxShadow: '0 20px 50px rgba(0, 15, 35, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8)',
+            border: '1px solid #E2E8F0',
+            color: '#1E293B',
+            width: '100%'
           }}
         >
-          {/* Card Title */}
-          <div style={{ marginBottom: '18px', textAlign: 'center' }}>
+          {/* Card Title & Institutional Identity */}
+          <div style={{ marginBottom: '22px', textAlign: 'center' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--color-bg-pale-aqua, #EBF3FA)',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  backgroundColor: '#EBF3FA',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--color-primary-teal, #0A4174)'
+                  color: '#0A4174'
                 }}
               >
-                <LogIn size={18} />
+                <LogIn size={20} />
               </div>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: '800', color: '#0A4174', margin: 0 }}>
-                Staff Login
-              </h2>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#0A4174', margin: 0, letterSpacing: '-0.01em' }}>
+                Staff Portal Sign In
+              </h1>
             </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary, #64748B)', margin: 0 }}>
-              Sign in with your verified hospital staff credentials
+            <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>
+              Sarji Group of Hospitals • Healthcare Information Management System
             </p>
           </div>
 
-          {/* Quick Select Institutional Persona (Dev & Demo) */}
+          {/* Quick Select Institutional Persona (Dev & Demo Evaluation Mode) */}
           {IS_DEV_MODE && (
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label
+            <div style={{ marginBottom: '18px', padding: '10px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span
                   style={{
                     fontSize: '0.70rem',
                     fontWeight: '700',
                     color: '#0A4174',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    letterSpacing: '0.04em'
                   }}
                 >
-                  Quick Select Test Persona:
-                </label>
-                <span style={{ fontSize: '0.66rem', color: 'var(--color-text-muted, #94A3B8)' }}>
-                  1-Click Auto-Fill
+                  Quick Select Staff Persona:
+                </span>
+                <span style={{ fontSize: '0.66rem', color: '#64748B' }}>
+                  1-Click Auto-Fill (Demo)
                 </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
@@ -333,8 +324,8 @@ export function LoginPage({ onLoginSuccess }) {
                       style={{
                         padding: '6px 8px',
                         borderRadius: '6px',
-                        border: `1.5px solid ${isSelected ? '#0A4174' : 'var(--color-border, #D5E2EE)'}`,
-                        backgroundColor: isSelected ? 'var(--color-bg-pale-aqua, #EBF3FA)' : '#FFFFFF',
+                        border: `1.5px solid ${isSelected ? '#0A4174' : '#CBD5E1'}`,
+                        backgroundColor: isSelected ? '#EBF3FA' : '#FFFFFF',
                         textAlign: 'left',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
@@ -370,9 +361,52 @@ export function LoginPage({ onLoginSuccess }) {
             </div>
           )}
 
-          {/* Login Form: Only the Valid Fields */}
+          {/* Form Controls */}
           <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {/* Email Field */}
+            {/* Hospital / Campus Branch Selector */}
+            <div>
+              <label
+                htmlFor="login-branch"
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: '600',
+                  color: '#334155',
+                  display: 'block',
+                  marginBottom: '5px'
+                }}
+              >
+                Hospital / Campus Branch <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span style={{ position: 'absolute', left: '12px', color: '#64748B', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
+                  <Building2 size={16} />
+                </span>
+                <select
+                  id="login-branch"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px 10px 38px',
+                    borderRadius: '8px',
+                    border: '1.5px solid #CBD5E1',
+                    fontSize: '0.82rem',
+                    color: '#1E293B',
+                    backgroundColor: '#FFFFFF',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {HOSPITAL_BRANCHES.map(branch => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Email / Username Field */}
             <div>
               <label
                 htmlFor="login-email"
@@ -384,10 +418,10 @@ export function LoginPage({ onLoginSuccess }) {
                   marginBottom: '5px'
                 }}
               >
-                Institutional Staff Email <span style={{ color: 'var(--color-error, #EF4444)' }}>*</span>
+                Username or Staff Email <span style={{ color: '#EF4444' }}>*</span>
               </label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <span style={{ position: 'absolute', left: '12px', color: '#64748B', pointerEvents: 'none' }}>
+                <span style={{ position: 'absolute', left: '12px', color: '#64748B', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
                   <Mail size={16} />
                 </span>
                 <input
@@ -409,16 +443,17 @@ export function LoginPage({ onLoginSuccess }) {
                       setSelectedPersona(null);
                     }
                   }}
-                  placeholder="doctor@hospital.test"
+                  placeholder="e.g. doctor@hospital.test or staff ID"
                   style={{
                     width: '100%',
-                    padding: '9px 12px 9px 38px',
+                    padding: '10px 12px 10px 38px',
                     borderRadius: '8px',
-                    border: '1.5px solid var(--color-border, #D5E2EE)',
+                    border: '1.5px solid #CBD5E1',
                     fontSize: '0.85rem',
                     color: '#1E293B',
                     backgroundColor: '#FFFFFF',
-                    outline: 'none'
+                    outline: 'none',
+                    transition: 'border-color 0.15s ease'
                   }}
                 />
               </div>
@@ -435,13 +470,13 @@ export function LoginPage({ onLoginSuccess }) {
                     color: '#334155'
                   }}
                 >
-                  Password <span style={{ color: 'var(--color-error, #EF4444)' }}>*</span>
+                  Password <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsForgotModalOpen(true)}
                   style={{
-                    fontSize: '0.72rem',
+                    fontSize: '0.74rem',
                     color: '#0A4174',
                     background: 'none',
                     border: 'none',
@@ -449,12 +484,14 @@ export function LoginPage({ onLoginSuccess }) {
                     padding: 0,
                     fontWeight: '600'
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
                 >
                   Forgot Password?
                 </button>
               </div>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <span style={{ position: 'absolute', left: '12px', color: '#64748B', pointerEvents: 'none' }}>
+                <span style={{ position: 'absolute', left: '12px', color: '#64748B', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
                   <Lock size={16} />
                 </span>
                 <input
@@ -473,16 +510,17 @@ export function LoginPage({ onLoginSuccess }) {
                       }
                     }
                   }}
-                  placeholder="••••••••••••"
+                  placeholder="Enter your account password"
                   style={{
                     width: '100%',
-                    padding: '9px 40px 9px 38px',
+                    padding: '10px 40px 10px 38px',
                     borderRadius: '8px',
-                    border: '1.5px solid var(--color-border, #D5E2EE)',
+                    border: '1.5px solid #CBD5E1',
                     fontSize: '0.85rem',
                     color: '#1E293B',
                     backgroundColor: '#FFFFFF',
-                    outline: 'none'
+                    outline: 'none',
+                    transition: 'border-color 0.15s ease'
                   }}
                 />
                 <button
@@ -496,7 +534,8 @@ export function LoginPage({ onLoginSuccess }) {
                     cursor: 'pointer',
                     color: '#64748B',
                     display: 'flex',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    padding: '4px'
                   }}
                   title={showPassword ? 'Hide password' : 'Show password'}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -507,16 +546,21 @@ export function LoginPage({ onLoginSuccess }) {
             </div>
 
             {/* Remember Me Option */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '2px 0 4px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.78rem', color: '#475569' }}>
                 <input
+                  id="remember-me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ accentColor: '#0A4174', cursor: 'pointer' }}
+                  style={{ accentColor: '#0A4174', cursor: 'pointer', width: '15px', height: '15px' }}
                 />
                 <span>Remember this workstation</span>
               </label>
+              <span style={{ fontSize: '0.70rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <ShieldCheck size={13} color="#10B981" />
+                <span>Protected Session</span>
+              </span>
             </div>
 
             {/* Error Message */}
@@ -539,8 +583,8 @@ export function LoginPage({ onLoginSuccess }) {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+            {/* Primary Sign In Button */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -558,7 +602,7 @@ export function LoginPage({ onLoginSuccess }) {
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 12px rgba(10, 65, 116, 0.3)',
+                  boxShadow: '0 4px 12px rgba(10, 65, 116, 0.25)',
                   transition: 'all 0.15s ease'
                 }}
                 onMouseEnter={(e) => {
@@ -578,7 +622,7 @@ export function LoginPage({ onLoginSuccess }) {
                 )}
               </button>
 
-              {/* Direct Demo / Guest Explore Button */}
+              {/* Direct Demo / Clinical Guest Explore Button */}
               <button
                 type="button"
                 onClick={handleQuickGuestAccess}
@@ -586,7 +630,7 @@ export function LoginPage({ onLoginSuccess }) {
                   width: '100%',
                   padding: '9px 14px',
                   borderRadius: '8px',
-                  backgroundColor: 'var(--color-bg-pale-aqua, #EBF3FA)',
+                  backgroundColor: '#EBF3FA',
                   color: '#0A4174',
                   border: '1.5px solid rgba(73, 118, 159, 0.35)',
                   fontSize: '0.82rem',
@@ -602,7 +646,7 @@ export function LoginPage({ onLoginSuccess }) {
                   e.currentTarget.style.backgroundColor = '#DCE9F6';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--color-bg-pale-aqua, #EBF3FA)';
+                  e.currentTarget.style.backgroundColor = '#EBF3FA';
                 }}
               >
                 <Sparkles size={15} color="#0A4174" />
@@ -612,12 +656,12 @@ export function LoginPage({ onLoginSuccess }) {
             </div>
           </form>
 
-          {/* Security Compliance Badge */}
+          {/* Security Compliance Seal */}
           <div
             style={{
-              marginTop: '18px',
+              marginTop: '20px',
               paddingTop: '14px',
-              borderTop: '1px solid var(--color-border, #D5E2EE)',
+              borderTop: '1px solid #E2E8F0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -627,12 +671,12 @@ export function LoginPage({ onLoginSuccess }) {
             }}
           >
             <ShieldCheck size={14} color="#10B981" />
-            <span>256-bit SSL Protected • NABH & HIPAA Isolation</span>
+            <span>NABH & HIPAA Compliant Healthcare System • 256-bit SSL Protection</span>
           </div>
         </div>
       </main>
 
-      {/* Footer Strip */}
+      {/* Enterprise Footer */}
       <footer
         style={{
           position: 'relative',
@@ -641,24 +685,28 @@ export function LoginPage({ onLoginSuccess }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
           borderTop: '1px solid rgba(255, 255, 255, 0.18)',
-          backgroundColor: 'rgba(10, 65, 116, 0.55)',
+          backgroundColor: 'rgba(10, 65, 116, 0.65)',
           backdropFilter: 'blur(8px)',
           fontSize: '0.74rem',
-          color: '#CBDDEE'
+          color: '#D1E4F5'
         }}
       >
         <div>
           © {new Date().getFullYear()} Sarji Group of Hospitals. All Rights Reserved.
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <span>MedicsPrime HMS Enterprise</span>
           <span>•</span>
-          <span>IT Helpdesk: <strong>ext. 108</strong></span>
+          <span>Shivamogga, Karnataka</span>
+          <span>•</span>
+          <span>IT Helpdesk: <strong>Ext. 108</strong> (+91 8182 225500)</span>
         </div>
       </footer>
 
-      {/* Forgot Password Modal */}
+      {/* Forgot Password / Institutional Recovery Modal */}
       <Modal
         isOpen={isForgotModalOpen}
         onClose={() => setIsForgotModalOpen(false)}
@@ -670,7 +718,7 @@ export function LoginPage({ onLoginSuccess }) {
           <div
             style={{
               padding: '14px',
-              backgroundColor: 'var(--color-bg-pale-aqua, #EBF3FA)',
+              backgroundColor: '#EBF3FA',
               borderRadius: '8px',
               border: '1px solid rgba(73, 118, 159, 0.35)',
               fontSize: '0.82rem',
