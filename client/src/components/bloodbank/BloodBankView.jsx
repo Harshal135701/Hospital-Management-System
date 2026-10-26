@@ -31,9 +31,24 @@ import { BloodBankService, PatientService, TokenManager } from '../../services/a
 import { HEALTHCARE_IMAGES } from '../../assets/images';
 import { useAuth } from '../../context/AuthContext';
 
-export const BloodBankView = () => {
+export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }) => {
   const { user, isAuthenticated, openLoginModal } = useAuth();
-  const [activeTab, setActiveTab] = useState('donors'); // 'donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover', 'audit'
+  const normalizeBloodTab = (tab) => {
+    if (!tab) return 'donors';
+    if (tab === '5.1' || tab === 'donors') return 'donors';
+    if (tab === '5.2' || tab === 'collection') return 'collection';
+    if (tab === '5.3' || tab === 'inventory') return 'inventory';
+    if (tab === '5.4' || tab === 'serology') return 'serology';
+    if (tab === '5.5' || tab === 'requisitions') return 'requisitions';
+    return tab;
+  };
+  const [activeTab, setActiveTab] = useState(() => normalizeBloodTab(initialTab));
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(normalizeBloodTab(initialTab));
+    }
+  }, [initialTab]);
   
   // Data states
   const [donors, setDonors] = useState([]);

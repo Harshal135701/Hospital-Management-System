@@ -35,12 +35,16 @@ import {
   Check,
   Copy,
   Package,
+  Boxes,
+  BedDouble,
 } from 'lucide-react';
 import { Button, Modal, Badge } from '../common/UIPrimitives';
 import { useHospitalState } from '../../context/HospitalStateContext';
 import { useAuth } from '../../context/AuthContext';
 import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
 import { BILLING_GROUPS } from '../billing/billingConstants';
+import { INVENTORY_GROUPS } from '../inventory/inventoryConstants';
+import { IPD_GROUPS } from '../ipd/ipdConstants';
 
 export const AppShell = ({
   currentRoute,
@@ -108,7 +112,47 @@ export const AppShell = ({
   const [expandedSectionsManual, setExpandedSectionsManual] = useState({});
   const [expandedAppointmentGroups, setExpandedAppointmentGroups] = useState({});
   const [expandedBillingGroups, setExpandedBillingGroups] = useState({});
+  const [expandedInventoryGroups, setExpandedInventoryGroups] = useState({});
+  const [expandedIpdGroups, setExpandedIpdGroups] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Auto-expand active group in IPD hierarchy when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'ipd' || currentRoute.startsWith('ipd:'))) {
+      if (currentRoute.startsWith('ipd:')) {
+        const parts = currentRoute.split(':');
+        const subId = parts[1];
+        if (subId) {
+          const groupNum = subId.split('.')[0];
+          if (groupNum) {
+            setExpandedIpdGroups(prev => ({ ...prev, [groupNum]: true }));
+          }
+        }
+      } else {
+        setExpandedIpdGroups(prev => ({ ...prev, '17': true }));
+      }
+      setExpandedSectionsManual(prev => ({ ...prev, ipd: true }));
+    }
+  }, [currentRoute]);
+
+  // Auto-expand active group in Inventory hierarchy when currentRoute changes
+  useEffect(() => {
+    if (typeof currentRoute === 'string' && (currentRoute === 'inventory' || currentRoute.startsWith('inventory:'))) {
+      if (currentRoute.startsWith('inventory:')) {
+        const parts = currentRoute.split(':');
+        const subId = parts[1];
+        if (subId) {
+          const groupNum = subId.split('.')[0];
+          if (groupNum) {
+            setExpandedInventoryGroups(prev => ({ ...prev, [groupNum]: true }));
+          }
+        }
+      } else {
+        setExpandedInventoryGroups(prev => ({ ...prev, '16': true }));
+      }
+      setExpandedSectionsManual(prev => ({ ...prev, inventory: true }));
+    }
+  }, [currentRoute]);
 
   // Auto-expand active group in Billing hierarchy when currentRoute changes
   useEffect(() => {
@@ -313,7 +357,21 @@ export const AppShell = ({
         { id: 'departments', label: 'Departments & Wards', icon: Building2 },
         { id: 'rooms', label: 'Beds & Inpatient', icon: Bed },
         { id: 'lab', label: 'Laboratory', icon: FlaskConical },
-        { id: 'bloodbank', label: 'Blood Bank', icon: Droplet, highlight: true }
+        { id: 'bloodbank', label: 'Blood Bank', icon: Droplet, highlight: true },
+        {
+          id: 'inventory',
+          label: 'Inventory',
+          icon: Boxes,
+          badge: '17 Groups',
+          isInventoryHierarchy: true
+        },
+        {
+          id: 'ipd',
+          label: 'IPD',
+          icon: BedDouble,
+          badge: '17 Groups',
+          isIpdHierarchy: true
+        }
       ]
     },
     {
@@ -611,7 +669,7 @@ export const AppShell = ({
                   const isItemActive = currentRoute === item.id ||
                     (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
-                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || (item.subItems && item.subItems.length > 0));
+                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || item.isInventoryHierarchy || item.isIpdHierarchy || (item.subItems && item.subItems.length > 0));
                   const isExpanded = Boolean(
                     expandedSectionsManual[item.id] !== undefined
                       ? expandedSectionsManual[item.id]
@@ -619,6 +677,36 @@ export const AppShell = ({
                   ) && !effectiveCollapsed;
 
                   const handleItemClick = () => {
+                    if (item.isIpdHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('ipd:17.1');
+                      } else {
+                        if (currentRoute !== 'ipd' && !currentRoute.startsWith('ipd:')) {
+                          handleSelectNav('ipd:17.1');
+                          setExpandedSectionsManual(prev => ({ ...prev, ipd: true }));
+                          setExpandedIpdGroups(prev => ({ ...prev, '17': true }));
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, ipd: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
+                    if (item.isInventoryHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('inventory:16.1');
+                      } else {
+                        if (currentRoute !== 'inventory' && !currentRoute.startsWith('inventory:')) {
+                          handleSelectNav('inventory:16.1');
+                          setExpandedSectionsManual(prev => ({ ...prev, inventory: true }));
+                          setExpandedInventoryGroups(prev => ({ ...prev, '16': true }));
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, inventory: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
                     if (item.isBillingHierarchy) {
                       if (effectiveCollapsed) {
                         handleSelectNav('billing:4.1');
@@ -1092,8 +1180,326 @@ export const AppShell = ({
                         </div>
                       )}
 
+                      {/* Expandable Inventory Module Complete Hierarchy (17 Groups) */}
+                      {item.isInventoryHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '3px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: '380px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                          }}
+                        >
+                          {INVENTORY_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedInventoryGroups[group.id]);
+                            const groupSubmodules = group.submodules;
+                            const isGroupActive =
+                              typeof currentRoute === 'string' &&
+                              (currentRoute === `inventory:group:${group.id}` ||
+                                groupSubmodules.some(s => currentRoute === `inventory:${s.id}`));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectNav(`inventory:${group.submodules[0].id}`);
+                                      setExpandedInventoryGroups(prev => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={group.title}
+                                  >
+                                    {group.shortTitle || group.title}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedInventoryGroups(prev => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'var(--color-text-muted)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Submodules */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {groupSubmodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === `inventory:${sub.id}` ||
+                                        (currentRoute === 'inventory' && sub.id === '16.1');
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(`inventory:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={sub.title}
+                                        >
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {sub.title}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Expandable IPD Hierarchy (17 Groups & 82 Submodules) */}
+                      {item.isIpdHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '3px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid var(--color-border)',
+                            maxHeight: '380px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                          }}
+                        >
+                          {IPD_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedIpdGroups[group.id]);
+                            const groupSubmodules = group.submodules;
+                            const isGroupActive =
+                              typeof currentRoute === 'string' &&
+                              (currentRoute === `ipd:group:${group.id}` ||
+                                groupSubmodules.some(s => currentRoute === `ipd:${s.id}`));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row - Clean name, NO numerical numbering prefix */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectNav(`ipd:${group.submodules[0].id}`);
+                                      setExpandedIpdGroups(prev => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={group.title}
+                                  >
+                                    {group.title}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedIpdGroups(prev => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'var(--color-text-muted)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Submodules - Clean name, NO numerical numbering prefix */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {groupSubmodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === `ipd:${sub.id}` ||
+                                        (currentRoute === 'ipd' && sub.id === '17.1');
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(`ipd:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
+                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={sub.title}
+                                        >
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {sub.title}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Expandable Sub-Navigation for other modules (e.g. Clinical) */}
-                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && hasSubItems && isExpanded && (
+                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && !item.isInventoryHierarchy && !item.isIpdHierarchy && hasSubItems && isExpanded && (
                         <div
                           style={{
                             display: 'flex',
@@ -1455,6 +1861,8 @@ export const AppShell = ({
                           handleSelectNav(`emergency:${sub.id}`);
                         } else if (sub.id.startsWith('13.')) {
                           handleSelectNav(`finance:${sub.id}`);
+                        } else if (parseInt(sub.id, 10) >= 16 && parseInt(sub.id, 10) <= 32) {
+                          handleSelectNav(`inventory:${sub.id}`);
                         } else {
                           handleSelectNav(`submodule:${sub.id}`);
                         }

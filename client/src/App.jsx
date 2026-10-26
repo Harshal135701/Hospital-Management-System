@@ -21,6 +21,8 @@ import { EmergencyView } from './components/emergency/EmergencyView';
 import { FinanceView } from './components/finance/FinanceView';
 import { FixedAssetView } from './components/fixed-asset/FixedAssetView';
 import { GeneralView } from './components/general/GeneralView';
+import { InventoryView } from './components/inventory/InventoryView';
+import { IpdView } from './components/ipd/IpdView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -57,6 +59,8 @@ const VALID_ROUTE_BASES = new Set([
   'lab',
   'fixed-asset',
   'general',
+  'inventory',
+  'ipd',
   'reports',
   'settings'
 ]);
@@ -151,6 +155,12 @@ export function App() {
       case 'general':
         return <GeneralView initialSubtab={routeSubtab || '15.1'} onNavigate={(subtab) => setCurrentRoute(`general:${subtab}`)} />;
 
+      case 'inventory':
+        return <InventoryView initialSubtab={routeSubtab || '16.1'} onNavigate={setCurrentRoute} />;
+
+      case 'ipd':
+        return <IpdView initialSubtab={routeSubtab || '17.1'} onNavigate={setCurrentRoute} />;
+
       case 'submodule': {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -175,6 +185,9 @@ export function App() {
         }
         if (routeSubtab && routeSubtab.startsWith('13.')) {
           return <FinanceView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
+          return <InventoryView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         const sub = SUBMODULES.find(s => s.id === routeSubtab) || SUBMODULES[0];
         return (
