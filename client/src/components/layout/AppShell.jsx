@@ -164,6 +164,14 @@ export const AppShell = ({
       else if (subId.startsWith('11.')) activeSectionId = 'emergency';
       else if (subId.startsWith('12.')) activeSectionId = 'emr';
       else if (subId.startsWith('13.')) activeSectionId = 'finance';
+      else if (subId.startsWith('16.')) {
+        activeSectionId = 'inventory';
+        setExpandedInventoryGroups({ '16': true });
+      }
+      else if (subId.startsWith('17.')) {
+        activeSectionId = 'ipd';
+        setExpandedIpdGroups({ '17': true });
+      }
       else if (subId.startsWith('18.')) activeSectionId = 'ivf';
       else if (subId.startsWith('19.')) activeSectionId = 'laboratory';
       else if (subId.startsWith('20.')) activeSectionId = 'mrd';
@@ -222,12 +230,15 @@ export const AppShell = ({
     if (activeSectionId === 'inventory') {
       if (currentRoute.startsWith('inventory:')) {
         const parts = currentRoute.split(':');
-        const subId = parts[1];
-        if (subId) {
-          const groupNum = subId.split('.')[0];
-          if (groupNum) {
-            setExpandedInventoryGroups({ [groupNum]: true });
+        if (parts[1] === 'group') {
+          const gId = parts[2];
+          if (gId) {
+            setExpandedInventoryGroups({ [gId]: true });
           }
+        } else {
+          const subId = parts[1]?.replace('submodule:', '') || '16.1';
+          const groupNum = subId.split('.')[0] || '16';
+          setExpandedInventoryGroups({ [groupNum]: true });
         }
       } else {
         setExpandedInventoryGroups({ '16': true });
@@ -237,12 +248,15 @@ export const AppShell = ({
     if (activeSectionId === 'ipd') {
       if (currentRoute.startsWith('ipd:')) {
         const parts = currentRoute.split(':');
-        const subId = parts[1];
-        if (subId) {
-          const groupNum = subId.split('.')[0];
-          if (groupNum) {
-            setExpandedIpdGroups({ [groupNum]: true });
+        if (parts[1] === 'group') {
+          const gId = parts[2];
+          if (gId) {
+            setExpandedIpdGroups({ [gId]: true });
           }
+        } else {
+          const subId = parts[1]?.replace('submodule:', '') || '17.1';
+          const groupNum = subId.split('.')[0] || '17';
+          setExpandedIpdGroups({ [groupNum]: true });
         }
       } else {
         setExpandedIpdGroups({ '17': true });
@@ -747,7 +761,7 @@ export const AppShell = ({
         },
         {
           id: 'ipd',
-          label: 'IPD',
+          label: 'IPD / IPDI',
           icon: BedDouble,
           badge: '17 Groups',
           isIpdHierarchy: true
@@ -1615,7 +1629,7 @@ export const AppShell = ({
                         </div>
                       )}
 
-                      {/* Expandable Inventory Module Complete Hierarchy (17 Groups) */}
+                      {/* Expandable Inventory Module Complete Hierarchy (Matching Appointment Module Design Exactly) */}
                       {item.isInventoryHierarchy && isExpanded && (
                         <div
                           style={{
@@ -1626,7 +1640,7 @@ export const AppShell = ({
                             marginLeft: '10px',
                             paddingLeft: '8px',
                             borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
-                            maxHeight: '380px',
+                            maxHeight: '360px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
                             scrollbarColor: '#49769F transparent'
@@ -1634,15 +1648,22 @@ export const AppShell = ({
                         >
                           {INVENTORY_GROUPS.map((group) => {
                             const isGroupExpanded = Boolean(expandedInventoryGroups[group.id]);
-                            const groupSubmodules = group.submodules;
+                            const groupSubmodules = group.submodules || [];
                             const isGroupActive =
-                              typeof currentRoute === 'string' &&
-                              (currentRoute === `inventory:group:${group.id}` ||
-                                groupSubmodules.some(s => currentRoute === `inventory:${s.id}`));
+                              currentRoute === `inventory:group:${group.id}` ||
+                              (typeof currentRoute === 'string' &&
+                                (currentRoute.startsWith(`inventory:${group.id}.`) ||
+                                  currentRoute.startsWith(`inventory:submodule:${group.id}.`) ||
+                                  (group.id === '16' && (currentRoute === 'inventory' || currentRoute === 'inventory:overview')) ||
+                                  groupSubmodules.some(s =>
+                                    currentRoute === `inventory:${s.id}` ||
+                                    currentRoute === `submodule:${s.id}` ||
+                                    (s.id === '16.1' && currentRoute === 'inventory')
+                                  )));
 
                             return (
                               <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                                {/* Group Header Row */}
+                                {/* Group Header Row - Identical to Appointment Group Row */}
                                 <div
                                   style={{
                                     display: 'flex',
@@ -1650,18 +1671,22 @@ export const AppShell = ({
                                     justifyContent: 'space-between',
                                     padding: '5px 8px',
                                     borderRadius: 'var(--radius-sm)',
-                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
                                     fontSize: '0.76rem',
                                     fontWeight: isGroupActive ? '600' : '500',
                                     transition: 'all 0.12s ease'
                                   }}
                                   className="group-tree-row"
                                 >
+                                  {/* Click group title -> Navigates to first submodule & opens group */}
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      handleSelectNav(`inventory:${group.submodules[0].id}`);
+                                      const firstSub = groupSubmodules[0];
+                                      if (firstSub) {
+                                        handleSelectNav(`inventory:${firstSub.id}`);
+                                      }
                                       setExpandedInventoryGroups(prev => ({ ...prev, [group.id]: true }));
                                     }}
                                     style={{
@@ -1680,9 +1705,10 @@ export const AppShell = ({
                                     }}
                                     title={group.title}
                                   >
-                                    {group.shortTitle || group.title}
+                                    {group.title}
                                   </button>
 
+                                  {/* Toggle Group Chevron */}
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -1696,19 +1722,20 @@ export const AppShell = ({
                                       background: 'none',
                                       border: 'none',
                                       padding: '2px',
-                                      color: 'var(--color-text-muted)',
+                                      color: 'rgba(255, 255, 255, 0.7)',
                                       cursor: 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
                                       flexShrink: 0
                                     }}
                                     title={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
+                                    aria-label={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
                                   >
                                     {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                                   </button>
                                 </div>
 
-                                {/* Submodules */}
+                                {/* Nested Sub-modules */}
                                 {isGroupExpanded && (
                                   <div
                                     style={{
@@ -1717,7 +1744,7 @@ export const AppShell = ({
                                       gap: '1px',
                                       marginLeft: '8px',
                                       paddingLeft: '8px',
-                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                       marginTop: '2px',
                                       marginBottom: '4px'
                                     }}
@@ -1725,7 +1752,9 @@ export const AppShell = ({
                                     {groupSubmodules.map((sub) => {
                                       const isSubActive =
                                         currentRoute === `inventory:${sub.id}` ||
-                                        (currentRoute === 'inventory' && sub.id === '16.1');
+                                        currentRoute === `inventory:submodule:${sub.id}` ||
+                                        currentRoute === `submodule:${sub.id}` ||
+                                        (sub.id === '16.1' && currentRoute === 'inventory');
 
                                       return (
                                         <button
@@ -1741,8 +1770,8 @@ export const AppShell = ({
                                             textAlign: 'left',
                                             padding: '4px 6px',
                                             borderRadius: 'var(--radius-sm)',
-                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                             fontWeight: isSubActive ? '600' : '400',
                                             fontSize: '0.73rem',
                                             border: 'none',
@@ -1751,12 +1780,13 @@ export const AppShell = ({
                                           }}
                                           title={sub.title}
                                         >
+                                          {/* Simple bullet */}
                                           <span
                                             style={{
                                               width: '4px',
                                               height: '4px',
                                               borderRadius: '50%',
-                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                               flexShrink: 0
                                             }}
                                           />
@@ -1774,7 +1804,7 @@ export const AppShell = ({
                         </div>
                       )}
 
-                      {/* Expandable IPD Hierarchy (17 Groups & 82 Submodules) */}
+                      {/* Expandable IPD / IPDI Hierarchy (Matching Appointment Module Design Exactly) */}
                       {item.isIpdHierarchy && isExpanded && (
                         <div
                           style={{
@@ -1785,7 +1815,7 @@ export const AppShell = ({
                             marginLeft: '10px',
                             paddingLeft: '8px',
                             borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
-                            maxHeight: '380px',
+                            maxHeight: '360px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
                             scrollbarColor: '#49769F transparent'
@@ -1793,15 +1823,22 @@ export const AppShell = ({
                         >
                           {IPD_GROUPS.map((group) => {
                             const isGroupExpanded = Boolean(expandedIpdGroups[group.id]);
-                            const groupSubmodules = group.submodules;
+                            const groupSubmodules = group.submodules || [];
                             const isGroupActive =
-                              typeof currentRoute === 'string' &&
-                              (currentRoute === `ipd:group:${group.id}` ||
-                                groupSubmodules.some(s => currentRoute === `ipd:${s.id}`));
+                              currentRoute === `ipd:group:${group.id}` ||
+                              (typeof currentRoute === 'string' &&
+                                (currentRoute.startsWith(`ipd:${group.id}.`) ||
+                                  currentRoute.startsWith(`ipd:submodule:${group.id}.`) ||
+                                  (group.id === '17' && (currentRoute === 'ipd' || currentRoute === 'ipd:overview')) ||
+                                  groupSubmodules.some(s =>
+                                    currentRoute === `ipd:${s.id}` ||
+                                    currentRoute === `submodule:${s.id}` ||
+                                    (s.id === '17.1' && currentRoute === 'ipd')
+                                  )));
 
                             return (
                               <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                                {/* Group Header Row - Clean name, NO numerical numbering prefix */}
+                                {/* Group Header Row - Identical to Appointment Group Row */}
                                 <div
                                   style={{
                                     display: 'flex',
@@ -1809,18 +1846,22 @@ export const AppShell = ({
                                     justifyContent: 'space-between',
                                     padding: '5px 8px',
                                     borderRadius: 'var(--radius-sm)',
-                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
                                     fontSize: '0.76rem',
                                     fontWeight: isGroupActive ? '600' : '500',
                                     transition: 'all 0.12s ease'
                                   }}
                                   className="group-tree-row"
                                 >
+                                  {/* Click group title -> Navigates to first submodule & opens group */}
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      handleSelectNav(`ipd:${group.submodules[0].id}`);
+                                      const firstSub = groupSubmodules[0];
+                                      if (firstSub) {
+                                        handleSelectNav(`ipd:${firstSub.id}`);
+                                      }
                                       setExpandedIpdGroups(prev => ({ ...prev, [group.id]: true }));
                                     }}
                                     style={{
@@ -1842,6 +1883,7 @@ export const AppShell = ({
                                     {group.title}
                                   </button>
 
+                                  {/* Toggle Group Chevron */}
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -1855,19 +1897,20 @@ export const AppShell = ({
                                       background: 'none',
                                       border: 'none',
                                       padding: '2px',
-                                      color: 'var(--color-text-muted)',
+                                      color: 'rgba(255, 255, 255, 0.7)',
                                       cursor: 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
                                       flexShrink: 0
                                     }}
                                     title={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
+                                    aria-label={isGroupExpanded ? `Collapse ${group.title}` : `Expand ${group.title}`}
                                   >
                                     {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                                   </button>
                                 </div>
 
-                                {/* Submodules - Clean name, NO numerical numbering prefix */}
+                                {/* Nested Sub-modules */}
                                 {isGroupExpanded && (
                                   <div
                                     style={{
@@ -1876,7 +1919,7 @@ export const AppShell = ({
                                       gap: '1px',
                                       marginLeft: '8px',
                                       paddingLeft: '8px',
-                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                       marginTop: '2px',
                                       marginBottom: '4px'
                                     }}
@@ -1884,7 +1927,9 @@ export const AppShell = ({
                                     {groupSubmodules.map((sub) => {
                                       const isSubActive =
                                         currentRoute === `ipd:${sub.id}` ||
-                                        (currentRoute === 'ipd' && sub.id === '17.1');
+                                        currentRoute === `ipd:submodule:${sub.id}` ||
+                                        currentRoute === `submodule:${sub.id}` ||
+                                        (sub.id === '17.1' && currentRoute === 'ipd');
 
                                       return (
                                         <button
@@ -1900,8 +1945,8 @@ export const AppShell = ({
                                             textAlign: 'left',
                                             padding: '4px 6px',
                                             borderRadius: 'var(--radius-sm)',
-                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                             fontWeight: isSubActive ? '600' : '400',
                                             fontSize: '0.73rem',
                                             border: 'none',
@@ -1910,12 +1955,13 @@ export const AppShell = ({
                                           }}
                                           title={sub.title}
                                         >
+                                          {/* Simple bullet */}
                                           <span
                                             style={{
                                               width: '4px',
                                               height: '4px',
                                               borderRadius: '50%',
-                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                               flexShrink: 0
                                             }}
                                           />
