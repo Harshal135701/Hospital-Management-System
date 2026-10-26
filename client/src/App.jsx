@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { HospitalStateProvider } from './context/HospitalStateContext';
 import { LoginModal } from './components/auth/LoginModal';
+import { LoginPage } from './components/auth/LoginPage';
 import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { PatientsView } from './components/patients/PatientsView';
@@ -23,6 +24,11 @@ import { FixedAssetView } from './components/fixed-asset/FixedAssetView';
 import { GeneralView } from './components/general/GeneralView';
 import { InventoryView } from './components/inventory/InventoryView';
 import { IpdView } from './components/ipd/IpdView';
+import { IvfView } from './components/ivf/IvfView';
+import { LaboratoryView } from './components/laboratory/LaboratoryView';
+import { MrdView } from './components/mrd/MrdView';
+import { NursingView } from './components/nursing/NursingView';
+import { OpdView } from './components/opd/OpdView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
@@ -50,6 +56,10 @@ const VALID_ROUTE_BASES = new Set([
   'emr',
   'embryology',
   'ivf',
+  'laboratory',
+  'mrd',
+  'nursing',
+  'opd',
   'emergency',
   'finance',
   'submodule',
@@ -62,7 +72,8 @@ const VALID_ROUTE_BASES = new Set([
   'inventory',
   'ipd',
   'reports',
-  'settings'
+  'settings',
+  'login'
 ]);
 
 const DEFAULT_ROUTE = 'dashboard';
@@ -101,10 +112,10 @@ export function App() {
   }, [currentRoute]);
 
   const renderCurrentView = () => {
-    const routeBase = typeof currentRoute === 'string' ? currentRoute.split(':')[0] : currentRoute;
-    const routeSubtab = typeof currentRoute === 'string' && currentRoute.includes(':')
-      ? currentRoute.slice(currentRoute.indexOf(':') + 1)
-      : null;
+    const routeParts = typeof currentRoute === 'string' ? currentRoute.split(':') : [];
+    const routeBase = routeParts[0] || currentRoute;
+    const routeSubtab = routeParts[1] || null;
+    const routeSubsubtab = routeParts[2] || null;
 
     switch (routeBase) {
       case 'dashboard':
@@ -127,7 +138,7 @@ export function App() {
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'bloodbank':
-        return <BloodBankView />;
+        return <BloodBankView initialTab={routeSubtab || 'donors'} initialSubtab={routeSubtab || 'donors'} onNavigate={setCurrentRoute} />;
 
       case 'daycare':
         return <DayCareView initialSubtab={routeSubtab || '8.1'} onNavigate={setCurrentRoute} />;
@@ -140,8 +151,23 @@ export function App() {
         return <EmrView initialSubtab={routeSubtab || '12.1'} onNavigate={setCurrentRoute} />;
 
       case 'embryology':
-      case 'ivf':
         return <EmbryologyView initialSubtab={routeSubtab || 'overview'} onNavigate={setCurrentRoute} />;
+
+      case 'ivf':
+        return <IvfView initialSubtab={routeSubtab || '18.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'laboratory':
+      case 'lab':
+        return <LaboratoryView initialSubtab={routeSubtab || '19.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'mrd':
+        return <MrdView initialSubtab={routeSubtab || '20.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'nursing':
+        return <NursingView initialSubtab={routeSubtab || '21.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'opd':
+        return <OpdView initialSubtab={routeSubtab || '22.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
 
       case 'emergency':
         return <EmergencyView initialSubtab={routeSubtab || '11.1'} onNavigate={setCurrentRoute} />;
@@ -165,6 +191,9 @@ export function App() {
         if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
+        if (routeSubtab && routeSubtab.startsWith('5.')) {
+          return <BloodBankView initialTab={routeSubtab} initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
         if (routeSubtab && routeSubtab.startsWith('7.')) {
           return <CreditBillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
@@ -185,6 +214,21 @@ export function App() {
         }
         if (routeSubtab && routeSubtab.startsWith('13.')) {
           return <FinanceView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('18.') || routeSubtab === '18')) {
+          return <IvfView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('19.') || routeSubtab === '19')) {
+          return <LaboratoryView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('20.') || routeSubtab === '20')) {
+          return <MrdView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('21.') || routeSubtab === '21')) {
+          return <NursingView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('22.') || routeSubtab === '22')) {
+          return <OpdView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
           return <InventoryView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -223,17 +267,6 @@ export function App() {
           />
         );
 
-      case 'lab':
-        return (
-          <PlaceholderView
-            title="Diagnostic Laboratory & Pathology"
-            subtitle="Phlebotomy collection tubes, biochemical analyzers, and diagnostic reporting workbenches."
-            icon={FlaskConical}
-            imageKey="diagnosticLab"
-            onBack={() => setCurrentRoute('dashboard')}
-          />
-        );
-
       case 'reports':
         return (
           <PlaceholderView
@@ -256,6 +289,9 @@ export function App() {
           />
         );
 
+      case 'login':
+        return <LoginPage onLoginSuccess={() => setCurrentRoute('dashboard')} />;
+
       default:
         return <DashboardView onNavigate={setCurrentRoute} />;
     }
@@ -264,12 +300,16 @@ export function App() {
   return (
     <AuthProvider>
       <HospitalStateProvider>
-        <AppShell
-          currentRoute={currentRoute}
-          onNavigate={setCurrentRoute}
-        >
-          {renderCurrentView()}
-        </AppShell>
+        {currentRoute === 'login' ? (
+          <LoginPage onLoginSuccess={() => setCurrentRoute('dashboard')} />
+        ) : (
+          <AppShell
+            currentRoute={currentRoute}
+            onNavigate={setCurrentRoute}
+          >
+            {renderCurrentView()}
+          </AppShell>
+        )}
 
         <LoginModal />
       </HospitalStateProvider>

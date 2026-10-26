@@ -25,7 +25,6 @@ import {
   Lock,
   User,
   Receipt,
-  Layers,
   Egg,
   Siren,
   RotateCcw,
@@ -37,6 +36,10 @@ import {
   Package,
   Boxes,
   BedDouble,
+  Utensils,
+  FileSpreadsheet,
+  HeartPulse,
+  Archive
 } from 'lucide-react';
 import { Button, Modal, Badge } from '../common/UIPrimitives';
 import { useHospitalState } from '../../context/HospitalStateContext';
@@ -45,6 +48,7 @@ import { MODULE_GROUPS, SUBMODULES } from '../appointments/submoduleRegistry';
 import { BILLING_GROUPS } from '../billing/billingConstants';
 import { INVENTORY_GROUPS } from '../inventory/inventoryConstants';
 import { IPD_GROUPS } from '../ipd/ipdConstants';
+import sarjiLogo from '../../assets/sarji-logo.png';
 
 export const AppShell = ({
   currentRoute,
@@ -114,110 +118,106 @@ export const AppShell = ({
   const [expandedBillingGroups, setExpandedBillingGroups] = useState({});
   const [expandedInventoryGroups, setExpandedInventoryGroups] = useState({});
   const [expandedIpdGroups, setExpandedIpdGroups] = useState({});
+  const [expandedSubmodules, setExpandedSubmodules] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Auto-expand active group in IPD hierarchy when currentRoute changes
+  // Auto-expand current active module accordion while collapsing inactive ones to prevent sidebar clutter
   useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'ipd' || currentRoute.startsWith('ipd:'))) {
-      if (currentRoute.startsWith('ipd:')) {
+    if (typeof currentRoute !== 'string') return;
+    const baseRoute = currentRoute.split(':')[0];
+
+    let activeSectionId = baseRoute;
+    if (baseRoute === 'insurance') activeSectionId = 'credit-billing';
+    if (baseRoute === 'diet') activeSectionId = 'dietary';
+    if (baseRoute === 'lab') activeSectionId = 'laboratory';
+    if (baseRoute === 'submodule') {
+      const parts = currentRoute.split(':');
+      const subId = parts[1] || '';
+      if (subId.startsWith('1.') || subId.startsWith('2.') || subId.startsWith('4.')) activeSectionId = 'billing';
+      else if (subId.startsWith('5.')) activeSectionId = 'bloodbank';
+      else if (subId.startsWith('7.')) activeSectionId = 'credit-billing';
+      else if (subId.startsWith('8.')) activeSectionId = 'daycare';
+      else if (subId.startsWith('9.')) activeSectionId = 'dietary';
+      else if (subId.startsWith('10.') || subId === '10.0') activeSectionId = 'embryology';
+      else if (subId.startsWith('11.')) activeSectionId = 'emergency';
+      else if (subId.startsWith('12.')) activeSectionId = 'emr';
+      else if (subId.startsWith('13.')) activeSectionId = 'finance';
+      else if (subId.startsWith('18.')) activeSectionId = 'ivf';
+      else if (subId.startsWith('19.')) activeSectionId = 'laboratory';
+      else if (subId.startsWith('20.')) activeSectionId = 'mrd';
+      else if (subId.startsWith('21.')) activeSectionId = 'nursing';
+      else if (subId.startsWith('22.')) activeSectionId = 'opd';
+    }
+
+    // Keep only the active module expanded by default so sidebar doesn't get cluttered with multiple open accordions
+    setExpandedSectionsManual({ [activeSectionId]: true });
+
+    // Auto-expand Level 2 submodule if present
+    const routeParts = currentRoute.split(':');
+    if (routeParts.length >= 2) {
+      const subIdKey = `${activeSectionId}:${routeParts[1]}`;
+      setExpandedSubmodules({ [subIdKey]: true });
+    }
+
+    if (activeSectionId === 'billing') {
+      const parts = currentRoute.split(':');
+      const subId = parts[1];
+      if (subId) {
+        const groupNum = subId.split('.')[0];
+        if (groupNum) {
+          setExpandedBillingGroups({ [groupNum]: true });
+        }
+      }
+    }
+
+    if (activeSectionId === 'appointments') {
+      if (currentRoute.startsWith('appointments:')) {
         const parts = currentRoute.split(':');
-        const subId = parts[1];
-        if (subId) {
-          const groupNum = subId.split('.')[0];
-          if (groupNum) {
-            setExpandedIpdGroups(prev => ({ ...prev, [groupNum]: true }));
+        if (parts[1] === 'group') {
+          const gId = parts[2];
+          if (gId) {
+            setExpandedAppointmentGroups({ [gId]: true });
+          }
+        } else {
+          const subId = parts[1]?.replace('submodule:', '');
+          const found = SUBMODULES.find(s => s.id === subId);
+          if (found) {
+            setExpandedAppointmentGroups({ [found.groupId]: true });
           }
         }
       } else {
-        setExpandedIpdGroups(prev => ({ ...prev, '17': true }));
+        setExpandedAppointmentGroups({ '3': true });
       }
-      setExpandedSectionsManual(prev => ({ ...prev, ipd: true }));
     }
-  }, [currentRoute]);
 
-  // Auto-expand active group in Inventory hierarchy when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'inventory' || currentRoute.startsWith('inventory:'))) {
+    if (activeSectionId === 'inventory') {
       if (currentRoute.startsWith('inventory:')) {
         const parts = currentRoute.split(':');
         const subId = parts[1];
         if (subId) {
           const groupNum = subId.split('.')[0];
           if (groupNum) {
-            setExpandedInventoryGroups(prev => ({ ...prev, [groupNum]: true }));
+            setExpandedInventoryGroups({ [groupNum]: true });
           }
         }
       } else {
-        setExpandedInventoryGroups(prev => ({ ...prev, '16': true }));
+        setExpandedInventoryGroups({ '16': true });
       }
-      setExpandedSectionsManual(prev => ({ ...prev, inventory: true }));
     }
-  }, [currentRoute]);
 
-  // Auto-expand active group in Billing hierarchy when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && currentRoute.startsWith('billing:')) {
-      const parts = currentRoute.split(':');
-      const subId = parts[1];
-      if (subId) {
-        const groupNum = subId.split('.')[0];
-        if (groupNum) {
-          setExpandedBillingGroups(prev => ({ ...prev, [groupNum]: true }));
-        }
-      }
-      setExpandedSectionsManual(prev => ({ ...prev, billing: true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand Credit Billing when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'credit-billing' || currentRoute.startsWith('credit-billing:'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, 'credit-billing': true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand Embryology when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'embryology' || currentRoute.startsWith('embryology:') || currentRoute.startsWith('submodule:10.'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, embryology: true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand Emergency when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'emergency' || currentRoute.startsWith('emergency:') || currentRoute.startsWith('submodule:11.'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, emergency: true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand Finance when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'finance' || currentRoute.startsWith('finance:') || currentRoute.startsWith('submodule:13.'))) {
-      setExpandedSectionsManual(prev => ({ ...prev, finance: true }));
-    }
-  }, [currentRoute]);
-
-  // Auto-expand active group in Appointment hierarchy when currentRoute changes
-  useEffect(() => {
-    if (typeof currentRoute === 'string' && (currentRoute === 'appointments' || currentRoute.startsWith('appointments:'))) {
-      if (currentRoute.startsWith('appointments:')) {
+    if (activeSectionId === 'ipd') {
+      if (currentRoute.startsWith('ipd:')) {
         const parts = currentRoute.split(':');
-        if (parts[1] === 'group') {
-          const gId = parts[2];
-          if (gId) {
-            setExpandedAppointmentGroups(prev => ({ ...prev, [gId]: true }));
-          }
-        } else {
-          const subId = parts[1]?.replace('submodule:', '');
-          const found = SUBMODULES.find(s => s.id === subId);
-          if (found) {
-            setExpandedAppointmentGroups(prev => ({ ...prev, [found.groupId]: true }));
+        const subId = parts[1];
+        if (subId) {
+          const groupNum = subId.split('.')[0];
+          if (groupNum) {
+            setExpandedIpdGroups({ [groupNum]: true });
           }
         }
       } else {
-        setExpandedAppointmentGroups(prev => ({ ...prev, '3': true }));
+        setExpandedIpdGroups({ '17': true });
       }
-      setExpandedSectionsManual(prev => ({ ...prev, appointments: true }));
     }
   }, [currentRoute]);
 
@@ -350,14 +350,313 @@ export const AppShell = ({
             { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
             { id: 'clinical:orders', label: 'Orders (CPOE)' },
             { id: 'clinical:notes', label: 'Clinical Progress Notes' }
-
+          ]
+        },
+        {
+          id: 'daycare',
+          label: 'Day Care',
+          icon: Bed,
+          subItems: [
+            { id: 'daycare:8.1', label: 'Admission & Procedure' },
+            { id: 'daycare:8.2', label: 'Chair & Bed Allocation' },
+            { id: 'daycare:8.3', label: 'Procedure Monitoring' },
+            { id: 'daycare:8.4', label: 'Discharge Summary' }
+          ]
+        },
+        {
+          id: 'dietary',
+          label: 'Diet & Nutrition',
+          icon: Utensils,
+          subItems: [
+            { id: 'dietary:9.1', label: 'Nutritional Assessment' },
+            { id: 'dietary:9.2', label: 'Patient Diet Ordering' },
+            { id: 'dietary:9.3', label: 'Kitchen Batch Production' },
+            { id: 'dietary:9.4', label: 'Ward Meal Delivery' }
+          ]
+        },
+        {
+          id: 'emr',
+          label: 'EMR Records',
+          icon: FileSpreadsheet,
+          subItems: [
+            { id: 'emr:12.1', label: 'Patient Timeline' },
+            { id: 'emr:12.2', label: 'Prescription Studio' },
+            { id: 'emr:12.3', label: 'ICD-10 Diagnoses' },
+            { id: 'emr:12.4', label: 'Encounters Browser' },
+            { id: 'emr:12.5', label: 'Clinical Documents' }
+          ]
+        },
+        {
+          id: 'bloodbank',
+          label: 'Blood Bank',
+          icon: Droplet,
+          highlight: true,
+          subItems: [
+            { id: 'bloodbank:donors', label: 'Donors & Screening' },
+            { id: 'bloodbank:collection', label: 'Bag Collection & Barcodes' },
+            { id: 'bloodbank:inventory', label: 'Inventory & Cold Chain' },
+            { id: 'bloodbank:serology', label: 'Serology & Safe Release' },
+            { id: 'bloodbank:requisitions', label: 'Requisitions & Crossmatch' },
+            { id: 'bloodbank:handover', label: 'Issue & Handover Dispatch' },
+            { id: 'bloodbank:audit', label: 'Immutable Audit Trail' }
+          ]
+        },
+        {
+          id: 'ivf',
+          label: 'IVF',
+          icon: HeartPulse,
+          subItems: [
+            {
+              id: 'ivf:18.1',
+              label: 'Couple Registration & Consent',
+              subsubItems: [
+                { id: 'ivf:18.1:18.1.1', label: 'Registration & Bonded Identifier' },
+                { id: 'ivf:18.1:18.1.2', label: 'Legal ART Consent Verification' },
+                { id: 'ivf:18.1:18.1.3', label: 'Pre-Treatment Serology Screening' }
+              ]
+            },
+            {
+              id: 'ivf:18.2',
+              label: 'Controlled Ovarian Stimulation',
+              subsubItems: [
+                { id: 'ivf:18.2:18.2.1', label: 'Stimulation Protocol & Dosage' },
+                { id: 'ivf:18.2:18.2.2', label: 'Hormonal Surge Monitoring (E2/P4)' },
+                { id: 'ivf:18.2:18.2.3', label: 'Medication Dispense Schedule' }
+              ]
+            },
+            {
+              id: 'ivf:18.3',
+              label: 'Bilateral Follicular USG',
+              subsubItems: [
+                { id: 'ivf:18.3:18.3.1', label: 'TVS Folliculometry' },
+                { id: 'ivf:18.3:18.3.2', label: 'Bilateral Ovary Follicle Grid' },
+                { id: 'ivf:18.3:18.3.3', label: 'Endometrial Thickness & Grading' }
+              ]
+            },
+            {
+              id: 'ivf:18.4',
+              label: 'Ovulatory Trigger & OPU',
+              subsubItems: [
+                { id: 'ivf:18.4:18.4.1', label: 'Trigger Administration Clock' },
+                { id: 'ivf:18.4:18.4.2', label: '35-36h OPU Surgery Slot' },
+                { id: 'ivf:18.4:18.4.3', label: 'Anesthesia & Pre-Op Clearance' }
+              ]
+            },
+            {
+              id: 'ivf:18.5',
+              label: 'Pregnancy Outcome & Beta-hCG',
+              subsubItems: [
+                { id: 'ivf:18.5:18.5.1', label: 'Luteal Phase Support Tracking' },
+                { id: 'ivf:18.5:18.5.2', label: 'Day 14 Serum Beta-hCG Testing' },
+                { id: 'ivf:18.5:18.5.3', label: 'Gestational Sac Ultrasound' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'laboratory',
+          label: 'Laboratory',
+          icon: FlaskConical,
+          subItems: [
+            {
+              id: 'laboratory:19.1',
+              label: 'Test Requisition & Billing',
+              subsubItems: [
+                { id: 'laboratory:19.1:19.1.1', label: 'Order Intake & Walk-in' },
+                { id: 'laboratory:19.1:19.1.2', label: 'Billing & Ledger Routing' },
+                { id: 'laboratory:19.1:19.1.3', label: 'LIS Accession Worklist' }
+              ]
+            },
+            {
+              id: 'laboratory:19.2',
+              label: 'Phlebotomy & Tube Barcoding',
+              subsubItems: [
+                { id: 'laboratory:19.2:19.2.1', label: 'Phlebotomy Queue & Chair' },
+                { id: 'laboratory:19.2:19.2.2', label: 'Color-Coded Tube Barcodes' },
+                { id: 'laboratory:19.2:19.2.3', label: 'Specimen Draw Allocation' },
+                { id: 'laboratory:19.2:19.2.4', label: 'Collection Timestamp Verification' }
+              ]
+            },
+            {
+              id: 'laboratory:19.3',
+              label: 'Instrument Interfacing',
+              subsubItems: [
+                { id: 'laboratory:19.3:19.3.1', label: 'Specimen Bench Check-in' },
+                { id: 'laboratory:19.3:19.3.2', label: 'ASTM / HL7 Profile Query' },
+                { id: 'laboratory:19.3:19.3.3', label: 'Analytical Run & Raw Data' }
+              ]
+            },
+            {
+              id: 'laboratory:19.4',
+              label: 'Result Entry & Panic Alerts',
+              subsubItems: [
+                { id: 'laboratory:19.4:19.4.1', label: 'Automated & Manual Result Entry' },
+                { id: 'laboratory:19.4:19.4.2', label: 'Reference Interval Validation' },
+                { id: 'laboratory:19.4:19.4.3', label: 'Abnormal High / Low Flags' },
+                { id: 'laboratory:19.4:19.4.4', label: 'Life-Threatening Panic Alerts' }
+              ]
+            },
+            {
+              id: 'laboratory:19.5',
+              label: 'Pathologist Authorization',
+              subsubItems: [
+                { id: 'laboratory:19.5:19.5.1', label: 'Historical Trend & Flag Review' },
+                { id: 'laboratory:19.5:19.5.2', label: 'Clinical Interpretation Remarks' },
+                { id: 'laboratory:19.5:19.5.3', label: 'Digital Signature & Authorization' },
+                { id: 'laboratory:19.5:19.5.4', label: 'Multi-Channel EMR Publishing' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'mrd',
+          label: 'MRD',
+          icon: Archive,
+          subItems: [
+            {
+              id: 'mrd:20.1',
+              label: 'Physical Archival & Tracking',
+              subsubItems: [
+                { id: 'mrd:20.1:20.1.1', label: '48h Inpatient File Inward' },
+                { id: 'mrd:20.1:20.1.2', label: 'File Completeness Inspection' },
+                { id: 'mrd:20.1:20.1.3', label: 'Physical Coordinate Assignment' },
+                { id: 'mrd:20.1:20.1.4', label: 'Permanent Record Room Index' }
+              ]
+            },
+            {
+              id: 'mrd:20.2',
+              label: 'ICD-10 & CPT Clinical Coding',
+              subsubItems: [
+                { id: 'mrd:20.2:20.2.1', label: 'Operative & Discharge Review' },
+                { id: 'mrd:20.2:20.2.2', label: 'Primary Cause ICD-10-CM' },
+                { id: 'mrd:20.2:20.2.3', label: 'Surgical Procedure CPT Mapping' },
+                { id: 'mrd:20.2:20.2.4', label: 'Morbidity Statistics & Indexing' }
+              ]
+            },
+            {
+              id: 'mrd:20.3',
+              label: 'Birth & Death Registration',
+              subsubItems: [
+                { id: 'mrd:20.3:20.3.1', label: 'Obstetric Birth Intimation' },
+                { id: 'mrd:20.3:20.3.2', label: 'Form 4 / 4A Cause of Death' }
+              ]
+            },
+            {
+              id: 'mrd:20.4',
+              label: 'File Checkout & Audit Lending',
+              subsubItems: [
+                { id: 'mrd:20.4:20.4.1', label: 'Requisition & Subpoena Intake' },
+                { id: 'mrd:20.4:20.4.2', label: 'Checkout Logging & Deadlines' },
+                { id: 'mrd:20.4:20.4.3', label: 'Overdue Loan Tracking & Alerts' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'nursing',
+          label: 'Nursing',
+          icon: HeartPulse,
+          subItems: [
+            {
+              id: 'nursing:21.1',
+              label: 'Ward Nursing Workstation',
+              subsubItems: [
+                { id: 'nursing:21.1:21.1.1', label: 'Assigned Wing Shift Dashboard' },
+                { id: 'nursing:21.1:21.1.2', label: 'Bedside Vital Alerts & Census' },
+                { id: 'nursing:21.1:21.1.3', label: 'Active Care Plan Launcher' }
+              ]
+            },
+            {
+              id: 'nursing:21.2',
+              label: 'Vitals & Intake-Output',
+              subsubItems: [
+                { id: 'nursing:21.2:21.2.1', label: 'Bedside Scheduled Vitals' },
+                { id: 'nursing:21.2:21.2.2', label: 'Fluid Intake Logging' },
+                { id: 'nursing:21.2:21.2.3', label: 'Fluid Output Logging' },
+                { id: 'nursing:21.2:21.2.4', label: '24h Cumulative Fluid Balance' }
+              ]
+            },
+            {
+              id: 'nursing:21.3',
+              label: 'Medication Administration (MAR)',
+              subsubItems: [
+                { id: 'nursing:21.3:21.3.1', label: 'Shift Scheduled Medication Grid' },
+                { id: 'nursing:21.3:21.3.2', label: 'Wristband & Barcode Verification' },
+                { id: 'nursing:21.3:21.3.3', label: 'Administered Electronic Time' },
+                { id: 'nursing:21.3:21.3.4', label: 'Withheld Dose & Reason' }
+              ]
+            },
+            {
+              id: 'nursing:21.4',
+              label: 'Doctor Order Execution',
+              subsubItems: [
+                { id: 'nursing:21.4:21.4.1', label: 'Real-time Inpatient Order Queue' },
+                { id: 'nursing:21.4:21.4.2', label: 'Bedside Execution Sign-off' }
+              ]
+            },
+            {
+              id: 'nursing:21.5',
+              label: 'Shift Handover Notes',
+              subsubItems: [
+                { id: 'nursing:21.5:21.5.1', label: 'Shift End Summary Compilation' },
+                { id: 'nursing:21.5:21.5.2', label: 'Outgoing Nurse SBAR Notes' },
+                { id: 'nursing:21.5:21.5.3', label: 'Incoming Nurse Acceptance' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'opd',
+          label: 'OPD',
+          icon: Stethoscope,
+          subItems: [
+            {
+              id: 'opd:22.1',
+              label: 'OPD Clinic Desk Dashboard',
+              subsubItems: [
+                { id: 'opd:22.1:22.1.1', label: 'Specialty Session Activation' },
+                { id: 'opd:22.1:22.1.2', label: 'Doctor Roster & Room Assign' },
+                { id: 'opd:22.1:22.1.3', label: 'Clinic Flow & Wait Telemetry' }
+              ]
+            },
+            {
+              id: 'opd:22.2',
+              label: 'Patient Arrival & Check-in',
+              subsubItems: [
+                { id: 'opd:22.2:22.2.1', label: 'Reception Desk Check-in' },
+                { id: 'opd:22.2:22.2.2', label: 'Arrival Status Flip' }
+              ]
+            },
+            {
+              id: 'opd:22.3',
+              label: 'Consultation Queue',
+              subsubItems: [
+                { id: 'opd:22.3:22.3.1', label: 'Live Queue Pacing' },
+                { id: 'opd:22.3:22.3.2', label: 'Emergency & Senior Priority' },
+                { id: 'opd:22.3:22.3.3', label: 'Cabin Waiting Count Display' }
+              ]
+            },
+            {
+              id: 'opd:22.4',
+              label: 'OPD Visit Slip Printout',
+              subsubItems: [
+                { id: 'opd:22.4:22.4.1', label: 'Automated Visit Slip Gen' },
+                { id: 'opd:22.4:22.4.2', label: 'Barcode & Token Slip Printing' }
+              ]
+            },
+            {
+              id: 'opd:22.5',
+              label: 'Follow-up Tracking',
+              subsubItems: [
+                { id: 'opd:22.5:22.5.1', label: 'Review Date Scheduling' },
+                { id: 'opd:22.5:22.5.2', label: 'Recall SMS & WhatsApp' }
+              ]
+            }
           ]
         },
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
         { id: 'departments', label: 'Departments & Wards', icon: Building2 },
         { id: 'rooms', label: 'Beds & Inpatient', icon: Bed },
-        { id: 'lab', label: 'Laboratory', icon: FlaskConical },
-        { id: 'bloodbank', label: 'Blood Bank', icon: Droplet, highlight: true },
         {
           id: 'inventory',
           label: 'Inventory',
@@ -378,7 +677,8 @@ export const AppShell = ({
       title: 'Administration',
       items: [
         { id: 'reports', label: 'Reports & Audit Logs', icon: FileText },
-        { id: 'settings', label: 'System Settings', icon: Settings }
+        { id: 'settings', label: 'System Settings', icon: Settings },
+        { id: 'login', label: 'Login Portal', icon: LogIn }
       ]
     }
   ];
@@ -410,8 +710,8 @@ export const AppShell = ({
       <aside
         style={{
           width: effectiveCollapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)',
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid var(--color-border)',
+          backgroundColor: '#0A4174',
+          borderRight: '1px solid rgba(73, 118, 159, 0.4)',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
@@ -427,43 +727,46 @@ export const AppShell = ({
         {/* Brand Header */}
         <div
           style={{
-            height: 'var(--topbar-height)',
-            padding: effectiveCollapsed ? '0 12px' : '0 16px',
+            minHeight: '74px',
+            padding: effectiveCollapsed ? '10px 8px' : '10px 12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: effectiveCollapsed ? 'center' : 'space-between',
-            borderBottom: '1px solid var(--color-border-subtle)',
-            backgroundColor: '#FFFFFF',
+            borderBottom: '1px solid rgba(73, 118, 159, 0.35)',
+            backgroundColor: '#0A4174',
             flexShrink: 0
           }}
         >
           {!effectiveCollapsed ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                <div
+              {/* White Logo Container Box as in Photo 1 */}
+              <div
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '8px',
+                  padding: '4px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #FFFFFF',
+                  minWidth: 0,
+                  flex: 1,
+                  marginRight: '8px',
+                  height: '48px',
+                  overflow: 'hidden'
+                }}
+              >
+                <img
+                  src={sarjiLogo}
+                  alt="Sarji Group of Hospitals"
                   style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-primary-teal)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFFFFF',
-                    boxShadow: '0 2px 6px rgba(8, 127, 140, 0.25)',
-                    flexShrink: 0
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    display: 'block'
                   }}
-                >
-                  <Activity size={19} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.98rem', color: 'var(--color-primary-teal)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                    MedicsPrime
-                  </div>
-                  <div style={{ fontSize: '0.65rem', fontWeight: '500', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Hospital Management
-                  </div>
-                </div>
+                />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <button
@@ -477,9 +780,9 @@ export const AppShell = ({
                     width: '28px',
                     height: '28px',
                     borderRadius: 'var(--radius-sm)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: '#FFFFFF',
+                    color: '#FFFFFF',
+                    border: '1px solid #49769F',
+                    backgroundColor: 'rgba(73, 118, 159, 0.35)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
@@ -499,8 +802,9 @@ export const AppShell = ({
                     width: '28px',
                     height: '28px',
                     borderRadius: 'var(--radius-sm)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
+                    color: '#FFFFFF',
+                    border: '1px solid #49769F',
+                    backgroundColor: 'rgba(73, 118, 159, 0.35)',
                     cursor: 'pointer'
                   }}
                   title="Close navigation"
@@ -511,22 +815,32 @@ export const AppShell = ({
               </div>
             </>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <div
                 style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-primary-teal)',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  backgroundColor: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#FFFFFF',
-                  boxShadow: '0 2px 6px rgba(8, 127, 140, 0.25)'
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                  padding: '3px',
+                  overflow: 'hidden'
                 }}
-                title="MedicsPrime Hospital Management"
+                title="Sarji Group of Hospitals"
               >
-                <Activity size={18} />
+                <img
+                  src={sarjiLogo}
+                  alt="Sarji"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'left center'
+                  }}
+                />
               </div>
               <button
                 type="button"
@@ -539,9 +853,9 @@ export const AppShell = ({
                   width: '24px',
                   height: '24px',
                   borderRadius: 'var(--radius-sm)',
-                  color: 'var(--color-text-secondary)',
-                  border: 'none',
-                  backgroundColor: 'transparent',
+                  color: '#FFFFFF',
+                  border: '1px solid #49769F',
+                  backgroundColor: 'rgba(73, 118, 159, 0.35)',
                   cursor: 'pointer'
                 }}
                 title="Expand sidebar"
@@ -554,14 +868,14 @@ export const AppShell = ({
         </div>
 
         {/* Hospital Identity Header */}
-        <div style={{ padding: effectiveCollapsed ? '8px 10px 4px' : '10px 12px 4px', flexShrink: 0 }}>
+        <div style={{ padding: effectiveCollapsed ? '8px 8px 4px' : '10px 12px 4px', flexShrink: 0 }}>
           {!effectiveCollapsed ? (
             <div
               style={{
                 padding: '8px 10px',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
+                backgroundColor: 'rgba(73, 118, 159, 0.25)',
                 borderRadius: 'var(--radius-md)',
-                border: '1px solid rgba(8, 127, 140, 0.15)',
+                border: '1px solid #49769F',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -574,62 +888,63 @@ export const AppShell = ({
                     width: '7px',
                     height: '7px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--color-success)',
-                    flexShrink: 0
+                    backgroundColor: '#10B981',
+                    flexShrink: 0,
+                    boxShadow: '0 0 6px #10B981'
                   }}
                 />
                 <div style={{ minWidth: 0 }}>
                   <div
                     style={{
                       fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: 'var(--color-primary-teal)',
+                      fontWeight: '700',
+                      color: '#FFFFFF',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    Apex Central Hospital
+                    Sarji Group of Hospitals
                   </div>
                   <div
                     style={{
                       fontSize: '0.65rem',
-                      color: 'var(--color-text-secondary)',
+                      color: '#D1E4F5',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    Main Clinical Campus
+                    Trusted empathy in healthcare
                   </div>
                 </div>
               </div>
-              <ShieldCheck size={14} color="var(--color-primary-teal)" style={{ flexShrink: 0 }} />
+              <ShieldCheck size={14} color="#FFFFFF" style={{ flexShrink: 0 }} />
             </div>
           ) : (
             <div
               style={{
                 width: '100%',
                 height: '34px',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
+                backgroundColor: 'rgba(73, 118, 159, 0.25)',
                 borderRadius: 'var(--radius-md)',
-                border: '1px solid rgba(8, 127, 140, 0.15)',
+                border: '1px solid #49769F',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '4px'
               }}
-              title="Apex Central Hospital • Main Clinical Campus"
+              title="Sarji Group of Hospitals • Trusted empathy in healthcare"
             >
               <div
                 style={{
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--color-success)'
+                  backgroundColor: '#10B981'
                 }}
               />
-              <ShieldCheck size={14} color="var(--color-primary-teal)" />
+              <ShieldCheck size={14} color="#FFFFFF" />
             </div>
           )}
         </div>
@@ -643,9 +958,9 @@ export const AppShell = ({
                   style={{
                     fontSize: '0.68rem',
                     fontWeight: '700',
-                    color: 'var(--color-text-muted)',
+                    color: '#8CB1D4',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.08em',
                     padding: '8px 10px 4px',
                     textAlign: 'left'
                   }}
@@ -657,7 +972,7 @@ export const AppShell = ({
                   <div
                     style={{
                       height: '1px',
-                      backgroundColor: 'var(--color-border-subtle)',
+                      backgroundColor: 'rgba(73, 118, 159, 0.35)',
                       margin: '6px 6px 8px'
                     }}
                   />
@@ -770,13 +1085,13 @@ export const AppShell = ({
                           padding: effectiveCollapsed ? '8px 0' : '8px 10px',
                           minHeight: '38px',
                           borderRadius: 'var(--radius-md)',
-                          backgroundColor: isItemActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                          color: isItemActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                          backgroundColor: isItemActive ? '#49769F' : 'transparent',
+                          color: '#FFFFFF',
                           fontWeight: isItemActive ? '600' : '500',
                           fontSize: 'var(--font-size-sm)',
                           border: '1px solid',
-                          borderColor: isItemActive ? 'rgba(8, 127, 140, 0.2)' : 'transparent',
-                          boxShadow: isItemActive && !effectiveCollapsed ? 'inset 3px 0 0 var(--color-primary-teal)' : 'none',
+                          borderColor: isItemActive ? 'rgba(255, 255, 255, 0.35)' : 'transparent',
+                          boxShadow: isItemActive && !effectiveCollapsed ? 'inset 3px 0 0 #FFFFFF' : 'none',
                           transition: 'background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease',
                           position: 'relative',
                           cursor: 'pointer'
@@ -794,7 +1109,7 @@ export const AppShell = ({
                         >
                           <Icon
                             size={18}
-                            color={isItemActive ? 'var(--color-primary-teal)' : 'currentColor'}
+                            color={isItemActive ? '#FFFFFF' : '#D1E4F5'}
                             style={{ flexShrink: 0 }}
                           />
                           {!effectiveCollapsed && (
@@ -818,10 +1133,10 @@ export const AppShell = ({
                               flexShrink: 0,
                               padding: '2px 7px',
                               fontSize: '0.68rem',
-                              fontWeight: '600',
+                              fontWeight: '700',
                               borderRadius: 'var(--radius-full)',
-                              backgroundColor: isItemActive ? 'var(--color-primary-teal)' : '#EEF2F2',
-                              color: isItemActive ? '#FFFFFF' : 'var(--color-text-secondary)',
+                              backgroundColor: isItemActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.45)',
+                              color: isItemActive ? '#0A4174' : '#FFFFFF',
                               lineHeight: 1.3
                             }}
                           >
@@ -833,7 +1148,7 @@ export const AppShell = ({
                           <span
                             style={{
                               marginLeft: 'auto',
-                              color: 'var(--color-text-secondary)',
+                              color: isItemActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
                               display: 'flex',
                               alignItems: 'center'
                             }}
@@ -851,7 +1166,7 @@ export const AppShell = ({
                               width: '6px',
                               height: '6px',
                               borderRadius: '50%',
-                              backgroundColor: isItemActive ? 'var(--color-primary-teal)' : 'var(--color-aqua-accent)'
+                              backgroundColor: '#FFFFFF'
                             }}
                           />
                         )}
@@ -867,11 +1182,11 @@ export const AppShell = ({
                             marginTop: '3px',
                             marginLeft: '10px',
                             paddingLeft: '8px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: '360px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
-                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                            scrollbarColor: '#49769F transparent'
                           }}
                         >
                           {MODULE_GROUPS.map((group) => {
@@ -893,8 +1208,8 @@ export const AppShell = ({
                                     justifyContent: 'space-between',
                                     padding: '5px 8px',
                                     borderRadius: 'var(--radius-sm)',
-                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
                                     fontSize: '0.76rem',
                                     fontWeight: isGroupActive ? '600' : '500',
                                     transition: 'all 0.12s ease'
@@ -941,7 +1256,7 @@ export const AppShell = ({
                                       background: 'none',
                                       border: 'none',
                                       padding: '2px',
-                                      color: 'var(--color-text-muted)',
+                                      color: 'rgba(255, 255, 255, 0.7)',
                                       cursor: 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -963,7 +1278,7 @@ export const AppShell = ({
                                       gap: '1px',
                                       marginLeft: '8px',
                                       paddingLeft: '8px',
-                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                       marginTop: '2px',
                                       marginBottom: '4px'
                                     }}
@@ -987,8 +1302,8 @@ export const AppShell = ({
                                             textAlign: 'left',
                                             padding: '4px 6px',
                                             borderRadius: 'var(--radius-sm)',
-                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                             fontWeight: isSubActive ? '600' : '400',
                                             fontSize: '0.73rem',
                                             border: 'none',
@@ -1003,7 +1318,7 @@ export const AppShell = ({
                                               width: '4px',
                                               height: '4px',
                                               borderRadius: '50%',
-                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                               flexShrink: 0
                                             }}
                                           />
@@ -1031,11 +1346,11 @@ export const AppShell = ({
                             marginTop: '3px',
                             marginLeft: '10px',
                             paddingLeft: '8px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: '360px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
-                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                            scrollbarColor: '#49769F transparent'
                           }}
                         >
                           {BILLING_GROUPS.map((group) => {
@@ -1056,8 +1371,8 @@ export const AppShell = ({
                                     justifyContent: 'space-between',
                                     padding: '5px 8px',
                                     borderRadius: 'var(--radius-sm)',
-                                    backgroundColor: isGroupActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                    color: isGroupActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
                                     fontSize: '0.76rem',
                                     fontWeight: isGroupActive ? '600' : '500',
                                     transition: 'all 0.12s ease'
@@ -1102,7 +1417,7 @@ export const AppShell = ({
                                       background: 'none',
                                       border: 'none',
                                       padding: '2px',
-                                      color: 'var(--color-text-muted)',
+                                      color: 'rgba(255, 255, 255, 0.7)',
                                       cursor: 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -1123,7 +1438,7 @@ export const AppShell = ({
                                       gap: '1px',
                                       marginLeft: '8px',
                                       paddingLeft: '8px',
-                                      borderLeft: '1px solid var(--color-border-subtle)',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
                                       marginTop: '2px',
                                       marginBottom: '4px'
                                     }}
@@ -1147,8 +1462,8 @@ export const AppShell = ({
                                             textAlign: 'left',
                                             padding: '4px 6px',
                                             borderRadius: 'var(--radius-sm)',
-                                            backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                            color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
                                             fontWeight: isSubActive ? '600' : '400',
                                             fontSize: '0.73rem',
                                             border: 'none',
@@ -1162,7 +1477,7 @@ export const AppShell = ({
                                               width: '4px',
                                               height: '4px',
                                               borderRadius: '50%',
-                                              backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                               flexShrink: 0
                                             }}
                                           />
@@ -1190,11 +1505,11 @@ export const AppShell = ({
                             marginTop: '3px',
                             marginLeft: '10px',
                             paddingLeft: '8px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: '380px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
-                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                            scrollbarColor: '#49769F transparent'
                           }}
                         >
                           {INVENTORY_GROUPS.map((group) => {
@@ -1349,11 +1664,11 @@ export const AppShell = ({
                             marginTop: '3px',
                             marginLeft: '10px',
                             paddingLeft: '8px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: '380px',
                             overflowY: 'auto',
                             scrollbarWidth: 'thin',
-                            scrollbarColor: 'var(--color-primary-teal, #0D9488) transparent'
+                            scrollbarColor: '#49769F transparent'
                           }}
                         >
                           {IPD_GROUPS.map((group) => {
@@ -1508,21 +1823,178 @@ export const AppShell = ({
                             marginTop: '2px',
                             marginLeft: '12px',
                             paddingLeft: '14px',
-                            borderLeft: '1.5px solid var(--color-border)',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
                             maxHeight: 'none'
                           }}
                         >
                           {item.subItems.map((sub) => {
-                            const isSubActive =
-                              currentRoute === sub.id ||
-                              (sub.id === 'clinical:consultation' && currentRoute === 'clinical') ||
-                              (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') ||
-                              (sub.id === 'finance:13.1' && (currentRoute === 'finance' || currentRoute === 'finance:overview')) ||
-                              (typeof currentRoute === 'string' && sub.id.startsWith('finance:') && (currentRoute === `submodule:${sub.id.replace('finance:', '')}` || currentRoute === `appointments:${sub.id.replace('finance:', '')}`)) ||
-                              (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) ||
-                              (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) ||
-                              (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) ||
-                              (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`));
+                            const hasSubsub = Boolean(sub.subsubItems && sub.subsubItems.length > 0);
+                            const isSubExpanded = Boolean(expandedSubmodules[sub.id]);
+
+                            const isSubActive = (() => {
+                              if (currentRoute === sub.id) return true;
+                              if (typeof currentRoute === 'string' && currentRoute.startsWith(sub.id + ':')) return true;
+                              if (sub.id === 'clinical:consultation' && currentRoute === 'clinical') return true;
+                              if (sub.id === 'daycare:8.1' && currentRoute === 'daycare') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('daycare:') && currentRoute === `submodule:${sub.id.replace('daycare:', '')}`) return true;
+                              if (sub.id === 'dietary:9.1' && (currentRoute === 'dietary' || currentRoute === 'diet')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('dietary:') && currentRoute === `submodule:${sub.id.replace('dietary:', '')}`) return true;
+                              if (sub.id === 'emr:12.1' && currentRoute === 'emr') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('emr:') && currentRoute === `submodule:${sub.id.replace('emr:', '')}`) return true;
+                              if (sub.id === 'bloodbank:donors' && currentRoute === 'bloodbank') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('bloodbank:') && currentRoute === `submodule:${sub.id.replace('bloodbank:', '')}`) return true;
+                              if (sub.id === 'credit-billing:7.1' && currentRoute === 'credit-billing') return true;
+                              if (sub.id === 'finance:13.1' && (currentRoute === 'finance' || currentRoute === 'finance:overview')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('finance:') && (currentRoute === `submodule:${sub.id.replace('finance:', '')}` || currentRoute === `appointments:${sub.id.replace('finance:', '')}`)) return true;
+                              if (sub.id === 'embryology:10.1' && (currentRoute === 'embryology' || currentRoute === 'embryology:overview')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('embryology:') && (currentRoute === `submodule:${sub.id.replace('embryology:', '')}` || currentRoute === `appointments:${sub.id.replace('embryology:', '')}`)) return true;
+                              if (sub.id === 'emergency:11.1' && (currentRoute === 'emergency' || currentRoute === 'emergency:overview')) return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('emergency:') && (currentRoute === `submodule:${sub.id.replace('emergency:', '')}` || currentRoute === `appointments:${sub.id.replace('emergency:', '')}`)) return true;
+                              if (typeof currentRoute === 'string') {
+                                const parts = currentRoute.split(':');
+                                const subParts = sub.id.split(':');
+                                if (subParts.length >= 2 && parts[0] === subParts[0] && parts[1] === subParts[1]) return true;
+                                if (parts[0] === 'submodule' && parts[1] && subParts[1] === parts[1]) return true;
+                              }
+                              return false;
+                            })();
+
+                            if (hasSubsub) {
+                              return (
+                                <div key={sub.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '4px 6px',
+                                      borderRadius: 'var(--radius-sm)',
+                                      backgroundColor: isSubActive ? '#49769F' : 'transparent',
+                                      color: isSubActive ? '#FFFFFF' : '#D1E4F5',
+                                      fontSize: '0.78rem',
+                                      fontWeight: isSubActive ? '600' : '500',
+                                      transition: 'all 0.12s ease'
+                                    }}
+                                    className="group-tree-row"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleSelectNav(sub.subsubItems[0]?.id || sub.id);
+                                        setExpandedSubmodules({ [sub.id]: true });
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        padding: 0,
+                                        textAlign: 'left',
+                                        color: 'inherit',
+                                        fontWeight: 'inherit',
+                                        fontSize: 'inherit',
+                                        cursor: 'pointer',
+                                        flex: 1,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}
+                                      title={sub.label}
+                                    >
+                                      {sub.label}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedSubmodules(prev => ({
+                                          ...prev,
+                                          [sub.id]: !isSubExpanded
+                                        }));
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        padding: '2px',
+                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        flexShrink: 0
+                                      }}
+                                      title={isSubExpanded ? `Collapse ${sub.label}` : `Expand ${sub.label}`}
+                                      aria-label={isSubExpanded ? `Collapse ${sub.label}` : `Expand ${sub.label}`}
+                                    >
+                                      {isSubExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                    </button>
+                                  </div>
+
+                                  {/* Level 3 items with circular bullets */}
+                                  {isSubExpanded && (
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '1px',
+                                        marginLeft: '8px',
+                                        paddingLeft: '8px',
+                                        borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
+                                        marginTop: '2px',
+                                        marginBottom: '4px'
+                                      }}
+                                    >
+                                      {sub.subsubItems.map((subsub) => {
+                                        const isSubsubActive =
+                                          currentRoute === subsub.id ||
+                                          (typeof currentRoute === 'string' && (
+                                            currentRoute.endsWith(`:${subsub.id.split(':').pop()}`) ||
+                                            currentRoute === `submodule:${subsub.id.split(':').pop()}`
+                                          ));
+
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={subsub.id}
+                                            onClick={() => handleSelectNav(subsub.id)}
+                                            className={`nav-subitem ${isSubsubActive ? 'nav-subitem-active' : ''}`}
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '8px',
+                                              width: '100%',
+                                              textAlign: 'left',
+                                              padding: '4px 6px',
+                                              borderRadius: 'var(--radius-sm)',
+                                              backgroundColor: isSubsubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                              color: isSubsubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
+                                              fontWeight: isSubsubActive ? '600' : '400',
+                                              fontSize: '0.73rem',
+                                              border: 'none',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.12s ease'
+                                            }}
+                                            title={subsub.label}
+                                          >
+                                            <span
+                                              style={{
+                                                width: '4px',
+                                                height: '4px',
+                                                borderRadius: '50%',
+                                                backgroundColor: isSubsubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
+                                                flexShrink: 0
+                                              }}
+                                            />
+                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                              {subsub.label}
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+
+
                             return (
                               <button
                                 type="button"
@@ -1537,8 +2009,8 @@ export const AppShell = ({
                                   textAlign: 'left',
                                   padding: '6px 8px',
                                   borderRadius: 'var(--radius-sm)',
-                                  backgroundColor: isSubActive ? 'var(--color-bg-pale-aqua)' : 'transparent',
-                                  color: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                                  backgroundColor: isSubActive ? '#49769F' : 'transparent',
+                                  color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)',
                                   fontWeight: isSubActive ? '600' : '400',
                                   fontSize: '0.8rem',
                                   border: 'none',
@@ -1551,7 +2023,7 @@ export const AppShell = ({
                                     width: '5px',
                                     height: '5px',
                                     borderRadius: '50%',
-                                    backgroundColor: isSubActive ? 'var(--color-primary-teal)' : 'var(--color-border)',
+                                    backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
                                     flexShrink: 0
                                   }}
                                 />
@@ -1575,8 +2047,8 @@ export const AppShell = ({
         <div
           style={{
             padding: effectiveCollapsed ? '10px 8px' : '12px 14px',
-            borderTop: '1px solid var(--color-border-subtle)',
-            backgroundColor: '#FFFFFF',
+            borderTop: '1px solid rgba(73, 118, 159, 0.4)',
+            backgroundColor: '#07294A',
             display: 'flex',
             alignItems: 'center',
             justifyContent: effectiveCollapsed ? 'center' : 'space-between',
@@ -1592,14 +2064,15 @@ export const AppShell = ({
                       width: '32px',
                       height: '32px',
                       borderRadius: 'var(--radius-full)',
-                      backgroundColor: 'var(--color-primary-teal)',
+                      backgroundColor: '#49769F',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontWeight: '600',
+                      fontWeight: '700',
                       fontSize: '0.8rem',
-                      flexShrink: 0
+                      flexShrink: 0,
+                      border: '1.5px solid #FFFFFF'
                     }}
                   >
                     {user.full_name ? user.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'ST'}
@@ -1609,7 +2082,7 @@ export const AppShell = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         fontWeight: '600',
-                        color: 'var(--color-text-primary)',
+                        color: '#FFFFFF',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1621,7 +2094,7 @@ export const AppShell = ({
                     <div
                       style={{
                         fontSize: '0.68rem',
-                        color: 'var(--color-text-secondary)',
+                        color: '#A0C4E4',
                         textTransform: 'capitalize',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -1637,7 +2110,7 @@ export const AppShell = ({
                   <button
                     type="button"
                     onClick={() => openLoginModal()}
-                    style={{ color: 'var(--color-text-muted)', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+                    style={{ color: '#D1E4F5', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
                     title="Switch Staff Account"
                     aria-label="Switch Staff Account"
                   >
@@ -1646,7 +2119,7 @@ export const AppShell = ({
                   <button
                     type="button"
                     onClick={logout}
-                    style={{ color: 'var(--color-error)', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+                    style={{ color: '#F87171', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
                     title="Sign out"
                     aria-label="Sign out"
                   >
@@ -1662,14 +2135,14 @@ export const AppShell = ({
                   width: '34px',
                   height: '34px',
                   borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--color-primary-teal)',
+                  backgroundColor: '#49769F',
                   color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: '600',
+                  fontWeight: '700',
                   fontSize: '0.8rem',
-                  border: 'none',
+                  border: '1.5px solid #FFFFFF',
                   cursor: 'pointer'
                 }}
                 title={`${user.full_name} (${user.role ? user.role.replace(/_/g, ' ') : 'Staff'}) • Click to switch user`}
@@ -1680,15 +2153,15 @@ export const AppShell = ({
             )
           ) : (
             !effectiveCollapsed ? (
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left' }}>
                   <div
                     style={{
                       width: '28px',
                       height: '28px',
                       borderRadius: 'var(--radius-full)',
-                      backgroundColor: '#E2E8F0',
-                      color: 'var(--color-text-muted)',
+                      backgroundColor: 'rgba(73, 118, 159, 0.35)',
+                      color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1698,23 +2171,36 @@ export const AppShell = ({
                     <Lock size={14} />
                   </div>
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                    <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: '600', color: '#FFFFFF' }}>
                       Not Signed In
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#A0C4E4' }}>
                       Public Terminal
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  icon={LogIn}
+                <button
+                  type="button"
                   onClick={() => openLoginModal()}
-                  style={{ width: '100%', padding: '6px 12px' }}
+                  style={{
+                    width: '100%',
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    backgroundColor: '#49769F',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
                 >
+                  <LogIn size={14} />
                   Staff Login
-                </Button>
+                </button>
               </div>
             ) : (
               <button
@@ -1724,12 +2210,12 @@ export const AppShell = ({
                   width: '34px',
                   height: '34px',
                   borderRadius: 'var(--radius-full)',
-                  backgroundColor: '#E2E8F0',
-                  color: 'var(--color-text-muted)',
+                  backgroundColor: 'rgba(73, 118, 159, 0.35)',
+                  color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: 'none',
+                  border: '1px solid #49769F',
                   cursor: 'pointer'
                 }}
                 title="Staff Login"
@@ -1861,6 +2347,16 @@ export const AppShell = ({
                           handleSelectNav(`emergency:${sub.id}`);
                         } else if (sub.id.startsWith('13.')) {
                           handleSelectNav(`finance:${sub.id}`);
+                        } else if (sub.id.startsWith('18.')) {
+                          handleSelectNav(`ivf:${sub.id}`);
+                        } else if (sub.id.startsWith('19.')) {
+                          handleSelectNav(`laboratory:${sub.id}`);
+                        } else if (sub.id.startsWith('20.')) {
+                          handleSelectNav(`mrd:${sub.id}`);
+                        } else if (sub.id.startsWith('21.')) {
+                          handleSelectNav(`nursing:${sub.id}`);
+                        } else if (sub.id.startsWith('22.')) {
+                          handleSelectNav(`opd:${sub.id}`);
                         } else if (parseInt(sub.id, 10) >= 16 && parseInt(sub.id, 10) <= 32) {
                           handleSelectNav(`inventory:${sub.id}`);
                         } else {
@@ -1948,7 +2444,7 @@ export const AppShell = ({
                   padding: '5px 10px',
                   borderRadius: 'var(--radius-full)',
                   backgroundColor: 'var(--color-bg-pale-aqua)',
-                  border: '1px solid rgba(8, 127, 140, 0.25)',
+                  border: '1px solid rgba(73, 118, 159, 0.35)',
                   color: 'var(--color-primary-teal)',
                   fontSize: '0.72rem',
                   fontWeight: '600'
@@ -2004,38 +2500,68 @@ export const AppShell = ({
               <ChevronDown size={14} color="var(--color-text-muted)" />
             </div>
 
-            {/* Staff Role Badge or Sign In Button */}
+            {/* Staff Role Badge or Sign In / Out */}
             {isAuthenticated && user ? (
-              <button
-                type="button"
-                onClick={() => openLoginModal()}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: 'var(--color-bg-pale-aqua)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(8, 127, 140, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: '600',
-                  color: 'var(--color-primary-teal)',
-                  cursor: 'pointer'
-                }}
-                title="Click to switch staff role"
-              >
-                <ShieldCheck size={14} />
-                <span>{user.role ? user.role.replace(/_/g, ' ').toUpperCase() : 'STAFF'}</span>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => openLoginModal()}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: 'var(--color-bg-pale-aqua)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid rgba(73, 118, 159, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    color: 'var(--color-primary-teal)',
+                    cursor: 'pointer'
+                  }}
+                  title="Click to switch staff role"
+                >
+                  <ShieldCheck size={14} />
+                  <span>{user.role ? user.role.replace(/_/g, ' ').toUpperCase() : 'STAFF'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    onNavigate('login');
+                  }}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: '#FFFFFF',
+                    color: '#DC2626',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Sign out and return to Login Portal"
+                >
+                  <LogOut size={13} color="#DC2626" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={LogIn}
-                onClick={() => openLoginModal()}
-              >
-                Sign In
-              </Button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={LogIn}
+                  onClick={() => onNavigate('login')}
+                >
+                  Login Portal
+                </Button>
+              </div>
             )}
           </div>
         </header>
@@ -2185,7 +2711,7 @@ export const AppShell = ({
               padding: '14px 16px',
               backgroundColor: 'var(--color-bg-pale-aqua)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(8, 127, 140, 0.2)',
+              border: '1px solid rgba(73, 118, 159, 0.35)',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-primary)',
               lineHeight: 1.5
@@ -2394,28 +2920,32 @@ export const AppShell = ({
           outline: none;
         }
         .nav-item:hover {
-          background-color: var(--color-bg-soft-cyan) !important;
-          color: var(--color-text-primary) !important;
+          background-color: rgba(73, 118, 159, 0.4) !important;
+          color: #FFFFFF !important;
         }
         .nav-item-active:hover {
-          background-color: var(--color-bg-pale-aqua) !important;
-          color: var(--color-primary-teal) !important;
+          background-color: #49769F !important;
+          color: #FFFFFF !important;
+        }
+        .group-tree-row:hover {
+          background-color: rgba(73, 118, 159, 0.35) !important;
+          color: #FFFFFF !important;
         }
         .nav-subitem {
           outline: none;
         }
         .nav-subitem:hover {
-          background-color: var(--color-bg-soft-cyan) !important;
-          color: var(--color-text-primary) !important;
+          background-color: rgba(73, 118, 159, 0.35) !important;
+          color: #FFFFFF !important;
         }
         .nav-subitem-active:hover {
-          background-color: var(--color-bg-pale-aqua) !important;
-          color: var(--color-primary-teal) !important;
+          background-color: #49769F !important;
+          color: #FFFFFF !important;
         }
         .desktop-collapse-btn:hover {
-          background-color: var(--color-bg-pale-aqua) !important;
-          color: var(--color-primary-teal) !important;
-          border-color: rgba(8, 127, 140, 0.3) !important;
+          background-color: #49769F !important;
+          color: #FFFFFF !important;
+          border-color: #FFFFFF !important;
         }
         @media (max-width: 900px) {
           .app-sidebar {

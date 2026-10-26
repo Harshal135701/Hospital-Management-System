@@ -69,7 +69,7 @@ export const EMBRYOLOGY_SUBMODULES = [
 ];
 
 export const OOCYTE_MATURITY_STAGES = [
-  { code: 'MII', name: 'Metaphase II (Mature)', description: 'First polar body extruded; optimal for ICSI microinjection', color: '#087F8C' },
+  { code: 'MII', name: 'Metaphase II (Mature)', description: 'First polar body extruded; optimal for ICSI microinjection', color: '#0A4174' },
   { code: 'MI', name: 'Metaphase I (Intermediate)', description: 'No polar body, no germinal vesicle; immature', color: '#C68A27' },
   { code: 'GV', name: 'Germinal Vesicle (Immature)', description: 'Prominent nuclear membrane; prophase I arrest', color: '#C94C55' },
   { code: 'DEG', name: 'Degenerated / Atretic', description: 'Vacuolated, dark or fractured zona pellucida', color: '#8E9F9F' }
@@ -113,9 +113,9 @@ export const GARDNER_TE_GRADES = [
 
 export const EMBRYO_STATUSES = {
   viable: { label: 'Viable / Culturing', variant: 'info', color: '#4388C7' },
-  selected_for_et: { label: 'Selected for Transfer', variant: 'teal', color: '#087F8C' },
+  selected_for_et: { label: 'Selected for Transfer', variant: 'teal', color: '#0A4174' },
   transferred: { label: 'Transferred (ET)', variant: 'success', color: '#21856B' },
-  frozen: { label: 'Cryopreserved (LN2)', variant: 'teal', color: '#087F8C' },
+  frozen: { label: 'Cryopreserved (LN2)', variant: 'teal', color: '#0A4174' },
   arrested: { label: 'Development Arrested', variant: 'gray', color: '#8E9F9F' },
   discarded: { label: 'Discarded (Non-Viable)', variant: 'danger', color: '#C94C55' }
 };

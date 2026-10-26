@@ -464,7 +464,7 @@ export const ProgressNotes = ({ patient, onSaveNote }) => {
             <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '10px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--color-primary-teal)' }}>
-                  Apex Central Hospital — Progress Note
+                  Sarji Group of Hospitals — Progress Note
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{currentDateTimeStr}</span>
               </div>

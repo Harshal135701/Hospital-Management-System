@@ -28,27 +28,50 @@ import {
 
 import { Card, Button, Badge, Input, Select, Modal } from '../common/UIPrimitives';
 import { BloodBankService, PatientService, TokenManager } from '../../services/api';
-import { HEALTHCARE_IMAGES } from '../../assets/images';
 import { useAuth } from '../../context/AuthContext';
 
-export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }) => {
-  const { user, isAuthenticated, openLoginModal } = useAuth();
-  const normalizeBloodTab = (tab) => {
-    if (!tab) return 'donors';
-    if (tab === '5.1' || tab === 'donors') return 'donors';
-    if (tab === '5.2' || tab === 'collection') return 'collection';
-    if (tab === '5.3' || tab === 'inventory') return 'inventory';
-    if (tab === '5.4' || tab === 'serology') return 'serology';
-    if (tab === '5.5' || tab === 'requisitions') return 'requisitions';
-    return tab;
+const resolveBloodBankTab = (target) => {
+  if (!target) return 'donors';
+  const clean = String(target).replace('bloodbank:', '');
+  const numMap = {
+    '5.1': 'donors',
+    '5.2': 'collection',
+    '5.3': 'inventory',
+    '5.4': 'serology',
+    '5.5': 'requisitions',
+    '5.6': 'handover',
+    '5.7': 'audit',
+    '1': 'donors',
+    '2': 'collection',
+    '3': 'inventory',
+    '4': 'serology',
+    '5': 'requisitions',
+    '6': 'handover',
+    '7': 'audit'
   };
-  const [activeTab, setActiveTab] = useState(() => normalizeBloodTab(initialTab));
+  if (numMap[clean]) return numMap[clean];
+  const validTabs = ['donors', 'collection', 'inventory', 'serology', 'requisitions', 'handover', 'audit'];
+  if (validTabs.includes(clean)) return clean;
+  return 'donors';
+};
+
+export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors', onNavigate }) => {
+  const { user, isAuthenticated, openLoginModal } = useAuth();
+  const [activeTab, setActiveTab] = useState(() => resolveBloodBankTab(initialTab || initialSubtab));
 
   useEffect(() => {
-    if (initialTab) {
-      setActiveTab(normalizeBloodTab(initialTab));
+    const nextTab = resolveBloodBankTab(initialTab || initialSubtab);
+    if (nextTab) {
+      setActiveTab(nextTab);
     }
-  }, [initialTab]);
+  }, [initialTab, initialSubtab]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (typeof onNavigate === 'function') {
+      onNavigate(`bloodbank:${tabId}`);
+    }
+  };
   
   // Data states
   const [donors, setDonors] = useState([]);
@@ -151,6 +174,115 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
     groupVerified: true,
     coldChainVerified: true
   });
+
+  // Cold Chain Sensor Log Modal State (Submodule 5.3)
+  const [isTemperatureModalOpen, setIsTemperatureModalOpen] = useState(false);
+  const [temperatureForm, setTemperatureForm] = useState({
+    storage_unit_code: 'REF-01',
+    storage_unit_type: 'blood_refrigerator',
+    recorded_temperature_c: '4.0',
+    target_min_temp_c: '2.0',
+    target_max_temp_c: '6.0',
+    agitator_operational: true,
+    recorded_by_name: 'Sr. Suresh P. (Blood Bank Tech)',
+    corrective_action: ''
+  });
+
+  const handleSaveTemperatureLog = (e) => {
+    e.preventDefault();
+    const tempVal = parseFloat(temperatureForm.recorded_temperature_c) || 4.0;
+    const minVal = parseFloat(temperatureForm.target_min_temp_c) || 2.0;
+    const maxVal = parseFloat(temperatureForm.target_max_temp_c) || 6.0;
+    const alertRaised = tempVal < minVal || tempVal > maxVal;
+
+    const newLog = {
+      id: `temp-${Date.now()}`,
+      recorded_at: new Date().toISOString(),
+      storage_unit_code: temperatureForm.storage_unit_code,
+      storage_unit_type: temperatureForm.storage_unit_type,
+      recorded_temperature_c: tempVal,
+      target_min_temp_c: minVal,
+      target_max_temp_c: maxVal,
+      agitator_operational: temperatureForm.agitator_operational,
+      alert_raised: alertRaised,
+      recorded_by_name: temperatureForm.recorded_by_name,
+      corrective_action: alertRaised ? (temperatureForm.corrective_action || 'Temperature excursion logged, backup cooling activated.') : null
+    };
+
+    setTemperatureLogs(prev => [newLog, ...prev]);
+    setIsTemperatureModalOpen(false);
+  };
+
+  // Serology TTI Screening Modal State (Submodule 5.4)
+  const [isSerologyModalOpen, setIsSerologyModalOpen] = useState(false);
+  const [selectedSerologyTarget, setSelectedSerologyTarget] = useState(null);
+  const [serologyForm, setSerologyForm] = useState({
+    technician1_group: 'O Positive',
+    technician2_group: 'O Positive',
+    concur: true,
+    hiv_result: 'non_reactive',
+    hbv_result: 'non_reactive',
+    hcv_result: 'non_reactive',
+    syphilis_result: 'non_reactive',
+    malaria_result: 'non_reactive',
+    release_decision: 'approved_for_release',
+    pathologist_notes: 'All 5 mandatory TTI markers non-reactive. Safe release verified.'
+  });
+
+  const handleOpenSerologyModal = (sero) => {
+    setSelectedSerologyTarget(sero);
+    setSerologyForm({
+      technician1_group: sero.blood_group_claimed || 'O Positive',
+      technician2_group: sero.blood_group_claimed || 'O Positive',
+      concur: true,
+      hiv_result: 'non_reactive',
+      hbv_result: 'non_reactive',
+      hcv_result: 'non_reactive',
+      syphilis_result: 'non_reactive',
+      malaria_result: 'non_reactive',
+      release_decision: 'approved_for_release',
+      pathologist_notes: 'All 5 mandatory TTI markers non-reactive. Dual-technician grouping matches.'
+    });
+    setIsSerologyModalOpen(true);
+  };
+
+  const handleSaveSerologyResult = (e) => {
+    e.preventDefault();
+    if (!selectedSerologyTarget) return;
+
+    const ttiArray = [
+      { name: 'hiv_1_2', label: 'HIV 1 & 2', result: serologyForm.hiv_result, method: '4th Gen ELISA' },
+      { name: 'hepatitis_b', label: 'Hepatitis B (HBsAg)', result: serologyForm.hbv_result, method: 'Chemiluminescence (CLIA)' },
+      { name: 'hepatitis_c', label: 'Hepatitis C (Anti-HCV)', result: serologyForm.hcv_result, method: 'Chemiluminescence (CLIA)' },
+      { name: 'syphilis', label: 'Syphilis (VDRL / RPR)', result: serologyForm.syphilis_result, method: 'RPR Flocculation' },
+      { name: 'malaria', label: 'Malaria Antigen / Smear', result: serologyForm.malaria_result, method: 'Dual Antigen RDT' }
+    ];
+
+    setSerologyWorkbenches(prev => prev.map(s => {
+      if (s.donation_number === selectedSerologyTarget.donation_number) {
+        return {
+          ...s,
+          dual_grouping: {
+            determined_group: serologyForm.technician1_group,
+            technician1: 'Sr. Suresh P. (Tech 1)',
+            technician2: 'Sr. Deepa K. (Tech 2)',
+            concur: serologyForm.concur,
+            verified: true
+          },
+          tti_tests: ttiArray,
+          release_authorization: {
+            status: serologyForm.release_decision,
+            authorized_by: 'Dr. Jayant Mukherjee (MD Pathology)',
+            authorized_at: new Date().toISOString(),
+            notes: serologyForm.pathologist_notes
+          }
+        };
+      }
+      return s;
+    }));
+
+    setIsSerologyModalOpen(false);
+  };
 
   const loadBloodBankData = async () => {
     if (!TokenManager.getToken()) {
@@ -589,102 +721,46 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Module Banner with clinical photography */}
+      {/* Module Banner */}
       <div
         style={{
           borderRadius: 'var(--radius-xl)',
           backgroundColor: '#FFFFFF',
           border: '1px solid var(--color-border)',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: '1.4fr 1fr',
-          boxShadow: 'var(--shadow-card)'
+          padding: '24px 28px',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
         }}
         className="bloodbank-banner"
       >
-        <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-              Submodules 5.1 – 5.6
-            </span>
-            <Badge variant="blood" size="sm">Dual-Gated Transfusion Safety</Badge>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
+                Submodules 5.1 – 5.6
+              </span>
+              <Badge variant="blood" size="sm">Dual-Gated Transfusion Safety</Badge>
+            </div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
+              Blood Bank & Transfusion Medicine Workspace
+            </h1>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', maxWidth: '780px', lineHeight: 1.5, margin: 0 }}>
+              Integrated donor screening, phlebotomy barcoding, cold-chain temperature control, dual-technician ABO/Rh verification, and safe-release issuance.
+            </p>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-            Blood Bank & Transfusion Medicine Workspace
-          </h1>
-          <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', maxWidth: '520px', lineHeight: 1.5, marginBottom: '20px' }}>
-            Integrated donor screening, phlebotomy barcoding, cold-chain temperature control, dual-technician ABO/Rh verification, and safe-release issuance.
-          </p>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={Plus}
-              onClick={() => setIsDonorModalOpen(true)}
-            >
-              Register Donor
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={CheckSquare}
-              onClick={() => {
-                if (donors.length > 0) {
-                  setSelectedDonorForScreening(donors[0]);
-                  setIsScreeningModalOpen(true);
-                } else {
-                  alert('No donors registered yet. Please click "Register Donor" first.');
-                }
-              }}
-            >
-              Screen Donor
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={QrCode}
-              onClick={() => setIsCollectionModalOpen(true)}
-            >
-              New Bag Collection
-            </Button>
-            <Button
-              variant="soft"
-              size="sm"
-              icon={FileCheck}
-              onClick={() => setIsRequisitionModalOpen(true)}
-            >
-              New Requisition
-            </Button>
-          </div>
-        </div>
-
-        <div style={{ position: 'relative', minHeight: '180px' }}>
-          <img
-            src={HEALTHCARE_IMAGES.bloodBankCentrifuge}
-            alt="Blood Bank Centrifuge and Laboratory"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
           <div
             style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.2) 20%, transparent 60%)'
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '16px',
-              right: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-dropdown)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '8px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-bg-pale-aqua)',
+              border: '1px solid rgba(8, 127, 140, 0.25)',
+              flexShrink: 0
             }}
           >
             <ShieldCheck size={16} color="var(--color-success)" />
@@ -692,6 +768,48 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
               TTI 5-Pathogen Gate Enforced
             </span>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            onClick={() => setIsDonorModalOpen(true)}
+          >
+            Register Donor
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={CheckSquare}
+            onClick={() => {
+              if (donors.length > 0) {
+                setSelectedDonorForScreening(donors[0]);
+                setIsScreeningModalOpen(true);
+              } else {
+                alert('No donors registered yet. Please click "Register Donor" first.');
+              }
+            }}
+          >
+            Screen Donor
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={QrCode}
+            onClick={() => setIsCollectionModalOpen(true)}
+          >
+            New Bag Collection
+          </Button>
+          <Button
+            variant="soft"
+            size="sm"
+            icon={FileCheck}
+            onClick={() => setIsRequisitionModalOpen(true)}
+          >
+            New Requisition
+          </Button>
         </div>
       </div>
 
@@ -800,7 +918,7 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1054,20 +1172,19 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
           >
             <div
               style={{
-                width: '72px',
-                height: '72px',
+                width: '48px',
+                height: '48px',
                 borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
+                backgroundColor: 'var(--color-bg-pale-aqua)',
+                border: '1px solid rgba(8, 127, 140, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 flexShrink: 0,
-                border: '1px solid var(--color-border)',
-                boxShadow: 'var(--shadow-subtle)'
+                color: 'var(--color-primary-teal)'
               }}
             >
-              <img
-                src={HEALTHCARE_IMAGES.bloodStorageFridge}
-                alt="Refrigerated blood components"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <Thermometer size={24} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1182,6 +1299,17 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
           </Card>
 
           {/* Storage Unit Cold Chain Telemetry & Sensor Logs */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setIsTemperatureModalOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={14} />
+              <span>Record Cold Chain Sensor Log</span>
+            </Button>
+          </div>
           <Card
             title="Storage Unit Cold Chain Telemetry & Sensor Logs"
             subtitle="Genuine temperature logs recorded in blood_storage_temperature_logs schema"
@@ -1282,20 +1410,19 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
           >
             <div
               style={{
-                width: '72px',
-                height: '72px',
+                width: '48px',
+                height: '48px',
                 borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
+                backgroundColor: 'var(--color-bg-pale-aqua)',
+                border: '1px solid rgba(8, 127, 140, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 flexShrink: 0,
-                border: '1px solid var(--color-border)',
-                boxShadow: 'var(--shadow-subtle)'
+                color: 'var(--color-primary-teal)'
               }}
             >
-              <img
-                src={HEALTHCARE_IMAGES.microscopeAnalysis}
-                alt="Microscopic & Serological Analysis"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <FlaskConical size={24} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1426,6 +1553,15 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
                           <Badge variant={releaseBadgeVariant}>
                             {releaseBadgeLabel}
                           </Badge>
+                          <Button
+                            size="xs"
+                            variant="primary"
+                            onClick={() => handleOpenSerologyModal(sero)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <CheckSquare size={13} />
+                            <span>Record TTI & Dual Grouping</span>
+                          </Button>
                         </div>
                       </div>
 
@@ -1981,7 +2117,7 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
               padding: '12px 14px',
               backgroundColor: 'var(--color-bg-pale-aqua)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(100, 216, 208, 0.4)',
+              border: '1px solid rgba(73, 118, 159, 0.35)',
               display: 'flex',
               alignItems: 'center',
               gap: '10px'
@@ -2525,7 +2661,7 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
                   padding: '10px 14px',
                   borderRadius: 'var(--radius-md)',
                   backgroundColor: uhidValidationMessage.type === 'success' ? 'var(--color-bg-pale-aqua)' : 'var(--color-error-bg)',
-                  border: `1px solid ${uhidValidationMessage.type === 'success' ? 'rgba(100, 216, 208, 0.4)' : 'var(--color-error-border)'}`,
+                  border: `1px solid ${uhidValidationMessage.type === 'success' ? 'rgba(73, 118, 159, 0.35)' : 'var(--color-error-border)'}`,
                   color: uhidValidationMessage.type === 'success' ? 'var(--color-primary-teal)' : 'var(--color-error)',
                   fontSize: 'var(--font-size-xs)',
                   display: 'flex',
@@ -2623,13 +2759,261 @@ export const BloodBankView = ({ initialTab = 'donors', onNavigate: _onNavigate }
         </form>
       </Modal>
 
-      <style>{`
-        @media (max-width: 992px) {
-          .bloodbank-banner {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+      {/* Storage Unit Cold Chain Temperature Sensor Modal */}
+      <Modal
+        isOpen={isTemperatureModalOpen}
+        onClose={() => setIsTemperatureModalOpen(false)}
+        title="Record Storage Unit Cold Chain Temperature Reading"
+      >
+        <form onSubmit={handleSaveTemperatureLog} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Storage Unit Code"
+              required
+              value={temperatureForm.storage_unit_code}
+              onChange={(e) => {
+                const code = e.target.value;
+                let type = 'blood_refrigerator';
+                let min = '2.0';
+                let max = '6.0';
+                let agit = false;
+                if (code.startsWith('FRZ-01')) {
+                  type = 'plasma_freezer';
+                  min = '-35.0';
+                  max = '-25.0';
+                } else if (code.startsWith('AGIT')) {
+                  type = 'platelet_agitator';
+                  min = '20.0';
+                  max = '24.0';
+                  agit = true;
+                } else if (code.startsWith('FRZ-02')) {
+                  type = 'cryo_freezer';
+                  min = '-40.0';
+                  max = '-30.0';
+                }
+                setTemperatureForm({
+                  ...temperatureForm,
+                  storage_unit_code: code,
+                  storage_unit_type: type,
+                  target_min_temp_c: min,
+                  target_max_temp_c: max,
+                  agitator_operational: agit
+                });
+              }}
+              options={[
+                { value: 'REF-01', label: 'REF-01: Main Blood Bank Walk-In Refrigerator (2°C - 6°C)' },
+                { value: 'FRZ-01', label: 'FRZ-01: Ultra-Low Plasma Deep Freezer (-35°C - -25°C)' },
+                { value: 'AGIT-01', label: 'AGIT-01: Helmer Platelet Agitator Chamber (20°C - 24°C)' },
+                { value: 'FRZ-02', label: 'FRZ-02: Cryoprecipitate Storage Unit (-40°C - -30°C)' }
+              ]}
+            />
+            <Input
+              label="Storage Unit Type"
+              value={temperatureForm.storage_unit_type.replace(/_/g, ' ')}
+              disabled
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+            <Input
+              label="Recorded Temp (°C)"
+              required
+              type="number"
+              step="0.1"
+              value={temperatureForm.recorded_temperature_c}
+              onChange={(e) => setTemperatureForm({ ...temperatureForm, recorded_temperature_c: e.target.value })}
+            />
+            <Input
+              label="Target Min Temp (°C)"
+              value={temperatureForm.target_min_temp_c}
+              disabled
+            />
+            <Input
+              label="Target Max Temp (°C)"
+              value={temperatureForm.target_max_temp_c}
+              disabled
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-bg-pale-aqua)' }}>
+            <input
+              type="checkbox"
+              id="agitator_status"
+              checked={temperatureForm.agitator_operational}
+              onChange={(e) => setTemperatureForm({ ...temperatureForm, agitator_operational: e.target.checked })}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            <label htmlFor="agitator_status" style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--color-primary-teal)', cursor: 'pointer' }}>
+              Agitator / Circulation Motor Operational & Oscillating Normally
+            </label>
+          </div>
+
+          <Input
+            label="Staff Technician / Sensor Operator"
+            required
+            value={temperatureForm.recorded_by_name}
+            onChange={(e) => setTemperatureForm({ ...temperatureForm, recorded_by_name: e.target.value })}
+          />
+
+          <Input
+            label="Corrective Action (if out of range excursion)"
+            placeholder="e.g. Compressor calibrated, secondary cold pack circulation activated"
+            value={temperatureForm.corrective_action}
+            onChange={(e) => setTemperatureForm({ ...temperatureForm, corrective_action: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsTemperatureModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Save Temperature Log
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Serology TTI Screening & Dual Grouping Verification Modal */}
+      <Modal
+        isOpen={isSerologyModalOpen}
+        onClose={() => setIsSerologyModalOpen(false)}
+        title={`Serology TTI Screen & Dual Grouping: ${selectedSerologyTarget?.donation_number || ''}`}
+      >
+        <form onSubmit={handleSaveSerologyResult} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', fontSize: '0.8rem', color: '#991B1B' }}>
+            <strong>Mandatory Safety Gate:</strong> All 5 TTI infection markers must be Non-Reactive, and forward/reverse grouping between Technicians 1 & 2 must concur before release approval.
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Technician 1 ABO/Rh Group"
+              required
+              value={serologyForm.technician1_group}
+              onChange={(e) => setSerologyForm({ ...serologyForm, technician1_group: e.target.value })}
+              options={[
+                { value: 'O Positive', label: 'O Positive (O+)' },
+                { value: 'O Negative', label: 'O Negative (O-)' },
+                { value: 'A Positive', label: 'A Positive (A+)' },
+                { value: 'A Negative', label: 'A Negative (A-)' },
+                { value: 'B Positive', label: 'B Positive (B+)' },
+                { value: 'B Negative', label: 'B Negative (B-)' },
+                { value: 'AB Positive', label: 'AB Positive (AB+)' },
+                { value: 'AB Negative', label: 'AB Negative (AB-)' }
+              ]}
+            />
+            <Select
+              label="Technician 2 ABO/Rh Group"
+              required
+              value={serologyForm.technician2_group}
+              onChange={(e) => setSerologyForm({ ...serologyForm, technician2_group: e.target.value })}
+              options={[
+                { value: 'O Positive', label: 'O Positive (O+)' },
+                { value: 'O Negative', label: 'O Negative (O-)' },
+                { value: 'A Positive', label: 'A Positive (A+)' },
+                { value: 'A Negative', label: 'A Negative (A-)' },
+                { value: 'B Positive', label: 'B Positive (B+)' },
+                { value: 'B Negative', label: 'B Negative (B-)' },
+                { value: 'AB Positive', label: 'AB Positive (AB+)' },
+                { value: 'AB Negative', label: 'AB Negative (AB-)' }
+              ]}
+            />
+          </div>
+
+          <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px' }}>
+            <h4 style={{ margin: '0 0 10px', fontSize: '0.85rem', fontWeight: '700', color: 'var(--color-primary-teal)' }}>
+              5-Pathogen Mandatory Transfusion-Transmissible Infection (TTI) Screen
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+              <Select
+                label="HIV 1 & 2 (4th Gen ELISA)"
+                value={serologyForm.hiv_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, hiv_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Hepatitis B (HBsAg CLIA)"
+                value={serologyForm.hbv_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, hbv_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Hepatitis C (Anti-HCV CLIA)"
+                value={serologyForm.hcv_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, hcv_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Syphilis (VDRL/RPR)"
+                value={serologyForm.syphilis_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, syphilis_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+              <Select
+                label="Malaria (Dual Ag / Smear)"
+                value={serologyForm.malaria_result}
+                onChange={(e) => setSerologyForm({ ...serologyForm, malaria_result: e.target.value })}
+                options={[
+                  { value: 'non_reactive', label: 'Non-Reactive' },
+                  { value: 'reactive', label: 'Reactive (Biohazard)' },
+                  { value: 'indeterminate', label: 'Indeterminate' }
+                ]}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <Select
+              label="Release Authorization Decision"
+              required
+              value={serologyForm.release_decision}
+              onChange={(e) => setSerologyForm({ ...serologyForm, release_decision: e.target.value })}
+              options={[
+                { value: 'approved_for_release', label: '✓ Approved for Safe Release' },
+                { value: 'quarantined_for_retest', label: '⚠ Quarantined for Retest' },
+                { value: 'rejected', label: '✕ Rejected (Biohazard Protocol Incinerate)' }
+              ]}
+            />
+            <Input
+              label="Authorizing Consultant Pathologist"
+              value="Dr. Jayant Mukherjee (MD Pathology, Reg #KMC-41908)"
+              disabled
+            />
+          </div>
+
+          <Input
+            label="Pathologist Release Remarks"
+            required
+            value={serologyForm.pathologist_notes}
+            onChange={(e) => setSerologyForm({ ...serologyForm, pathologist_notes: e.target.value })}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <Button variant="ghost" type="button" onClick={() => setIsSerologyModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Sign & Commit Serology Findings
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 };

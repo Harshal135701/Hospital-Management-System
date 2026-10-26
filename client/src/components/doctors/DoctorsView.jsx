@@ -343,7 +343,7 @@ export const DoctorsView = ({ onBack, onNavigate }) => {
                   padding: '10px 12px',
                   backgroundColor: 'var(--color-bg-pale-aqua)',
                   borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(100, 216, 208, 0.35)',
+                  border: '1px solid rgba(73, 118, 159, 0.3)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '4px'

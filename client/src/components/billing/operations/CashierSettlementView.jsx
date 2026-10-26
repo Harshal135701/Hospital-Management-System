@@ -424,10 +424,10 @@ export function CashierSettlementView() {
               fontSize: '0.85rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #087F8C', paddingBottom: '12px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--color-primary-teal, #0A4174)', paddingBottom: '12px', marginBottom: '14px' }}>
               <div>
-                <h2 style={{ margin: '0 0 2px', fontSize: '1.25rem', color: '#087F8C', fontWeight: '800' }}>
-                  APEX CENTRAL HOSPITAL
+                <h2 style={{ margin: '0 0 2px', fontSize: '1.25rem', color: 'var(--color-primary-teal, #0A4174)', fontWeight: '800' }}>
+                  SARJI GROUP OF HOSPITALS
                 </h2>
                 <div style={{ fontSize: '0.75rem', color: '#4B5563' }}>Day-End Cashier Settlement & Handover Report</div>
               </div>

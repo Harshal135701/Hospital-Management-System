@@ -3,7 +3,7 @@
  */
 
 export const DIET_CATEGORIES = [
-  { id: 'REGULAR', code: 'REG', name: 'Regular / Normal Diet', description: 'Standard balanced hospital nutritional diet.', color: '#087F8C' },
+  { id: 'REGULAR', code: 'REG', name: 'Regular / Normal Diet', description: 'Standard balanced hospital nutritional diet.', color: '#0A4174' },
   { id: 'DIABETIC', code: 'DM', name: 'Diabetic / Low Glycemic Index', description: 'Controlled complex carbohydrates, high soluble fibre, zero refined sugar.', color: '#0284C7' },
   { id: 'PUREED', code: 'PUR', name: 'Soft / Pureed Mechanical', description: 'Blended texture for dysphagia, post-oral surgery, or poor dentition.', color: '#8B5CF6' },
   { id: 'CLEAR_LIQUID', code: 'CLQ', name: 'Clear Liquid Diet', description: 'Broth, clear juices, electrolyte water. Strictly no solid residues.', color: '#D97706' },
