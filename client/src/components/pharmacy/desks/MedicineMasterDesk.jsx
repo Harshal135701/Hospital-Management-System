@@ -187,7 +187,7 @@ export function MedicineMasterDesk({
       )}
 
       <Card
-        title="25.2 Hospital Medicine Master & Salt Information Catalog"
+        title="Hospital Medicine Master & Salt Information Catalog"
         subtitle="Manage the hospital drug formulary, generic salt molecules, therapeutic classifications, and scheduled drug policies"
       >
         {/* Search, Filters, and Add Button Bar */}

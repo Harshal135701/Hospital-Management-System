@@ -106,7 +106,7 @@ export function SystemAdminAuditDesk({ activeSubtab = '29.1', onNavigateSubmodul
       {/* SUBMODULE 29.1: View User Sessions */}
       {activeSubtab === '29.1' && (
         <Card
-          title="29.1 Active Staff User Sessions & Concurrent Logins"
+          title="Active Staff User Sessions & Concurrent Logins"
           subtitle="Real-time terminal logins, authenticated JWT sessions, IP addresses, duration, and administrative revocation"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -165,7 +165,7 @@ export function SystemAdminAuditDesk({ activeSubtab = '29.1', onNavigateSubmodul
       {/* SUBMODULE 29.2: AUDIT: System Audit Trail & Clinical Audit Trail */}
       {activeSubtab === '29.2' && (
         <Card
-          title="29.2 AUDIT: System Audit Trail & Clinical Immutable Audit Logs"
+          title="AUDIT: System Audit Trail & Clinical Immutable Audit Logs"
           subtitle="Non-repudiation audit trail, clinical record edits, medication dispensation logs, and administrative overrides"
         >
           <div style={{ overflowX: 'auto', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)' }}>
@@ -204,7 +204,7 @@ export function SystemAdminAuditDesk({ activeSubtab = '29.1', onNavigateSubmodul
       {/* SUBMODULE 29.3: SETUP: Department & Module Master Setup */}
       {activeSubtab === '29.3' && (
         <Card
-          title="29.3 SETUP: Hospital Department & Specialty Master Setup"
+          title="SETUP: Hospital Department & Specialty Master Setup"
           subtitle="Clinical departments, Head of Department (HOD) allocations, outpatient consulting rooms, and inpatient bed quotas"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -251,7 +251,7 @@ export function SystemAdminAuditDesk({ activeSubtab = '29.1', onNavigateSubmodul
       {/* SUBMODULE 29.4: SYSTEM: Event Configuration */}
       {activeSubtab === '29.4' && (
         <Card
-          title="29.4 SYSTEM: Event Triggers & Notification Webhooks"
+          title="SYSTEM: Event Triggers & Notification Webhooks"
           subtitle="Clinical panic alarms, automated critical event dispatchers, SMS gateways, and webhook endpoints"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -298,7 +298,7 @@ export function SystemAdminAuditDesk({ activeSubtab = '29.1', onNavigateSubmodul
       {/* SUBMODULE 29.5: Role-Based Access Control (RBAC) & Permissions */}
       {activeSubtab === '29.5' && (
         <Card
-          title="29.5 Role-Based Access Control (RBAC) & Permission Matrix"
+          title="Role-Based Access Control (RBAC) & Permission Matrix"
           subtitle="Hospital staff role privileges across clinical, pharmaceutical, financial, and administrative modules"
         >
           <div style={{ overflowX: 'auto', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)' }}>

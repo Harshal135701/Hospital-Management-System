@@ -115,7 +115,7 @@ export function FifoBatchExpiryDesk({
 
       {/* Primary Batch Inventory Card */}
       <Card
-        title="25.3 FIFO Batch Ledger & Near-Expiry Vigilance"
+        title="FIFO Batch Ledger & Near-Expiry Vigilance"
         subtitle="Enforces First-In First-Out (FIFO) & First-Expiry First-Out (FEFO) dispensing order and monitors critical shelf-life thresholds"
       >
         {/* Search & Expiry Filter Controls */}

@@ -198,7 +198,7 @@ export function StockIndentsDesk({
       {/* TAB 1: Stock Replenishment Alerts */}
       {activeTab === 'alerts' && (
         <Card
-          title="25.5 Real-Time Inventory Replenishment & Reorder Thresholds"
+          title="Real-Time Inventory Replenishment & Reorder Thresholds"
           subtitle="Identifies stock deficits against configured minimum buffers and calculates suggested purchase requisitions"
         >
           {/* Filters Bar */}

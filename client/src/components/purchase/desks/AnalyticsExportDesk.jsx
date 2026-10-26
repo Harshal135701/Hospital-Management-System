@@ -89,7 +89,7 @@ export function AnalyticsExportDesk({ activeSubtab = '32.1', onNavigateSubmodule
       {/* SUBMODULE 32.1: ANALYTICS: Billing, Inventory, Purchase, System Analytics */}
       {activeSubtab === '32.1' && (
         <Card
-          title="32.1 ANALYTICS: Hospital Operations, Billing, Inventory & Purchase Analytics"
+          title="ANALYTICS: Hospital Operations, Billing, Inventory & Purchase Analytics"
           subtitle="Real-time clinical operational statistics, department revenue velocity, material turn-around time, and inventory consumption trends"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -161,7 +161,7 @@ export function AnalyticsExportDesk({ activeSubtab = '32.1', onNavigateSubmodule
       {/* SUBMODULE 32.2: DATA EXPORT: Billing Data Export, System Data Export */}
       {activeSubtab === '32.2' && (
         <Card
-          title="32.2 DATA EXPORT: Financial Billing & System Security Compliance Datasets"
+          title="DATA EXPORT: Financial Billing & System Security Compliance Datasets"
           subtitle="Generate itemized tax invoices, GSTR compliance returns, TPA receivables, and immutable system audit log files"
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
@@ -195,7 +195,7 @@ export function AnalyticsExportDesk({ activeSubtab = '32.1', onNavigateSubmodule
       {/* SUBMODULE 32.3: Executive KPI Dashboard Widgets */}
       {activeSubtab === '32.3' && (
         <Card
-          title="32.3 Executive Hospital KPI Dashboard Widgets"
+          title="Executive Hospital KPI Dashboard Widgets"
           subtitle="Bed Occupancy Rate (BOR), Average Length of Stay (ALOS), OT Utilization Index, and Cash Collection Velocity"
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
@@ -226,7 +226,7 @@ export function AnalyticsExportDesk({ activeSubtab = '32.1', onNavigateSubmodule
       {/* SUBMODULE 32.4: Tabular Data Export (Excel / CSV) */}
       {(activeSubtab === '32.4' || activeSubtab === '32.5') && (
         <Card
-          title="32.4 Tabular Data Export (Excel / CSV)"
+          title="Tabular Data Export (Excel / CSV)"
           subtitle="Direct client-side spreadsheet generation for material inventory stock, supplier rate comparison, and work order audit records"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -297,11 +297,11 @@ export const AppShell = ({
           icon: Users,
           badge: '5 Modules',
           subItems: [
-            { id: 'patients:24.1', label: '24.1 New Patient Registration' },
-            { id: 'patients:24.2', label: '24.2 UHID Generation & Smart Card Print' },
-            { id: 'patients:24.3', label: '24.3 Create New Visit / Encounter' },
-            { id: 'patients:24.4', label: '24.4 Patient Search & Record Merge' },
-            { id: 'patients:24.5', label: '24.5 Demographic & Identity Updates' }
+            { id: 'patients:24.1', label: 'New Patient Registration' },
+            { id: 'patients:24.2', label: 'UHID Generation & Smart Card Print' },
+            { id: 'patients:24.3', label: 'Create New Visit / Encounter' },
+            { id: 'patients:24.4', label: 'Patient Search & Record Merge' },
+            { id: 'patients:24.5', label: 'Demographic & Identity Updates' }
           ]
         },
         {
@@ -310,11 +310,11 @@ export const AppShell = ({
           icon: Pill,
           badge: '5 Modules',
           subItems: [
-            { id: 'pharmacy:25.1', label: '25.1 Prescription Dispensing (OPD & IPD)' },
-            { id: 'pharmacy:25.2', label: '25.2 Medicine Master & Salt Information' },
-            { id: 'pharmacy:25.3', label: '25.3 FIFO Batch & Expiry Management' },
-            { id: 'pharmacy:25.4', label: '25.4 IPD Unused Medicine Return & Credit' },
-            { id: 'pharmacy:25.5', label: '25.5 Pharmacy Stock Indents & Reorder Alerts' }
+            { id: 'pharmacy:25.1', label: 'Prescription Dispensing (OPD & IPD)' },
+            { id: 'pharmacy:25.2', label: 'Medicine Master & Salt Information' },
+            { id: 'pharmacy:25.3', label: 'FIFO Batch & Expiry Management' },
+            { id: 'pharmacy:25.4', label: 'IPD Unused Medicine Return & Credit' },
+            { id: 'pharmacy:25.5', label: 'Pharmacy Stock Indents & Reorder Alerts' }
           ]
         },
         {

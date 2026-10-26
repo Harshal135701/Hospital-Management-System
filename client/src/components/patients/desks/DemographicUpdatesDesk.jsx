@@ -272,7 +272,7 @@ export function DemographicUpdatesDesk({
 
       {/* Search & Lookup Header */}
       <Card
-        title="24.5 Demographic & Identity Updates Desk"
+        title="Demographic & Identity Updates Desk"
         subtitle="Search and select patient to correct personal details, contact coordinates, and identity parameters"
       >
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>

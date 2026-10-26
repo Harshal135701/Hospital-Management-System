@@ -155,7 +155,7 @@ export function PurchaseView({ initialSubtab, onNavigate }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
-            Group Ref: #{currentGroup.id} • Desk #{currentSubmodule.id}
+            {currentGroup.name}
           </span>
         </div>
       </div>
@@ -252,7 +252,7 @@ export function PurchaseView({ initialSubtab, onNavigate }) {
                   transition: 'all 0.12s ease'
                 }}
               >
-                <span>{g.groupNumber}: {g.shortLabel}</span>
+                <span>{g.shortLabel}</span>
               </button>
             );
           })}

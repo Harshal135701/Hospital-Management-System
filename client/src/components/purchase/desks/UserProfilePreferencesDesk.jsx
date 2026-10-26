@@ -80,7 +80,7 @@ export function UserProfilePreferencesDesk({ activeSubtab = '30.1', onNavigateSu
       {/* SUBMODULE 30.1: Manage Profile */}
       {activeSubtab === '30.1' && (
         <Card
-          title="30.1 Manage Staff Professional Profile"
+          title="Manage Staff Professional Profile"
           subtitle="User biographical details, Medical Council registration numbers, clinical qualifications, and official email"
         >
           <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '640px' }}>
@@ -134,7 +134,7 @@ export function UserProfilePreferencesDesk({ activeSubtab = '30.1', onNavigateSu
       {/* SUBMODULE 30.2: Change Password & Security */}
       {activeSubtab === '30.2' && (
         <Card
-          title="30.2 Change Password & Authentication Security"
+          title="Change Password & Authentication Security"
           subtitle="Hospital portal credentials update, multi-factor authentication (MFA) tokens, and session security"
         >
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '440px' }}>
@@ -174,7 +174,7 @@ export function UserProfilePreferencesDesk({ activeSubtab = '30.1', onNavigateSu
       {/* SUBMODULE 30.3: Switch Active Hospital Branch */}
       {activeSubtab === '30.3' && (
         <Card
-          title="30.3 Switch Active Hospital Branch Context"
+          title="Switch Active Hospital Branch Context"
           subtitle="Multi-hospital campus workstation environment switcher (routes patient queues, beds, and billing to active branch)"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '520px' }}>
@@ -201,7 +201,7 @@ export function UserProfilePreferencesDesk({ activeSubtab = '30.1', onNavigateSu
       {/* SUBMODULE 30.4: Switch Active Role */}
       {activeSubtab === '30.4' && (
         <Card
-          title="30.4 Switch Active Clinical / Administrative Role"
+          title="Switch Active Clinical / Administrative Role"
           subtitle="Switch between assigned user privileges (e.g. Chief Consultant Physician vs Duty Emergency Lead)"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '520px' }}>
@@ -228,7 +228,7 @@ export function UserProfilePreferencesDesk({ activeSubtab = '30.1', onNavigateSu
       {/* SUBMODULE 30.5: User UI Preferences & Theme */}
       {activeSubtab === '30.5' && (
         <Card
-          title="30.5 User UI Preferences & Table Density"
+          title="User UI Preferences & Table Density"
           subtitle="Custom table row compacting, font size adjustments, and color theme preferences"
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', maxWidth: '640px' }}>

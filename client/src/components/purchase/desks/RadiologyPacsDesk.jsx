@@ -60,7 +60,7 @@ export function RadiologyPacsDesk({ activeSubtab = '27.1', onNavigateSubmodule: 
       {/* SUBMODULE 27.1: Modality Scheduling & MWL */}
       {activeSubtab === '27.1' && (
         <Card
-          title="27.1 Modality Scheduling & DICOM MWL"
+          title="Modality Scheduling & DICOM MWL"
           subtitle="Modality Worklist (MWL) integration, RIS scheduling, patient arrival check-in, and examination queue"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -132,7 +132,7 @@ export function RadiologyPacsDesk({ activeSubtab = '27.1', onNavigateSubmodule: 
       {/* SUBMODULE 27.2: DICOM Image Acquisition & PACS Storage */}
       {activeSubtab === '27.2' && (
         <Card
-          title="27.2 DICOM PACS Archive Storage Tiering"
+          title="DICOM PACS Archive Storage Tiering"
           subtitle="Storage nodes, DICOM instance indexation, hot storage, near-line archive, and retention policies"
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '16px' }}>
@@ -163,7 +163,7 @@ export function RadiologyPacsDesk({ activeSubtab = '27.1', onNavigateSubmodule: 
       {/* SUBMODULE 27.3: Browser-based DICOM PACS Viewer */}
       {activeSubtab === '27.3' && (
         <Card
-          title="27.3 Browser-Based DICOM PACS Clinical Diagnostic Viewer"
+          title="Browser-Based DICOM PACS Clinical Diagnostic Viewer"
           subtitle="Zero-footprint medical imaging viewer with windowing (WW/WL), zoom, invert, pan, and cross-sectional presets"
         >
           {/* Active study details bar */}
@@ -279,7 +279,7 @@ export function RadiologyPacsDesk({ activeSubtab = '27.1', onNavigateSubmodule: 
       {/* SUBMODULE 27.4: Radiology Report Authoring */}
       {activeSubtab === '27.4' && (
         <Card
-          title="27.4 Radiology Report Authoring & Structured Reporting"
+          title="Radiology Report Authoring & Structured Reporting"
           subtitle="Radiologist diagnostic reporting workspace, voice dictation templates, findings, and formal impressions"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -326,7 +326,7 @@ export function RadiologyPacsDesk({ activeSubtab = '27.1', onNavigateSubmodule: 
       {/* SUBMODULE 27.5: Report Verification & EMR Distribution */}
       {activeSubtab === '27.5' && (
         <Card
-          title="27.5 Radiology Report Verification & EMR Distribution"
+          title="Radiology Report Verification & EMR Distribution"
           subtitle="Electronic signature verification, HL7/FHIR diagnostic report sync to clinician EMR, and patient portal release"
         >
           <div style={{ overflowX: 'auto', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)' }}>

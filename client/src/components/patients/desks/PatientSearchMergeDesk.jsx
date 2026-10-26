@@ -178,7 +178,7 @@ export function PatientSearchMergeDesk({
       {/* MODE 1: Master Patient Index Search Table */}
       {activeTab === 'search' && (
         <Card
-          title="24.4 Master Patient Index (MPI) Search & Registry"
+          title="Master Patient Index (MPI) Search & Registry"
           subtitle="Query the centralized patient database with multi-field search and filters"
         >
           {/* Filters Bar */}

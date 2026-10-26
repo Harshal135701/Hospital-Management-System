@@ -14,7 +14,7 @@ export const PHARMACY_SUBMODULES = [
   {
     id: '25.1',
     routeId: 'pharmacy:25.1',
-    label: '25.1 Prescription Dispensing (OPD & IPD)',
+    label: 'Prescription Dispensing (OPD & IPD)',
     shortLabel: 'Prescription Dispensing',
     icon: Pill,
     badge: 'Dispensing',
@@ -23,7 +23,7 @@ export const PHARMACY_SUBMODULES = [
   {
     id: '25.2',
     routeId: 'pharmacy:25.2',
-    label: '25.2 Medicine Master & Salt Information',
+    label: 'Medicine Master & Salt Information',
     shortLabel: 'Medicine Master',
     icon: BookOpen,
     badge: 'Formulary',
@@ -32,7 +32,7 @@ export const PHARMACY_SUBMODULES = [
   {
     id: '25.3',
     routeId: 'pharmacy:25.3',
-    label: '25.3 FIFO Batch & Expiry Management',
+    label: 'FIFO Batch & Expiry Management',
     shortLabel: 'FIFO & Expiry',
     icon: Clock,
     badge: 'FIFO Audit',
@@ -41,7 +41,7 @@ export const PHARMACY_SUBMODULES = [
   {
     id: '25.4',
     routeId: 'pharmacy:25.4',
-    label: '25.4 IPD Unused Medicine Return & Credit',
+    label: 'IPD Unused Medicine Return & Credit',
     shortLabel: 'IPD Returns & Credit',
     icon: RotateCcw,
     badge: 'Returns',
@@ -50,7 +50,7 @@ export const PHARMACY_SUBMODULES = [
   {
     id: '25.5',
     routeId: 'pharmacy:25.5',
-    label: '25.5 Pharmacy Stock Indents & Reorder Alerts',
+    label: 'Pharmacy Stock Indents & Reorder Alerts',
     shortLabel: 'Indents & Alerts',
     icon: Boxes,
     badge: 'Reorder',

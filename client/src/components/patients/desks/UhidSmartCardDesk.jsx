@@ -82,7 +82,7 @@ export function UhidSmartCardDesk({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Search & Lookup Bar */}
       <Card
-        title="24.2 UHID Generation & Smart Card Printing Terminal"
+        title="UHID Generation & Smart Card Printing Terminal"
         subtitle="Search patient by UHID, legal name, or phone to inspect digital card metadata and print standard RFID health cards"
       >
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>

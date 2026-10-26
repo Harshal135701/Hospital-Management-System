@@ -333,7 +333,7 @@ export function NewRegistrationDesk({
       )}
 
       <Card
-        title="24.1 New Patient Registration Desk"
+        title="New Patient Registration Desk"
         subtitle="Complete the clinical intake and identity verification to generate a unique permanent hospital UHID"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>

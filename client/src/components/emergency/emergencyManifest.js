@@ -297,11 +297,11 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Patient Registration',
     icon: UserPlus,
     submodules: [
-      { id: '24.1', routeId: 'emergency:24.1', label: '24.1 New Patient Registration', shortLabel: 'New Registration', icon: UserPlus },
-      { id: '24.2', routeId: 'emergency:24.2', label: '24.2 UHID Generation & Smart Card Print', shortLabel: 'UHID Generation', icon: CreditCard },
-      { id: '24.3', routeId: 'emergency:24.3', label: '24.3 Create New Visit / Encounter', shortLabel: 'New Encounter', icon: Calendar },
-      { id: '24.4', routeId: 'emergency:24.4', label: '24.4 Patient Search & Record Merge', shortLabel: 'Patient Search', icon: Search },
-      { id: '24.5', routeId: 'emergency:24.5', label: '24.5 Demographic & Identity Updates', shortLabel: 'Demographic Updates', icon: Edit }
+      { id: '24.1', routeId: 'emergency:24.1', label: 'New Patient Registration', shortLabel: 'New Registration', icon: UserPlus },
+      { id: '24.2', routeId: 'emergency:24.2', label: 'UHID Generation & Smart Card Print', shortLabel: 'UHID Generation', icon: CreditCard },
+      { id: '24.3', routeId: 'emergency:24.3', label: 'Create New Visit / Encounter', shortLabel: 'New Encounter', icon: Calendar },
+      { id: '24.4', routeId: 'emergency:24.4', label: 'Patient Search & Record Merge', shortLabel: 'Patient Search', icon: Search },
+      { id: '24.5', routeId: 'emergency:24.5', label: 'Demographic & Identity Updates', shortLabel: 'Demographic Updates', icon: Edit }
     ]
   },
   {
@@ -312,11 +312,11 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Pharmacy',
     icon: Pill,
     submodules: [
-      { id: '25.1', routeId: 'emergency:25.1', label: '25.1 Prescription Dispensing (OPD & IPD)', shortLabel: 'Rx Dispensing', icon: ShoppingCart },
-      { id: '25.2', routeId: 'emergency:25.2', label: '25.2 Medicine Master & Salt Information', shortLabel: 'Medicine Master', icon: Database },
-      { id: '25.3', routeId: 'emergency:25.3', label: '25.3 FIFO Batch & Expiry Management', shortLabel: 'FIFO Batch Expiry', icon: Clock },
-      { id: '25.4', routeId: 'emergency:25.4', label: '25.4 IPD Unused Medicine Return & Credit', shortLabel: 'IPD Return & Credit', icon: RotateCcw },
-      { id: '25.5', routeId: 'emergency:25.5', label: '25.5 Pharmacy Stock Indents & Reorder Alerts', shortLabel: 'Pharmacy Indents', icon: AlertCircle }
+      { id: '25.1', routeId: 'emergency:25.1', label: 'Prescription Dispensing (OPD & IPD)', shortLabel: 'Rx Dispensing', icon: ShoppingCart },
+      { id: '25.2', routeId: 'emergency:25.2', label: 'Medicine Master & Salt Information', shortLabel: 'Medicine Master', icon: Database },
+      { id: '25.3', routeId: 'emergency:25.3', label: 'FIFO Batch & Expiry Management', shortLabel: 'FIFO Batch Expiry', icon: Clock },
+      { id: '25.4', routeId: 'emergency:25.4', label: 'IPD Unused Medicine Return & Credit', shortLabel: 'IPD Return & Credit', icon: RotateCcw },
+      { id: '25.5', routeId: 'emergency:25.5', label: 'Pharmacy Stock Indents & Reorder Alerts', shortLabel: 'Pharmacy Indents', icon: AlertCircle }
     ]
   },
   {
@@ -327,11 +327,11 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Purchase & Procurement',
     icon: ShoppingBag,
     submodules: [
-      { id: '26.1', routeId: 'emergency:26.1', label: '26.1 Purchase Requisition (Indent)', shortLabel: 'Purchase Indents', icon: FileText },
-      { id: '26.2', routeId: 'emergency:26.2', label: '26.2 Request for Quotation (RFQ)', shortLabel: 'RFQ Management', icon: HelpCircle },
-      { id: '26.3', routeId: 'emergency:26.3', label: '26.3 Vendor Quotation Comparison', shortLabel: 'Vendor Comparison', icon: GitCompare },
-      { id: '26.4', routeId: 'emergency:26.4', label: '26.4 Purchase Order (PO) Creation & Approval', shortLabel: 'PO Approval', icon: CheckCircle },
-      { id: '26.5', routeId: 'emergency:26.5', label: '26.5 Goods Receipt Note (GRN) Inward Inspection', shortLabel: 'GRN Inwarding', icon: CheckSquare }
+      { id: '26.1', routeId: 'emergency:26.1', label: 'Purchase Requisition (Indent)', shortLabel: 'Purchase Indents', icon: FileText },
+      { id: '26.2', routeId: 'emergency:26.2', label: 'Request for Quotation (RFQ)', shortLabel: 'RFQ Management', icon: HelpCircle },
+      { id: '26.3', routeId: 'emergency:26.3', label: 'Vendor Quotation Comparison', shortLabel: 'Vendor Comparison', icon: GitCompare },
+      { id: '26.4', routeId: 'emergency:26.4', label: 'Purchase Order (PO) Creation & Approval', shortLabel: 'PO Approval', icon: CheckCircle },
+      { id: '26.5', routeId: 'emergency:26.5', label: 'Goods Receipt Note (GRN) Inward Inspection', shortLabel: 'GRN Inwarding', icon: CheckSquare }
     ]
   },
   {
@@ -342,11 +342,11 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Radiology & PACS',
     icon: Scan,
     submodules: [
-      { id: '27.1', routeId: 'emergency:27.1', label: '27.1 Modality Scheduling & MWL', shortLabel: 'Modality Scheduling', icon: Calendar },
-      { id: '27.2', routeId: 'emergency:27.2', label: '27.2 DICOM Image Acquisition & PACS Storage', shortLabel: 'DICOM PACS Storage', icon: Database },
-      { id: '27.3', routeId: 'emergency:27.3', label: '27.3 Browser-based DICOM PACS Viewer', shortLabel: 'PACS Viewer', icon: Monitor },
-      { id: '27.4', routeId: 'emergency:27.4', label: '27.4 Radiology Report Authoring', shortLabel: 'Report Authoring', icon: FileEdit },
-      { id: '27.5', routeId: 'emergency:27.5', label: '27.5 Report Verification & EMR Distribution', shortLabel: 'Report Verification', icon: Send }
+      { id: '27.1', routeId: 'emergency:27.1', label: 'Modality Scheduling & MWL', shortLabel: 'Modality Scheduling', icon: Calendar },
+      { id: '27.2', routeId: 'emergency:27.2', label: 'DICOM Image Acquisition & PACS Storage', shortLabel: 'DICOM PACS Storage', icon: Database },
+      { id: '27.3', routeId: 'emergency:27.3', label: 'Browser-based DICOM PACS Viewer', shortLabel: 'PACS Viewer', icon: Monitor },
+      { id: '27.4', routeId: 'emergency:27.4', label: 'Radiology Report Authoring', shortLabel: 'Report Authoring', icon: FileEdit },
+      { id: '27.5', routeId: 'emergency:27.5', label: 'Report Verification & EMR Distribution', shortLabel: 'Report Verification', icon: Send }
     ]
   },
   {
@@ -357,10 +357,10 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Retail & OTC Billing',
     icon: Receipt,
     submodules: [
-      { id: '28.1', routeId: 'emergency:28.1', label: '28.1 Over-the-Counter (OTC) POS Counter', shortLabel: 'OTC POS Counter', icon: ShoppingCart },
-      { id: '28.2', routeId: 'emergency:28.2', label: '28.2 Quick Barcode Scanning & Billing', shortLabel: 'Barcode Billing', icon: ScanLine },
-      { id: '28.3', routeId: 'emergency:28.3', label: '28.3 Multi-Mode Instant Payment', shortLabel: 'Multi-Mode Payment', icon: CreditCard },
-      { id: '28.4', routeId: 'emergency:28.4', label: '28.4 Retail Sales Return & Cash Refund', shortLabel: 'Sales Return & Refund', icon: Undo2 }
+      { id: '28.1', routeId: 'emergency:28.1', label: 'Over-the-Counter (OTC) POS Counter', shortLabel: 'OTC POS Counter', icon: ShoppingCart },
+      { id: '28.2', routeId: 'emergency:28.2', label: 'Quick Barcode Scanning & Billing', shortLabel: 'Barcode Billing', icon: ScanLine },
+      { id: '28.3', routeId: 'emergency:28.3', label: 'Multi-Mode Instant Payment', shortLabel: 'Multi-Mode Payment', icon: CreditCard },
+      { id: '28.4', routeId: 'emergency:28.4', label: 'Retail Sales Return & Cash Refund', shortLabel: 'Sales Return & Refund', icon: Undo2 }
     ]
   },
   {
@@ -371,11 +371,11 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'System Administration & Audit',
     icon: ShieldCheck,
     submodules: [
-      { id: '29.1', routeId: 'emergency:29.1', label: '29.1 View User Sessions', shortLabel: 'User Sessions', icon: Users },
-      { id: '29.2', routeId: 'emergency:29.2', label: '29.2 AUDIT: System Audit Trail & Clinical Audit Trail', shortLabel: 'Audit Trails', icon: ShieldAlert },
-      { id: '29.3', routeId: 'emergency:29.3', label: '29.3 SETUP: Department & Module Master Setup', shortLabel: 'Master Setup', icon: Settings },
-      { id: '29.4', routeId: 'emergency:29.4', label: '29.4 SYSTEM: Event Configuration', shortLabel: 'Event Configuration', icon: Bell },
-      { id: '29.5', routeId: 'emergency:29.5', label: '29.5 Role-Based Access Control (RBAC) & Permissions', shortLabel: 'RBAC Permissions', icon: Lock }
+      { id: '29.1', routeId: 'emergency:29.1', label: 'View User Sessions', shortLabel: 'User Sessions', icon: Users },
+      { id: '29.2', routeId: 'emergency:29.2', label: 'AUDIT: System Audit Trail & Clinical Audit Trail', shortLabel: 'Audit Trails', icon: ShieldAlert },
+      { id: '29.3', routeId: 'emergency:29.3', label: 'SETUP: Department & Module Master Setup', shortLabel: 'Master Setup', icon: Settings },
+      { id: '29.4', routeId: 'emergency:29.4', label: 'SYSTEM: Event Configuration', shortLabel: 'Event Configuration', icon: Bell },
+      { id: '29.5', routeId: 'emergency:29.5', label: 'Role-Based Access Control (RBAC) & Permissions', shortLabel: 'RBAC Permissions', icon: Lock }
     ]
   },
   {
@@ -386,11 +386,11 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'User Profile & Security',
     icon: User,
     submodules: [
-      { id: '30.1', routeId: 'emergency:30.1', label: '30.1 Manage Profile', shortLabel: 'Manage Profile', icon: User },
-      { id: '30.2', routeId: 'emergency:30.2', label: '30.2 Change Password & Security', shortLabel: 'Change Password', icon: KeyRound },
-      { id: '30.3', routeId: 'emergency:30.3', label: '30.3 Switch Active Hospital Branch', shortLabel: 'Switch Branch', icon: GitBranch },
-      { id: '30.4', routeId: 'emergency:30.4', label: '30.4 Switch Active Role', shortLabel: 'Switch Role', icon: Shield },
-      { id: '30.5', routeId: 'emergency:30.5', label: '30.5 User UI Preferences & Theme', shortLabel: 'UI Preferences', icon: Palette }
+      { id: '30.1', routeId: 'emergency:30.1', label: 'Manage Profile', shortLabel: 'Manage Profile', icon: User },
+      { id: '30.2', routeId: 'emergency:30.2', label: 'Change Password & Security', shortLabel: 'Change Password', icon: KeyRound },
+      { id: '30.3', routeId: 'emergency:30.3', label: 'Switch Active Hospital Branch', shortLabel: 'Switch Branch', icon: GitBranch },
+      { id: '30.4', routeId: 'emergency:30.4', label: 'Switch Active Role', shortLabel: 'Switch Role', icon: Shield },
+      { id: '30.5', routeId: 'emergency:30.5', label: 'User UI Preferences & Theme', shortLabel: 'UI Preferences', icon: Palette }
     ]
   },
   {
@@ -401,12 +401,12 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Work Orders',
     icon: ClipboardCheck,
     submodules: [
-      { id: '31.1', routeId: 'emergency:31.1', label: '31.1 Record Work Order', shortLabel: 'Record Work Order', icon: FilePlus },
-      { id: '31.2', routeId: 'emergency:31.2', label: '31.2 Record Work Order Requisition', shortLabel: 'Work Order Req', icon: FileInput },
-      { id: '31.3', routeId: 'emergency:31.3', label: '31.3 Record Work Order Receipt', shortLabel: 'Work Order Receipt', icon: Receipt },
-      { id: '31.4', routeId: 'emergency:31.4', label: '31.4 View Work Orders / Requisitions / Receipts', shortLabel: 'View Work Orders', icon: Eye },
-      { id: '31.5', routeId: 'emergency:31.5', label: '31.5 ORDERS: Approve Work Orders, Confirm Work Orders, Review Rejected', shortLabel: 'Approve Orders', icon: CheckSquare },
-      { id: '31.6', routeId: 'emergency:31.6', label: '31.6 RECEIPTS: Approve Work Order Receipts, Confirm Work Order Receipts', shortLabel: 'Approve Receipts', icon: ShieldCheck }
+      { id: '31.1', routeId: 'emergency:31.1', label: 'Record Work Order', shortLabel: 'Record Work Order', icon: FilePlus },
+      { id: '31.2', routeId: 'emergency:31.2', label: 'Record Work Order Requisition', shortLabel: 'Work Order Req', icon: FileInput },
+      { id: '31.3', routeId: 'emergency:31.3', label: 'Record Work Order Receipt', shortLabel: 'Work Order Receipt', icon: Receipt },
+      { id: '31.4', routeId: 'emergency:31.4', label: 'View Work Orders / Requisitions / Receipts', shortLabel: 'View Work Orders', icon: Eye },
+      { id: '31.5', routeId: 'emergency:31.5', label: 'ORDERS: Approve Work Orders, Confirm Work Orders, Review Rejected', shortLabel: 'Approve Orders', icon: CheckSquare },
+      { id: '31.6', routeId: 'emergency:31.6', label: 'RECEIPTS: Approve Work Order Receipts, Confirm Work Order Receipts', shortLabel: 'Approve Receipts', icon: ShieldCheck }
     ]
   },
   {
@@ -417,10 +417,10 @@ export const EMERGENCY_MODULE_GROUPS = [
     shortLabel: 'Analytics & Data Export',
     icon: BarChart3,
     submodules: [
-      { id: '32.1', routeId: 'emergency:32.1', label: '32.1 ANALYTICS: Billing, Inventory, Purchase, System Analytics', shortLabel: 'Module Analytics', icon: LineChart },
-      { id: '32.2', routeId: 'emergency:32.2', label: '32.2 DATA EXPORT: Billing Data Export, System Data Export', shortLabel: 'Data Export', icon: Download },
-      { id: '32.3', routeId: 'emergency:32.3', label: '32.3 Executive KPI Dashboard Widgets', shortLabel: 'KPI Dashboard', icon: LayoutDashboard },
-      { id: '32.4', routeId: 'emergency:32.4', label: '32.4 Tabular Data Export (Excel / CSV)', shortLabel: 'Tabular Export', icon: FileSpreadsheet }
+      { id: '32.1', routeId: 'emergency:32.1', label: 'ANALYTICS: Billing, Inventory, Purchase, System Analytics', shortLabel: 'Module Analytics', icon: LineChart },
+      { id: '32.2', routeId: 'emergency:32.2', label: 'DATA EXPORT: Billing Data Export, System Data Export', shortLabel: 'Data Export', icon: Download },
+      { id: '32.3', routeId: 'emergency:32.3', label: 'Executive KPI Dashboard Widgets', shortLabel: 'KPI Dashboard', icon: LayoutDashboard },
+      { id: '32.4', routeId: 'emergency:32.4', label: 'Tabular Data Export (Excel / CSV)', shortLabel: 'Tabular Export', icon: FileSpreadsheet }
     ]
   }
 ];

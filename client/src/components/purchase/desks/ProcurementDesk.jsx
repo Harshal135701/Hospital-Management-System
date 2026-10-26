@@ -313,7 +313,7 @@ export function ProcurementDesk({ activeSubtab = '26.1', onNavigateSubmodule: _o
       {/* SUBMODULE 26.1: Purchase Requisition (Indent) */}
       {activeSubtab === '26.1' && (
         <Card
-          title="26.1 Purchase Requisition (Indent)"
+          title="Purchase Requisition (Indent)"
           subtitle="Departmental purchase requests, capital asset proposals, priority tiering, and HOD approvals"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -373,7 +373,7 @@ export function ProcurementDesk({ activeSubtab = '26.1', onNavigateSubmodule: _o
       {/* SUBMODULE 26.2: Request for Quotation (RFQ) */}
       {activeSubtab === '26.2' && (
         <Card
-          title="26.2 Request for Quotation (RFQ)"
+          title="Request for Quotation (RFQ)"
           subtitle="Tender document issuance, technical specifications, vendor portal invitations, and tender submission deadlines"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -421,7 +421,7 @@ export function ProcurementDesk({ activeSubtab = '26.1', onNavigateSubmodule: _o
       {/* SUBMODULE 26.3: Vendor Quotation Comparison */}
       {activeSubtab === '26.3' && (
         <Card
-          title="26.3 Vendor Quotation Comparison Matrix"
+          title="Vendor Quotation Comparison Matrix"
           subtitle="Side-by-side L1/L2 tender rate evaluation, commercial warranties, payment terms, and vendor selection"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
@@ -488,7 +488,7 @@ export function ProcurementDesk({ activeSubtab = '26.1', onNavigateSubmodule: _o
       {/* SUBMODULE 26.4: Purchase Order Creation & Approval */}
       {activeSubtab === '26.4' && (
         <Card
-          title="26.4 Purchase Order (PO) Creation & Approval"
+          title="Purchase Order (PO) Creation & Approval"
           subtitle="Legally binding purchase orders, multi-level management approvals, delivery milestones, and dispatch tracking"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -549,7 +549,7 @@ export function ProcurementDesk({ activeSubtab = '26.1', onNavigateSubmodule: _o
       {/* SUBMODULE 26.5: Goods Receipt Note (GRN) Inward Inspection */}
       {activeSubtab === '26.5' && (
         <Card
-          title="26.5 Goods Receipt Note (GRN) Inward Inspection"
+          title="Goods Receipt Note (GRN) Inward Inspection"
           subtitle="Gate entry receipt, physical quality inspection, batch tracking, damaged goods quarantine, and GRN authorization"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>

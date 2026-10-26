@@ -284,7 +284,7 @@ export function NewVisitEncounterDesk({
 
       {/* Patient Lookup Card */}
       <Card
-        title="24.3 Reception Visit & Encounter Desk"
+        title="Reception Visit & Encounter Desk"
         subtitle="Search and select patient to schedule a new OPD, Emergency, Day Care, or Inpatient encounter"
       >
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>

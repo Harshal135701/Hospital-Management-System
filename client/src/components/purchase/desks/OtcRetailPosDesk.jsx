@@ -169,7 +169,7 @@ export function OtcRetailPosDesk({ activeSubtab = '28.1', onNavigateSubmodule: _
       {/* SUBMODULE 28.1: Over-the-Counter (OTC) POS Counter */}
       {activeSubtab === '28.1' && (
         <Card
-          title="28.1 Over-the-Counter (OTC) Retail POS Terminal"
+          title="Over-the-Counter (OTC) Retail POS Terminal"
           subtitle="Walk-in patient retail sales, fast barcode checkout, hold/resume active queues, and instant receipt printing"
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
@@ -283,7 +283,7 @@ export function OtcRetailPosDesk({ activeSubtab = '28.1', onNavigateSubmodule: _
       {/* SUBMODULE 28.2: Quick Barcode Scanning & Billing */}
       {activeSubtab === '28.2' && (
         <Card
-          title="28.2 High-Speed Barcode Scanning & Rapid Billing"
+          title="High-Speed Barcode Scanning & Rapid Billing"
           subtitle="Hardware barcode scanner listening port, audio beep feedback, instant item lookup, and queue acceleration"
         >
           <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -328,7 +328,7 @@ export function OtcRetailPosDesk({ activeSubtab = '28.1', onNavigateSubmodule: _
       {/* SUBMODULE 28.3: Multi-Mode Instant Payment */}
       {activeSubtab === '28.3' && (
         <Card
-          title="28.3 Multi-Mode Instant Payment Engine"
+          title="Multi-Mode Instant Payment Engine"
           subtitle="Dynamic UPI QR Code generation, credit/debit card EDC terminal reconciliation, cash tendered change, and split tenders"
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
@@ -453,7 +453,7 @@ export function OtcRetailPosDesk({ activeSubtab = '28.1', onNavigateSubmodule: _
       {/* SUBMODULE 28.4: Retail Sales Return & Cash Refund */}
       {activeSubtab === '28.4' && (
         <Card
-          title="28.4 Retail Sales Return & Instant Cash Refund"
+          title="Retail Sales Return & Instant Cash Refund"
           subtitle="Scan original retail invoice number, item physical condition verification, return to sellable inventory, and refund voucher"
         >
           <div style={{ display: 'flex', gap: '10px', maxWidth: '520px', marginBottom: '16px' }}>

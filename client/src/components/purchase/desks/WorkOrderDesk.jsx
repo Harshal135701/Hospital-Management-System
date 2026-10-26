@@ -258,7 +258,7 @@ export function WorkOrderDesk({ activeSubtab = '31.1', onNavigateSubmodule: _onN
       {/* SUBMODULE 31.1: Record Work Order */}
       {activeSubtab === '31.1' && (
         <Card
-          title="31.1 Record Work Order Proposal"
+          title="Record Work Order Proposal"
           subtitle="Direct issuance of biomedical repair contracts, engineering maintenance tasks, and facility work orders"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -306,7 +306,7 @@ export function WorkOrderDesk({ activeSubtab = '31.1', onNavigateSubmodule: _onN
       {/* SUBMODULE 31.2: Record Work Order Requisition */}
       {activeSubtab === '31.2' && (
         <Card
-          title="31.2 Record Work Order Requisition"
+          title="Record Work Order Requisition"
           subtitle="Departmental maintenance and biomedical repair requisitions with urgency classifications"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -357,7 +357,7 @@ export function WorkOrderDesk({ activeSubtab = '31.1', onNavigateSubmodule: _onN
       {/* SUBMODULE 31.3: Record Work Order Receipt */}
       {activeSubtab === '31.3' && (
         <Card
-          title="31.3 Record Work Order Completion Receipt"
+          title="Record Work Order Completion Receipt"
           subtitle="Contractor job completion deliverables, spares consumed log, and biomedical technician acceptance"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -404,7 +404,7 @@ export function WorkOrderDesk({ activeSubtab = '31.1', onNavigateSubmodule: _onN
       {/* SUBMODULE 31.4: View Work Orders / Requisitions / Receipts */}
       {activeSubtab === '31.4' && (
         <Card
-          title="31.4 Consolidated Work Order & Requisition Status Tracker"
+          title="Consolidated Work Order & Requisition Status Tracker"
           subtitle="Full facility maintenance lifecycle audit from initial requisition through work order and receipt clearance"
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '16px' }}>
@@ -430,7 +430,7 @@ export function WorkOrderDesk({ activeSubtab = '31.1', onNavigateSubmodule: _onN
       {/* SUBMODULE 31.5: ORDERS: Approve Work Orders, Confirm Work Orders, Review Rejected */}
       {activeSubtab === '31.5' && (
         <Card
-          title="31.5 ORDERS: Approve Work Orders, Confirm Work Orders, Review Rejected"
+          title="ORDERS: Approve Work Orders, Confirm Work Orders, Review Rejected"
           subtitle="Engineering supervisor review, budget clearance, contractor confirmation, and rejected maintenance appeals"
         >
           {/* Sub-tabs for 31.5 */}
@@ -560,7 +560,7 @@ export function WorkOrderDesk({ activeSubtab = '31.1', onNavigateSubmodule: _onN
       {/* SUBMODULE 31.6: RECEIPTS: Approve Work Order Receipts, Confirm Work Order Receipts */}
       {activeSubtab === '31.6' && (
         <Card
-          title="31.6 RECEIPTS: Approve Work Order Receipts, Confirm Work Order Receipts"
+          title="RECEIPTS: Approve Work Order Receipts, Confirm Work Order Receipts"
           subtitle="Biomedical engineering supervisory verification, technician signoff, and administrative invoice settlement clearance"
         >
           {/* Sub-tabs for 31.6 */}

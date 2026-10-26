@@ -115,7 +115,7 @@ export function IpdMedicineReturnDesk({
 
       {/* Main Return Queue Card */}
       <Card
-        title="25.4 Inpatient (IPD) Unused Medicine Return & Patient Credit Desk"
+        title="Inpatient (IPD) Unused Medicine Return & Patient Credit Desk"
         subtitle="Controlled medication return verification, physical blister seal inspection, financial credit note issuance, and batch restocking"
       >
         {/* Search Bar */}
