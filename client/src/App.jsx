@@ -124,7 +124,7 @@ export function App() {
         return <DashboardView onNavigate={setCurrentRoute} />;
 
       case 'patients':
-        return <PatientsView />;
+        return <PatientsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'appointments':
         return <AppointmentsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -237,6 +237,9 @@ export function App() {
         }
         if (routeSubtab && (routeSubtab.startsWith('23.') || routeSubtab === '23')) {
           return <OperationTheatreView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('24.') || routeSubtab === '24')) {
+          return <PatientsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
           return <InventoryView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

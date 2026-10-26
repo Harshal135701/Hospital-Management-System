@@ -13,6 +13,7 @@ import { EmrView } from '../emr/EmrView';
 import { EmbryologyView } from '../embryology/EmbryologyView';
 import { EmergencyView } from '../emergency/EmergencyView';
 import { FinanceView } from '../finance/FinanceView';
+import { PatientsView } from '../patients/PatientsView';
 import { SubmodulesView } from './SubmodulesView';
 import { MODULE_GROUPS, SUBMODULES } from './submoduleRegistry';
 
@@ -169,6 +170,15 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
         if (activeSubmodule.id.startsWith('13.')) {
           return (
             <FinanceView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 24: Patient / Visit Management
+        if (activeSubmodule.id.startsWith('24.')) {
+          return (
+            <PatientsView
               initialSubtab={activeSubmodule.id}
               onNavigate={handleSelectSubmodule}
             />

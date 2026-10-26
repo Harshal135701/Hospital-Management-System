@@ -269,7 +269,19 @@ export const AppShell = ({
     {
       title: 'Clinical Operations',
       items: [
-        { id: 'patients', label: 'Patients', icon: Users, badge: '4 New' },
+        {
+          id: 'patients',
+          label: 'Patient / Visit',
+          icon: Users,
+          badge: '5 Modules',
+          subItems: [
+            { id: 'patients:24.1', label: '24.1 New Patient Registration' },
+            { id: 'patients:24.2', label: '24.2 UHID Generation & Smart Card Print' },
+            { id: 'patients:24.3', label: '24.3 Create New Visit / Encounter' },
+            { id: 'patients:24.4', label: '24.4 Patient Search & Record Merge' },
+            { id: 'patients:24.5', label: '24.5 Demographic & Identity Updates' }
+          ]
+        },
         {
           id: 'appointments',
           label: 'Appointments',
@@ -2232,6 +2244,8 @@ export const AppShell = ({
                               if (currentRoute === sub.id) return true;
                               if (typeof currentRoute === 'string' && currentRoute.startsWith(sub.id + ':')) return true;
                               if (sub.id === 'clinical:consultation' && currentRoute === 'clinical') return true;
+                              if (sub.id === 'patients:24.1' && currentRoute === 'patients') return true;
+                              if (typeof currentRoute === 'string' && sub.id.startsWith('patients:') && (currentRoute === `submodule:${sub.id.replace('patients:', '')}` || currentRoute === `appointments:${sub.id.replace('patients:', '')}`)) return true;
                               if (sub.id === 'daycare:8.1' && currentRoute === 'daycare') return true;
                               if (typeof currentRoute === 'string' && sub.id.startsWith('daycare:') && currentRoute === `submodule:${sub.id.replace('daycare:', '')}`) return true;
                               if (sub.id === 'dietary:9.1' && (currentRoute === 'dietary' || currentRoute === 'diet')) return true;
