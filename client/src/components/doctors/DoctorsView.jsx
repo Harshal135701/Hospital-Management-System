@@ -444,7 +444,7 @@ export const DoctorsView = ({ onBack, onNavigate }) => {
               onChange={(e) => setDoctorForm({ ...doctorForm, fullName: e.target.value })}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px' }}>
               <Input
                 label="Employee / Reg Code"
                 required

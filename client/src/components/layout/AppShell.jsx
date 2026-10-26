@@ -695,13 +695,7 @@ export const AppShell = ({
       {/* Mobile Backdrop */}
       {isMobileMenuOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(24, 50, 56, 0.45)',
-            zIndex: 90,
-            backdropFilter: 'blur(3px)'
-          }}
+          className="mobile-backdrop"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -722,7 +716,7 @@ export const AppShell = ({
           transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
           transform: isMobileMenuOpen ? 'translateX(0)' : undefined
         }}
-        className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}
+        className={`app-sidebar ${effectiveCollapsed ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}
       >
         {/* Brand Header */}
         <div
@@ -2238,10 +2232,11 @@ export const AppShell = ({
           minWidth: 0,
           transition: 'margin-left 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
-        className="main-container"
+        className={`main-container ${effectiveCollapsed ? 'sidebar-collapsed' : ''}`}
       >
         {/* Top Navigation Bar */}
         <header
+          className="app-header"
           style={{
             height: 'var(--topbar-height)',
             backgroundColor: '#FFFFFF',
@@ -2256,12 +2251,12 @@ export const AppShell = ({
             boxShadow: 'var(--shadow-subtle)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
               className="mobile-menu-trigger"
-              style={{ display: 'none', padding: '8px', color: 'var(--color-text-primary)' }}
+              style={{ padding: '8px', color: 'var(--color-text-primary)' }}
               title="Open menu"
               aria-label="Open menu"
             >
@@ -2269,8 +2264,9 @@ export const AppShell = ({
             </button>
 
             {/* Global Patient Search Input */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', minWidth: 0 }}>
               <div
+                className="topbar-search-container"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -2279,7 +2275,8 @@ export const AppShell = ({
                   padding: '8px 16px',
                   borderRadius: 'var(--radius-full)',
                   border: '1.5px solid var(--color-border)',
-                  width: '340px',
+                  maxWidth: '340px',
+                  width: '100%',
                   transition: 'border-color 0.15s ease'
                 }}
               >
@@ -2310,11 +2307,12 @@ export const AppShell = ({
 
               {searchQuery.trim().length > 1 && (
                 <div
+                  className="topbar-search-dropdown"
                   style={{
                     position: 'absolute',
                     top: 'calc(100% + 6px)',
                     left: 0,
-                    width: '420px',
+                    width: 'min(420px, calc(100vw - 32px))',
                     maxHeight: '360px',
                     overflowY: 'auto',
                     backgroundColor: '#FFFFFF',
@@ -2399,11 +2397,11 @@ export const AppShell = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
             {/* Live Clinical Status Indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-success)', animation: 'pulse 2s infinite' }} />
-              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontWeight: '500' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-success)', animation: 'pulse 2s infinite', flexShrink: 0 }} />
+              <span className="topbar-status-text" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontWeight: '500' }}>
                 All Systems Operational
               </span>
             </div>
@@ -2477,12 +2475,13 @@ export const AppShell = ({
                 aria-label="Reset Demo Data"
               >
                 <RotateCcw size={13} />
-                <span>Reset Demo</span>
+                <span className="topbar-demo-btn-text">Reset Demo</span>
               </button>
             </div>
 
             {/* Department Quick Switcher */}
             <div
+              className="topbar-dept-select"
               style={{
                 padding: '6px 12px',
                 backgroundColor: '#F8FBFB',
@@ -2689,7 +2688,7 @@ export const AppShell = ({
         )}
 
         {/* Content Workspace */}
-        <main style={{ flex: 1, padding: '32px', backgroundColor: 'var(--color-bg-main)' }}>
+        <main className="app-main-content" style={{ flex: 1, padding: '32px', backgroundColor: 'var(--color-bg-main)' }}>
           {children}
         </main>
       </div>

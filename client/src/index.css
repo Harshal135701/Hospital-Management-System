@@ -180,3 +180,260 @@ input, select, textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: #9FBEDD;
 }
+
+
+/* ==========================================================================
+   RESPONSIVE DESIGN SYSTEM & BREAKPOINT ARCHITECTURE
+   Mobile (320px–480px) | Tablet (481px–768px) | Laptop (769px–1280px) | Desktop (1281px+)
+   ========================================================================== */
+
+/* Universal Responsive Containers & Layout */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  min-width: 320px;
+}
+
+#root {
+  width: 100%;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Fluid Media & Images */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Universal Table Responsiveness */
+.table-responsive,
+div[style*="overflow-x: auto"],
+div[style*="overflowX: auto"],
+div[style*="overflow-x:auto"],
+div[style*="overflowX:auto"] {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure data tables inside scrollable containers retain readable columns */
+div[style*="overflow-x: auto"] > table,
+div[style*="overflowX: auto"] > table,
+div[style*="overflow-x:auto"] > table,
+div[style*="overflowX:auto"] > table,
+.table-responsive > table {
+  min-width: 600px;
+}
+
+/* Compact receipts or print previews */
+#hospital-printable-receipt table,
+.table-compact,
+.modal-compact-table table {
+  min-width: auto;
+}
+
+/* Touch Friendly Interactions */
+@media (hover: none) and (pointer: coarse) {
+  button, select, input[type="button"], input[type="submit"] {
+    min-height: 40px;
+  }
+}
+
+/* ==========================================================================
+   AppShell Responsive Rules
+   ========================================================================== */
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(10, 45, 80, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 95;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-close-btn {
+  display: none;
+}
+
+.mobile-menu-trigger {
+  display: none;
+}
+
+.desktop-collapse-btn {
+  display: flex;
+}
+
+/* Tablet & Mobile Drawer Navigation (<= 1024px) */
+@media (max-width: 1024px) {
+  .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: min(300px, 86vw) !important;
+    transform: translateX(-100%) !important;
+    z-index: 200 !important;
+    box-shadow: 0 20px 45px rgba(10, 65, 116, 0.35) !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .desktop-collapse-btn {
+    display: none !important;
+  }
+
+  .mobile-close-btn {
+    display: inline-flex !important;
+  }
+
+  .mobile-menu-trigger {
+    display: inline-flex !important;
+  }
+
+  .main-container {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .app-header {
+    padding: 0 16px !important;
+    height: 62px !important;
+  }
+
+  .app-main-content {
+    padding: 20px 16px !important;
+  }
+
+  /* Compact topbar elements on tablets */
+  .topbar-status-text {
+    display: none !important;
+  }
+
+  .topbar-dept-select {
+    display: none !important;
+  }
+}
+
+/* Mobile Screens (<= 768px) */
+@media (max-width: 768px) {
+  /* Grids with multi-columns stack cleanly into 1 column on mobile/small tablet */
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: repeat(2, 1fr)"],
+  [style*="grid-template-columns:repeat(2, 1fr)"],
+  [style*="grid-template-columns: repeat(2,1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"],
+  [style*="grid-template-columns: repeat(3,1fr)"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"],
+  [style*="grid-template-columns: repeat(4, 1fr)"],
+  [style*="grid-template-columns: repeat(4,1fr)"],
+  [style*="grid-template-columns: 1fr 1fr 1fr 1fr"],
+  [style*="grid-template-columns: 1.5fr 1fr"],
+  [style*="grid-template-columns: 1.2fr 1fr"],
+  [style*="grid-template-columns: 1.6fr 1fr"],
+  [style*="grid-template-columns: 1.8fr 1.2fr"],
+  [style*="grid-template-columns: 2fr 1fr"],
+  [style*="grid-template-columns: 1.2fr 1fr 1fr"],
+  [style*="grid-template-columns: 1fr 2fr"],
+  .grid-2-col,
+  .grid-3-col,
+  .grid-4-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-compact-header {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .app-main-content {
+    padding: 16px 12px !important;
+  }
+
+  /* Form & Card Header wrapping */
+  .ui-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .ui-card-body {
+    padding: 16px 14px !important;
+  }
+
+  /* Search Bar adaptability */
+  .topbar-search-container {
+    width: 200px !important;
+  }
+
+  .topbar-search-dropdown {
+    width: calc(100vw - 32px) !important;
+    left: -48px !important;
+  }
+
+  .topbar-demo-btn-text {
+    display: none !important;
+  }
+}
+
+/* Small Mobile Screens (320px - 480px) */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 10px !important;
+    height: 56px !important;
+  }
+
+  .topbar-search-container {
+    width: 140px !important;
+    padding: 6px 10px !important;
+  }
+
+  .topbar-search-input {
+    font-size: 0.72rem !important;
+  }
+
+  .app-main-content {
+    padding: 12px 8px !important;
+  }
+
+  /* Modals on small phones */
+  .ui-modal-backdrop {
+    padding: 8px !important;
+  }
+
+  .ui-modal-dialog {
+    width: 96vw !important;
+    max-height: 94vh !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .ui-modal-header {
+    padding: 14px 16px !important;
+  }
+
+  .ui-modal-body {
+    padding: 16px 14px !important;
+  }
+
+  .ui-modal-title {
+    font-size: 1.05rem !important;
+  }
+
+  /* Buttons on small mobile */
+  .ui-button {
+    font-size: 0.78rem !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Tables font and padding adjustment on small mobile */
+  th, td {
+    padding: 8px 10px !important;
+    font-size: 0.76rem !important;
+  }
+}

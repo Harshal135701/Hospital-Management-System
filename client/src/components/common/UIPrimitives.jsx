@@ -122,13 +122,15 @@ export const Card = ({
     >
       {(title || subtitle || action) && (
         <div
+          className="ui-card-header"
           style={{
             padding: '18px 24px',
             borderBottom: headerBorder ? '1px solid var(--color-border-subtle)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '16px'
+            gap: '16px',
+            flexWrap: 'wrap'
           }}
         >
           <div>
@@ -138,7 +140,7 @@ export const Card = ({
           {action && <div>{action}</div>}
         </div>
       )}
-      <div style={{ padding: '24px' }}>
+      <div className="ui-card-body" style={{ padding: '24px' }}>
         {children}
       </div>
     </div>
@@ -321,10 +323,11 @@ export const Modal = ({
 
   return (
     <div
+      className="ui-modal-backdrop"
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(24, 50, 56, 0.45)',
+        backgroundColor: 'rgba(10, 45, 80, 0.48)',
         backdropFilter: 'blur(3px)',
         zIndex: 1000,
         display: 'flex',
@@ -335,6 +338,7 @@ export const Modal = ({
       onClick={onClose}
     >
       <div
+        className="ui-modal-dialog"
         style={{
           backgroundColor: '#FFFFFF',
           borderRadius: 'var(--radius-xl)',
@@ -344,21 +348,23 @@ export const Modal = ({
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '90vh'
+          maxHeight: '92vh'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
+          className="ui-modal-header"
           style={{
-            padding: '20px 26px',
+            padding: '20px 24px',
             borderBottom: '1px solid var(--color-border-subtle)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            gap: '12px'
           }}
         >
-          <div>
-            <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)' }}>{title}</h3>
+          <div style={{ minWidth: 0 }}>
+            <h3 className="ui-modal-title" style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)' }}>{title}</h3>
             {subtitle && <p style={{ margin: '3px 0 0', fontSize: 'var(--font-size-xs)' }}>{subtitle}</p>}
           </div>
           <button
@@ -367,13 +373,17 @@ export const Modal = ({
               padding: '6px',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--color-text-secondary)',
-              fontSize: '18px'
+              fontSize: '18px',
+              cursor: 'pointer',
+              flexShrink: 0
             }}
+            title="Close dialog"
+            aria-label="Close dialog"
           >
             ✕
           </button>
         </div>
-        <div style={{ padding: '24px 26px', overflowY: 'auto' }}>
+        <div className="ui-modal-body" style={{ padding: '24px 26px', overflowY: 'auto' }}>
           {children}
         </div>
       </div>
@@ -456,3 +466,9 @@ export const SafeImage = ({
   );
 };
 
+
+export const TableResponsive = ({ children, className = '', style = {}, ...props }) => (
+  <div className={`table-responsive ${className}`} style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', ...style }} {...props}>
+    {children}
+  </div>
+);

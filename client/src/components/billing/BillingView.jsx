@@ -288,7 +288,7 @@ export function BillingView({ initialSubtab = '4.1', onNavigate }) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
           gap: '10px'
         }}
       >

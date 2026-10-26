@@ -857,7 +857,7 @@ export const PatientsView = () => {
             }}
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: '500', color: 'var(--color-text-primary)' }}>
@@ -902,7 +902,7 @@ export const PatientsView = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '14px' }}>
             <Select
               label="Blood Group"
               value={formData.bloodGroup}
@@ -921,7 +921,7 @@ export const PatientsView = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '14px' }}>
             <Input
               label="Primary Mobile Number"
               required
@@ -953,7 +953,7 @@ export const PatientsView = () => {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
             <Input
               label="Emergency Contact Name"
               placeholder="e.g. Rahul Deshmukh"
@@ -1013,7 +1013,7 @@ export const PatientsView = () => {
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
             <Input
               label="City"
               value={formData.city}

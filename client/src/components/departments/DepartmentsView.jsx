@@ -213,7 +213,7 @@ export function DepartmentsView({ onBack, onNavigate: _onNavigate }) {
       )}
 
       {/* Search Bar */}
-      <div style={{ width: '300px' }}>
+      <div style={{ width: '100%', maxWidth: '340px' }}>
         <Input
           placeholder="Search departments by name or code..."
           icon={Search}

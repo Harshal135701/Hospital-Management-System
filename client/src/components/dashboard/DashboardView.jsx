@@ -269,7 +269,7 @@ export const DashboardView = ({ onNavigate }) => {
       {/* =========================================================================
           OPERATIONAL KPI METRIC CARDS
           ========================================================================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px' }}>
         {operationalStats.map((s, idx) => {
           const Icon = s.icon;
           return (
@@ -577,7 +577,7 @@ export const DashboardView = ({ onNavigate }) => {
           <Badge variant="teal" size="sm">7 Integrated Services</Badge>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px' }}>
           {[
             {
               title: 'Cardiology & Heart Care',

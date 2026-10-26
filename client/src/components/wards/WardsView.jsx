@@ -194,7 +194,7 @@ export const WardsView = ({ onBack, onNavigate }) => {
       </div>
 
       {/* Hospital Inpatient Telemetry KPI Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
         <div style={{ padding: '16px 18px', backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-card)' }}>
           <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontWeight: '600', textTransform: 'uppercase' }}>
             Total Hospital Capacity
@@ -252,7 +252,7 @@ export const WardsView = ({ onBack, onNavigate }) => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '18px' }}>
           {filteredWards.map((w) => {
             const photo = HEALTHCARE_IMAGES[w.imageKey] || HEALTHCARE_IMAGES.inpatientWardBed;
             const pct = Math.round((w.occupied_beds / w.total_beds) * 100);
