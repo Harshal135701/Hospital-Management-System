@@ -4,21 +4,18 @@ import {
   Bed,
   Activity,
   ArrowRightCircle,
-  AlertTriangle,
   Clock,
-  HeartPulse,
-  Users,
-  CheckCircle2,
-  XCircle,
-  FileText,
-  UserCheck,
-  Building2,
-  FileCheck
+  Pill,
+  Tag,
+  Stethoscope,
+  Paperclip,
+  FileSpreadsheet
 } from 'lucide-react';
 
-export const EMERGENCY_SUBMODULES = [
+export const EMERGENCY_OPERATIONS_SUBMODULES = [
   {
     id: '11.1',
+    routeId: 'emergency:11.1',
     code: '11.1',
     label: '11.1 Triage Assessment (Level 1 to 4)',
     shortLabel: 'Triage Assessment',
@@ -28,6 +25,7 @@ export const EMERGENCY_SUBMODULES = [
   },
   {
     id: '11.2',
+    routeId: 'emergency:11.2',
     code: '11.2',
     label: '11.2 Medico-Legal Case (MLC) Registry',
     shortLabel: 'MLC Registry',
@@ -37,6 +35,7 @@ export const EMERGENCY_SUBMODULES = [
   },
   {
     id: '11.3',
+    routeId: 'emergency:11.3',
     code: '11.3',
     label: '11.3 Emergency Bay & Bed Allocation',
     shortLabel: 'Bay & Bed Allocation',
@@ -46,6 +45,7 @@ export const EMERGENCY_SUBMODULES = [
   },
   {
     id: '11.4',
+    routeId: 'emergency:11.4',
     code: '11.4',
     label: '11.4 Trauma Clinical Charting',
     shortLabel: 'Trauma Charting',
@@ -55,6 +55,7 @@ export const EMERGENCY_SUBMODULES = [
   },
   {
     id: '11.5',
+    routeId: 'emergency:11.5',
     code: '11.5',
     label: '11.5 Rapid Disposition (ICU/OT/Ward/Discharge)',
     shortLabel: 'Rapid Disposition',
@@ -63,6 +64,99 @@ export const EMERGENCY_SUBMODULES = [
     description: 'Fast-track clinical disposition to Cath Lab, ICU, Emergency OT, Inpatient Ward, or discharge.'
   }
 ];
+
+export const PATIENT_CLINICAL_RECORDS_SUBMODULES = [
+  {
+    id: '12.1',
+    routeId: 'emergency:12.1',
+    code: '12.1',
+    label: '12.1 Longitudinal Patient Lifetime Timeline',
+    shortLabel: 'Patient Timeline',
+    icon: Clock,
+    badge: 'Timeline',
+    description: 'Longitudinal clinical history, historical encounters, vital event log, and patient timeline.'
+  },
+  {
+    id: '12.2',
+    routeId: 'emergency:12.2',
+    code: '12.2',
+    label: '12.2 E-Prescription (Rx) Studio',
+    shortLabel: 'E-Prescription Studio',
+    icon: Pill,
+    badge: 'Rx Studio',
+    description: 'Electronic prescription drafting, dose calculations, drug formulary interactions, and digital signing.'
+  },
+  {
+    id: '12.3',
+    routeId: 'emergency:12.3',
+    code: '12.3',
+    label: '12.3 ICD-10 & SNOMED Diagnosis Coding',
+    shortLabel: 'Diagnosis Coding',
+    icon: Tag,
+    badge: 'Coding',
+    description: 'Clinical terminology lookup, ICD-10 mortality/morbidity indexing, and SNOMED-CT clinical concepts.'
+  },
+  {
+    id: '12.4',
+    routeId: 'emergency:12.4',
+    code: '12.4',
+    label: '12.4 Previous Encounters Browser',
+    shortLabel: 'Previous Encounters',
+    icon: Stethoscope,
+    badge: 'Encounters',
+    description: 'Historical outpatient visits, inpatient admissions, discharge summaries, and emergency encounters.'
+  },
+  {
+    id: '12.5',
+    routeId: 'emergency:12.5',
+    code: '12.5',
+    label: '12.5 Clinical Document Attachments',
+    shortLabel: 'Document Attachments',
+    icon: Paperclip,
+    badge: 'Documents',
+    description: 'Diagnostic report PDFs, DICOM radiology scans, lab attachments, and outside clinical records.'
+  }
+];
+
+export const EMERGENCY_GROUPS = [
+  {
+    id: 'group-a',
+    code: 'A',
+    title: 'Emergency Operations',
+    shortTitle: 'Operations',
+    icon: Siren,
+    submodules: EMERGENCY_OPERATIONS_SUBMODULES
+  },
+  {
+    id: 'group-b',
+    code: 'B',
+    title: 'Patient Clinical Records',
+    shortTitle: 'Clinical Records',
+    icon: FileSpreadsheet,
+    submodules: PATIENT_CLINICAL_RECORDS_SUBMODULES
+  }
+];
+
+export const ALL_EMERGENCY_SUBMODULES = [
+  ...EMERGENCY_OPERATIONS_SUBMODULES,
+  ...PATIENT_CLINICAL_RECORDS_SUBMODULES
+];
+
+export const EMERGENCY_SUBMODULES = EMERGENCY_OPERATIONS_SUBMODULES;
+
+export {
+  EMERGENCY_MODULE_GROUPS,
+  ALL_HOSPITAL_EMERGENCY_MODULES,
+  ALL_HOSPITAL_EMERGENCY_SUBMODULES,
+  findEmergencyGroupById,
+  findEmergencyGroupBySubmoduleId,
+  findEmergencySubmoduleById,
+  findCategoryByModuleId,
+  findModuleBySubmoduleId,
+  findCategoryBySubmoduleId,
+  findSubmoduleById,
+  HOSPITAL_EMERGENCY_WORKSPACE_CATEGORIES
+} from './emergencyManifest';
 
 export const TRIAGE_LEVELS = {
   1: {

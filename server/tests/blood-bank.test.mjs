@@ -143,6 +143,11 @@ async function setupDatabase() {
     console.log(`[Setup] Applying Migration 4: ${mig4}...`);
     await executeMigration(client, mig4);
 
+    if (fs.existsSync(path.resolve(serverDir, 'migrations/1793000000002_core-hms-workflows-enhancements.js'))) {
+      console.log('[Setup] Applying Migration 5: migrations/1793000000002_core-hms-workflows-enhancements.js...');
+      await executeMigration(client, 'migrations/1793000000002_core-hms-workflows-enhancements.js');
+    }
+
     // Pre-populate Department & Doctor in Disposable DB
     const deptRes = await client.query("INSERT INTO departments (name, code) VALUES ('Transfusion Medicine', 'TM') RETURNING id");
     const deptId = deptRes.rows[0].id;

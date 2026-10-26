@@ -140,54 +140,124 @@ export function MlcRegistryDesk({
         </Button>
       </div>
 
-      {/* Summary Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Total MLC Registered
+      {/* 4 Summary Stat Cards matching Finance VouchersDesk */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '14px'
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Total MLC Registered
+            </span>
+            <span style={{ backgroundColor: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Registry
+            </span>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
             {mlcList.length}
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Official hospital legal registry
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Official statutory hospital legal registry entries
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Police Intimations Dispatched
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-primary-teal)', textTransform: 'uppercase' }}>
+              Police Intimations
+            </span>
+            <span style={{ backgroundColor: 'var(--color-bg-pale-aqua)', color: 'var(--color-primary-teal)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Dispatched
+            </span>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-primary-teal)', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--color-primary-teal)' }}>
             {mlcList.length}
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#16A34A', marginTop: '2px', fontWeight: '600' }}>
-            ✓ 100% Intimations Transmitted
-          </div>
+          <span style={{ fontSize: '0.74rem', color: '#16A34A', fontWeight: '600' }}>
+            ✓ 100% Intimations transmitted to jurisdictional PS
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Certificates Issued
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#2563EB', textTransform: 'uppercase' }}>
+              Certificates Issued
+            </span>
+            <span style={{ backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Injury Certs
+            </span>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: '700', color: '#2563EB', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#2563EB' }}>
             {mlcList.filter(m => m.certificate_issued).length}
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Injury certificate delivered to IO
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Official medico-legal injury certificates handed to IO
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Alcohol / Substance Suspected
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' }}>
+              Toxicology / Substance
+            </span>
+            <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Suspected
+            </span>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: '700', color: '#DC2626', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#DC2626' }}>
             {mlcList.filter(m => m.alcohol_suspected).length}
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Blood toxicology requested
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Blood alcohol & chemical toxicology analysis ordered
+          </span>
         </div>
       </div>
 

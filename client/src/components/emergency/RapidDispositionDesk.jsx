@@ -89,54 +89,124 @@ export function RapidDispositionDesk({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Top Disposition Status & Quick Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Completed Dispositions
+      {/* 4 Disposition KPI Status Cards matching Finance VouchersDesk */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '14px'
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-primary-teal)', textTransform: 'uppercase' }}>
+              Completed Transfers
+            </span>
+            <span style={{ backgroundColor: 'var(--color-bg-pale-aqua)', color: 'var(--color-primary-teal)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Dispositions
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: 'var(--color-primary-teal)', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--color-primary-teal)' }}>
             {dispositions.length} Transferred
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#16A34A', marginTop: '2px', fontWeight: '600' }}>
-            ✓ Bay Released Automatically
-          </div>
+          <span style={{ fontSize: '0.74rem', color: '#16A34A', fontWeight: '600' }}>
+            ✓ Acute ED bays released automatically on transfer
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Pending Disposition in ED
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: pendingDispositionPatients.length > 0 ? '#EA580C' : 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Pending In ED
+            </span>
+            <span style={{ backgroundColor: pendingDispositionPatients.length > 0 ? '#FFEDD5' : '#F1F5F9', color: pendingDispositionPatients.length > 0 ? '#9A3412' : '#475569', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Awaiting Sign-off
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: pendingDispositionPatients.length > 0 ? '#EA580C' : 'var(--color-text-primary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: pendingDispositionPatients.length > 0 ? '#EA580C' : 'var(--color-text-primary)' }}>
             {pendingDispositionPatients.length} Patients
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Awaiting transfer / discharge decision
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Stabilized cases requiring unit transfer or discharge
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Critical / ICU Transfers
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' }}>
+              Critical / ICU Transfers
+            </span>
+            <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              High Acuity
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: '#DC2626', marginTop: '4px' }}>
-            {dispositions.filter(d => String(d.disposition_type || '').includes('ICU') || String(d.disposition_type || '').includes('Cath')).length}
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#DC2626' }}>
+            {dispositions.filter(d => String(d.disposition_type || '').includes('ICU') || String(d.disposition_type || '').includes('Cath')).length} Cases
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Fast-track critical transfers
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Expedited handover to Cath Lab, ICU, or Emergency OT
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Safe Discharges Home
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#16A34A', textTransform: 'uppercase' }}>
+              Safe Discharges Home
+            </span>
+            <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Discharged
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: '#16A34A', marginTop: '4px' }}>
-            {dispositions.filter(d => String(d.disposition_type || '').includes('Discharge')).length}
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#16A34A' }}>
+            {dispositions.filter(d => String(d.disposition_type || '').includes('Discharge')).length} Discharged
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Prescriptions & advice issued
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Prescriptions, follow-up advice & discharge summary issued
+          </span>
         </div>
       </div>
 

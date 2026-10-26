@@ -45,7 +45,7 @@ const pool = new Pool({
 
 // Helper for dynamic migrations
 async function executeMigration(client, relPath, direction = 'up') {
-  const fullPath = path.resolve('c:/Users/acer/Downloads/Hospital-Management-System/server', relPath);
+  const fullPath = path.resolve(import.meta.dirname, '..', relPath);
   const mod = await import('file:///' + fullPath.replace(/\\/g, '/'));
   const sqlStatements = [];
   const pgm = {

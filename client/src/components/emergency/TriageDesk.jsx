@@ -140,32 +140,44 @@ export function TriageDesk({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Top Triage Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
+      {/* 5 Triage Severity Summary Cards matching Finance VouchersDesk */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '14px'
+        }}
+      >
         {/* Total in Triage */}
         <div
           onClick={() => setSelectedLevelFilter('ALL')}
           style={{
             backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
             border: selectedLevelFilter === 'ALL' ? '2px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-              All Active ED Cases
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-primary-teal)', textTransform: 'uppercase' }}>
+              All Active Cases
             </span>
-            <Activity size={18} color="var(--color-primary-teal)" />
+            <span style={{ backgroundColor: 'var(--color-bg-pale-aqua)', color: 'var(--color-primary-teal)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              ED Census
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: 'var(--color-text-primary)', marginTop: '6px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
             {levelCounts.all}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-            Current census in Emergency Dept
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Total emergency intake across all acuity tiers
+          </span>
         </div>
 
         {/* Level 1 Resuscitation */}
@@ -173,10 +185,14 @@ export function TriageDesk({
           onClick={() => setSelectedLevelFilter('1')}
           style={{
             backgroundColor: selectedLevelFilter === '1' ? TRIAGE_LEVELS[1].bgColor : '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
             border: `1px solid ${selectedLevelFilter === '1' ? TRIAGE_LEVELS[1].borderColor : 'var(--color-border)'}`,
             borderLeft: `4px solid ${TRIAGE_LEVELS[1].badgeColor}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
@@ -185,14 +201,16 @@ export function TriageDesk({
             <span style={{ fontSize: '0.78rem', fontWeight: '700', color: TRIAGE_LEVELS[1].textColor, textTransform: 'uppercase' }}>
               Level 1: Resuscitation
             </span>
-            <Siren size={18} color={TRIAGE_LEVELS[1].badgeColor} />
+            <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Immediate
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: TRIAGE_LEVELS[1].badgeColor, marginTop: '6px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: TRIAGE_LEVELS[1].badgeColor }}>
             {levelCounts.l1}
           </div>
-          <div style={{ fontSize: '0.75rem', color: TRIAGE_LEVELS[1].textColor, marginTop: '2px' }}>
-            Target: 0 min (Immediate)
-          </div>
+          <span style={{ fontSize: '0.74rem', color: TRIAGE_LEVELS[1].textColor }}>
+            Target: 0 min • Cardiac arrest / severe shock
+          </span>
         </div>
 
         {/* Level 2 Emergent */}
@@ -200,10 +218,14 @@ export function TriageDesk({
           onClick={() => setSelectedLevelFilter('2')}
           style={{
             backgroundColor: selectedLevelFilter === '2' ? TRIAGE_LEVELS[2].bgColor : '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
             border: `1px solid ${selectedLevelFilter === '2' ? TRIAGE_LEVELS[2].borderColor : 'var(--color-border)'}`,
             borderLeft: `4px solid ${TRIAGE_LEVELS[2].badgeColor}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
@@ -212,14 +234,16 @@ export function TriageDesk({
             <span style={{ fontSize: '0.78rem', fontWeight: '700', color: TRIAGE_LEVELS[2].textColor, textTransform: 'uppercase' }}>
               Level 2: Emergent
             </span>
-            <AlertTriangle size={18} color={TRIAGE_LEVELS[2].badgeColor} />
+            <span style={{ backgroundColor: '#FFEDD5', color: '#9A3412', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              &lt; 10 Mins
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: TRIAGE_LEVELS[2].badgeColor, marginTop: '6px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: TRIAGE_LEVELS[2].badgeColor }}>
             {levelCounts.l2}
           </div>
-          <div style={{ fontSize: '0.75rem', color: TRIAGE_LEVELS[2].textColor, marginTop: '2px' }}>
-            Target: &lt; 10 min
-          </div>
+          <span style={{ fontSize: '0.74rem', color: TRIAGE_LEVELS[2].textColor }}>
+            Chest pain, STEMI, acute stroke, major trauma
+          </span>
         </div>
 
         {/* Level 3 Urgent */}
@@ -227,10 +251,14 @@ export function TriageDesk({
           onClick={() => setSelectedLevelFilter('3')}
           style={{
             backgroundColor: selectedLevelFilter === '3' ? TRIAGE_LEVELS[3].bgColor : '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
             border: `1px solid ${selectedLevelFilter === '3' ? TRIAGE_LEVELS[3].borderColor : 'var(--color-border)'}`,
             borderLeft: `4px solid ${TRIAGE_LEVELS[3].badgeColor}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
@@ -239,14 +267,16 @@ export function TriageDesk({
             <span style={{ fontSize: '0.78rem', fontWeight: '700', color: TRIAGE_LEVELS[3].textColor, textTransform: 'uppercase' }}>
               Level 3: Urgent
             </span>
-            <Clock size={18} color={TRIAGE_LEVELS[3].badgeColor} />
+            <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              &lt; 30 Mins
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: TRIAGE_LEVELS[3].badgeColor, marginTop: '6px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: TRIAGE_LEVELS[3].badgeColor }}>
             {levelCounts.l3}
           </div>
-          <div style={{ fontSize: '0.75rem', color: TRIAGE_LEVELS[3].textColor, marginTop: '2px' }}>
-            Target: &lt; 30 min
-          </div>
+          <span style={{ fontSize: '0.74rem', color: TRIAGE_LEVELS[3].textColor }}>
+            Acute abdomen, moderate dyspnea, fractures
+          </span>
         </div>
 
         {/* Level 4 Semi-Urgent */}
@@ -254,10 +284,14 @@ export function TriageDesk({
           onClick={() => setSelectedLevelFilter('4')}
           style={{
             backgroundColor: selectedLevelFilter === '4' ? TRIAGE_LEVELS[4].bgColor : '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
             border: `1px solid ${selectedLevelFilter === '4' ? TRIAGE_LEVELS[4].borderColor : 'var(--color-border)'}`,
             borderLeft: `4px solid ${TRIAGE_LEVELS[4].badgeColor}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
@@ -266,14 +300,16 @@ export function TriageDesk({
             <span style={{ fontSize: '0.78rem', fontWeight: '700', color: TRIAGE_LEVELS[4].textColor, textTransform: 'uppercase' }}>
               Level 4: Semi-Urgent
             </span>
-            <CheckCircle2 size={18} color={TRIAGE_LEVELS[4].badgeColor} />
+            <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              &lt; 60 Mins
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: TRIAGE_LEVELS[4].badgeColor, marginTop: '6px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: TRIAGE_LEVELS[4].badgeColor }}>
             {levelCounts.l4}
           </div>
-          <div style={{ fontSize: '0.75rem', color: TRIAGE_LEVELS[4].textColor, marginTop: '2px' }}>
-            Target: &lt; 60 min
-          </div>
+          <span style={{ fontSize: '0.74rem', color: TRIAGE_LEVELS[4].textColor }}>
+            Lacerations, sprains, minor injuries, ambulatory
+          </span>
         </div>
       </div>
 

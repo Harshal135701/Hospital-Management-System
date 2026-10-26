@@ -41,7 +41,7 @@ const pool = new Pool({
 });
 
 async function executeMigration(client, relPath) {
-  const fullPath = path.resolve('c:/Users/acer/Downloads/Hospital-Management-System/server', relPath);
+  const fullPath = path.resolve(import.meta.dirname, '..', relPath);
   const mod = await import('file:///' + fullPath.replace(/\\/g, '/'));
   const sqlStatements = [];
   const pgm = {
@@ -68,14 +68,14 @@ async function setupDatabase() {
     console.log('[Setup] Applying Migration 1: 1791635204809_initial-schema.js...');
     await executeMigration(client, 'migrations/1791635204809_initial-schema.js');
 
-    console.log('[Setup] Applying Migration 2: 1791785051918_blood-bank-schema.js...');
-    await executeMigration(client, 'migrations/1791785051918_blood-bank-schema.js');
+    console.log('[Setup] Applying Migration 2: 1791980000000_blood-bank-schema.js...');
+    await executeMigration(client, 'migrations/1791980000000_blood-bank-schema.js');
 
-    console.log('[Setup] Applying Migration 3: 1791785895061_blood-bank-refinements.js...');
-    await executeMigration(client, 'migrations/1791785895061_blood-bank-refinements.js');
+    console.log('[Setup] Applying Migration 3: 1791980000001_blood-bank-refinements.js...');
+    await executeMigration(client, 'migrations/1791980000001_blood-bank-refinements.js');
 
-    console.log('[Setup] Applying Migration 4: 1791800000000_staff-accounts-and-rbac.js...');
-    await executeMigration(client, 'migrations/1791800000000_staff-accounts-and-rbac.js');
+    console.log('[Setup] Applying Migration 4: 1791980000002_staff-accounts-and-rbac.js...');
+    await executeMigration(client, 'migrations/1791980000002_staff-accounts-and-rbac.js');
 
     // Pre-populate Department & Doctor in Disposable DB
     const deptRes = await client.query("INSERT INTO departments (name, code) VALUES ('Transfusion Medicine', 'TM') RETURNING id");
@@ -146,20 +146,6 @@ async function runTests() {
     console.log(`[Server] Production Express server listening on ephemeral port ${port} -> ${baseUrl}`);
 
     // ========================================================================
-<<<<<<< HEAD
-    // CHECK 1: Missing Bearer Token on Blood Bank Endpoints Returns 401
-    // ========================================================================
-    console.log('\n--- CHECK 1: Unauthenticated Access Detection ---');
-    {
-      const unauthRes = await fetch(`${baseUrl}/blood-bank/donors`);
-      const unauthData = await unauthRes.json();
-      assert(unauthRes.status === 401, 'Unauthenticated GET /blood-bank/donors returns HTTP 401 Unauthorized');
-      assert(unauthData.code === 'UNAUTHORIZED', 'Returns code: UNAUTHORIZED');
-      assert(
-        unauthData.message.includes('Authentication required. Missing Bearer token in Authorization header'),
-        'Returns message: "Authentication required. Missing Bearer token in Authorization header."'
-      );
-=======
     // CHECK 1: Missing Bearer Token on Protected Endpoints Returns 401, Public 200
     // ========================================================================
     console.log('\n--- CHECK 1: Unauthenticated Access Detection & Public Endpoints ---');
@@ -178,7 +164,6 @@ async function runTests() {
           `GET ${ep} returns message: "Authentication required. Missing Bearer token in Authorization header."`
         );
       }
->>>>>>> origin/krishna
     }
 
     // ========================================================================
@@ -335,6 +320,7 @@ async function runTests() {
       server.close();
     }
     await pool.end();
+    process.exit(0);
   }
 }
 

@@ -21,7 +21,7 @@ const config = {
 
 async function executeMigrationSql(client, migrationPath, direction = 'up') {
   // Read ESM migration file
-  const fullPath = path.resolve('c:/Users/acer/Downloads/Hospital-Management-System/server', migrationPath);
+  const fullPath = path.resolve(import.meta.dirname, '..', relPath);
   // Dynamic import of ESM migration file
   const mod = await import('file:///' + fullPath.replace(/\\/g, '/'));
   

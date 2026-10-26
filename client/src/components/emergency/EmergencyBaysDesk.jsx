@@ -107,54 +107,124 @@ export function EmergencyBaysDesk({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Bed Board Header KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Total Emergency Beds
+      {/* 4 Bed Board Summary KPI Cards matching Finance VouchersDesk */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '14px'
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Total Emergency Beds
+            </span>
+            <span style={{ backgroundColor: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Capacity
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: 'var(--color-text-primary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
             {totalBays} Beds
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Zones Red, Yellow, Green & Blue
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Resuscitation (Red), Monitored (Yellow), Green & Isolation
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Occupied Beds
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' }}>
+              Occupied Beds ({occupancyRate}%)
+            </span>
+            <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Occupied
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: '#DC2626', marginTop: '4px' }}>
-            {occupiedBays} ({occupancyRate}%)
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#DC2626' }}>
+            {occupiedBays} / {totalBays}
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#DC2626', marginTop: '2px', fontWeight: '600' }}>
-            {occupancyRate >= 80 ? '⚠ High Bed Pressure' : 'Operational Capacity Normal'}
-          </div>
+          <span style={{ fontSize: '0.74rem', color: occupancyRate >= 80 ? '#DC2626' : 'var(--color-text-muted)', fontWeight: occupancyRate >= 80 ? '600' : 'normal' }}>
+            {occupancyRate >= 80 ? '⚠ High Bed Pressure • Expedite Dispositions' : 'Optimal acute census capacity'}
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Available Ready Beds
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#16A34A', textTransform: 'uppercase' }}>
+              Available Ready Beds
+            </span>
+            <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Turnaround
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: '#16A34A', marginTop: '4px' }}>
-            {availableBays} Beds
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#16A34A' }}>
+            {availableBays} Ready
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#16A34A', marginTop: '2px', fontWeight: '600' }}>
-            Immediate Turnaround Ready
-          </div>
+          <span style={{ fontSize: '0.74rem', color: '#16A34A', fontWeight: '600' }}>
+            Sanitized and equipped for immediate patient intake
+          </span>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-            Patients Awaiting Beds
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: unallocatedPatients.length > 0 ? '#EA580C' : 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Awaiting Bay Allocation
+            </span>
+            <span style={{ backgroundColor: unallocatedPatients.length > 0 ? '#FFEDD5' : '#F1F5F9', color: unallocatedPatients.length > 0 ? '#9A3412' : '#475569', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: '700' }}>
+              Queue
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '700', color: unallocatedPatients.length > 0 ? '#EA580C' : 'var(--color-text-primary)', marginTop: '4px' }}>
-            {unallocatedPatients.length}
+          <div style={{ fontSize: '1.45rem', fontWeight: '800', color: unallocatedPatients.length > 0 ? '#EA580C' : 'var(--color-text-primary)' }}>
+            {unallocatedPatients.length} Patients
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-            Triage queue pending allocation
-          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+            Triaged ED cases requiring acute bay placement
+          </span>
         </div>
       </div>
 

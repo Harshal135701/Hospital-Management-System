@@ -6,6 +6,7 @@ import {
   Activity,
   ArrowRightCircle,
   RefreshCw,
+  RotateCcw,
   Plus,
   CheckCircle2,
   AlertTriangle,
@@ -14,7 +15,26 @@ import {
   Users
 } from 'lucide-react';
 import { Card, Button, Badge } from '../common/UIPrimitives';
-import { EMERGENCY_SUBMODULES, TRIAGE_LEVELS } from './emergencyConstants';
+import {
+  EMERGENCY_SUBMODULES,
+  TRIAGE_LEVELS,
+  EMERGENCY_MODULE_GROUPS,
+  ALL_HOSPITAL_EMERGENCY_SUBMODULES,
+  findEmergencyGroupBySubmoduleId,
+  findEmergencySubmoduleById
+} from './emergencyConstants';
+import { EmrView } from '../emr/EmrView';
+import { FinanceView } from '../finance/FinanceView';
+import { FixedAssetView } from '../fixed-asset/FixedAssetView';
+import { GeneralView } from '../general/GeneralView';
+import { IpdView } from '../ipd/IpdView';
+import { IvfView } from '../ivf/IvfView';
+import { LaboratoryView } from '../laboratory/LaboratoryView';
+import { MrdView } from '../mrd/MrdView';
+import { NursingView } from '../nursing/NursingView';
+import { OpdView } from '../opd/OpdView';
+import { InventoryView } from '../inventory/InventoryView';
+import { SubmodulesView } from '../appointments/SubmodulesView';
 import {
   INITIAL_TRIAGE_LIST,
   INITIAL_MLC_RECORDS,
@@ -31,14 +51,12 @@ import { RapidDispositionDesk } from './RapidDispositionDesk';
 import { EmergencyService, PatientService, ClinicalStaffService } from '../../services/api';
 
 export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
-  // Normalize initialSubtab to 11.1 ... 11.5
+  // Normalize initialSubtab across all 22 hospital emergency workspace modules (11 to 32)
   const normalizeSubtab = (tab) => {
     if (!tab) return '11.1';
     const cleaned = String(tab).replace('emergency:', '').replace('submodule:', '');
-    if (['11.1', '11.2', '11.3', '11.4', '11.5'].includes(cleaned)) {
-      return cleaned;
-    }
-    return '11.1';
+    const found = ALL_HOSPITAL_EMERGENCY_SUBMODULES.some(s => s.id === cleaned);
+    return found ? cleaned : '11.1';
   };
 
   const [activeSubtab, setActiveSubtab] = useState(() => normalizeSubtab(initialSubtab));
@@ -470,232 +488,484 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
     }
   };
 
-  // Badge counts for tabs
-  const tabBadges = {
-    '11.1': triageList.length,
-    '11.2': mlcList.length,
-    '11.3': `${bays.filter(b => b.status === 'occupied').length}/${bays.length}`,
-    '11.4': traumaCharts.length,
-    '11.5': triageList.filter(t => !t.disposition_type).length
+  // Reset to Baseline Seed Data (matching FinanceView standard)
+  const handleResetData = () => {
+    setTriageList(INITIAL_TRIAGE_LIST);
+    setMlcList(INITIAL_MLC_RECORDS);
+    setBays(INITIAL_EMERGENCY_BAYS);
+    setTraumaCharts(INITIAL_TRAUMA_CHARTS);
+    setDispositions(INITIAL_DISPOSITIONS);
+    showToast('Emergency department demo data successfully reset to baseline.');
   };
 
+  // Active group and submodule resolution across all 22 hospital modules
+  const currentSubmodule = useMemo(() => {
+    return findEmergencySubmoduleById(activeSubtab) || ALL_HOSPITAL_EMERGENCY_SUBMODULES[0];
+  }, [activeSubtab]);
+
+  const currentGroup = useMemo(() => {
+    return findEmergencyGroupBySubmoduleId(activeSubtab) || EMERGENCY_MODULE_GROUPS[0];
+  }, [activeSubtab]);
+
+  // Tab Badge Counts matching FinanceView pill format
+  const tabBadges = useMemo(() => {
+    return {
+      '11.1': `${triageList.length} Cases`,
+      '11.2': `${mlcList.length} MLCs`,
+      '11.3': `${bays.filter(b => b.status === 'occupied').length}/${bays.length} Bays`,
+      '11.4': `${traumaCharts.length} Charts`,
+      '11.5': `${triageList.filter(t => !t.disposition_type).length} Pending`
+    };
+  }, [triageList, mlcList, bays, traumaCharts]);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Workspace Header matching ClinicalsView */}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        width: '100%'
+      }}
+    >
+      {/* Workspace Context Navigation Banner matching FinanceView */}
       <div
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '16px',
-          borderBottom: '1px solid var(--color-border)',
-          paddingBottom: '16px'
+          flexWrap: 'wrap',
+          gap: '10px',
+          paddingBottom: '12px',
+          borderBottom: '1px solid var(--color-border-subtle)'
         }}
       >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
-                color: 'var(--color-primary-teal)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Siren size={20} />
-            </div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: '1.45rem',
-                fontWeight: '700',
-                color: 'var(--color-text-primary)',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              Emergency Department (EDMS)
-            </h1>
-          </div>
-          <p
-            style={{
-              margin: '6px 0 0',
-              fontSize: '0.85rem',
-              color: 'var(--color-text-secondary)'
-            }}
-          >
-            Level 1-4 Triage Assessment, MLC Registry, Bay Allocation, Trauma Charting, and Rapid Disposition.
-          </p>
-        </div>
-
-        {/* Global Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={RefreshCw}
-            loading={loading}
-            onClick={fetchEmergencyData}
-            title="Refresh Live ED Data from Database"
-          >
-            Sync ED Census
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            icon={Plus}
-            onClick={() => handleSelectSubtab('11.1')}
-          >
-            New Triage Intake
-          </Button>
-        </div>
-      </div>
-
-      {/* Global Toast Message */}
-      {toastMessage && (
-        <div
+        <nav
+          aria-label="Breadcrumb"
           style={{
-            backgroundColor: 'var(--color-success-bg)',
-            color: 'var(--color-success)',
-            border: '1px solid var(--color-success-border)',
-            padding: '10px 16px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.85rem',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-text-secondary)',
+            flexWrap: 'wrap'
           }}
         >
-          <CheckCircle2 size={16} />
-          <span>{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => handleSelectSubtab('11.1')}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--color-primary-teal)',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <Siren size={13} />
+            <span>Emergency Department</span>
+          </button>
+          <span style={{ color: 'var(--color-text-muted)' }}>/</span>
+          <button
+            type="button"
+            onClick={() => {
+              const firstSub = currentGroup.submodules[0]?.id || '11.1';
+              handleSelectSubtab(firstSub);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--color-text-secondary)',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            title={currentGroup.name}
+          >
+            {currentGroup.name}
+          </button>
+          <span style={{ color: 'var(--color-text-muted)' }}>/</span>
+          <span style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>
+            {currentSubmodule.label || currentSubmodule.shortLabel}
+          </span>
+          {currentSubmodule.badge && (
+            <Badge variant="teal" size="sm">
+              {currentSubmodule.badge}
+            </Badge>
+          )}
+        </nav>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+            Desk Ref: #{currentSubmodule.code || currentSubmodule.id}
+          </span>
         </div>
-      )}
+      </div>
 
-      {/* Submodule Tab Navigation Bar matching ClinicalsView */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '6px',
-          borderBottom: '2px solid var(--color-border)',
-          marginBottom: '6px',
-          overflowX: 'auto',
-          paddingBottom: '2px'
-        }}
-      >
-        {EMERGENCY_SUBMODULES.map((submodule) => {
-          const isActive = activeSubtab === submodule.id;
-          const Icon = submodule.icon;
-          const badgeCount = tabBadges[submodule.id];
-
-          return (
-            <button
-              type="button"
-              key={submodule.id}
-              onClick={() => handleSelectSubtab(submodule.id)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 16px',
-                borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-                border: 'none',
-                borderBottom: isActive ? '3px solid var(--color-primary-teal)' : '3px solid transparent',
-                backgroundColor: isActive ? '#FFFFFF' : 'transparent',
-                color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
-                fontWeight: isActive ? '700' : '500',
-                fontSize: '0.86rem',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                marginBottom: '-2px',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <Icon size={16} />
-              <span>{submodule.label}</span>
-              {badgeCount !== undefined && badgeCount !== null && (
-                <span
+      {/* Group A: Emergency Operations Workspace */}
+      {activeSubtab.startsWith('11.') && (
+        <>
+          {/* Main Module Header matching FinanceView */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              paddingBottom: '4px'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h1
                   style={{
-                    backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : '#F1F5F9',
-                    color: isActive ? 'var(--color-primary-teal)' : '#64748B',
-                    padding: '1px 7px',
-                    borderRadius: '10px',
-                    fontSize: '0.70rem',
-                    fontWeight: '700',
-                    marginLeft: '4px'
+                    margin: 0,
+                    fontSize: '1.4rem',
+                    fontWeight: '800',
+                    color: 'var(--color-text-primary)',
+                    letterSpacing: '-0.02em'
                   }}
                 >
-                  {badgeCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                  Emergency Department (EDMS)
+                </h1>
+                <Badge variant="teal">Module 11</Badge>
+              </div>
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontSize: '0.84rem',
+                  color: 'var(--color-text-secondary)'
+                }}
+              >
+                Level 1-4 Triage Stratification, MLC Registry & Intimations, Resuscitation Bay Allocation, Trauma Charting, and Rapid Disposition.
+              </p>
+            </div>
 
-      {/* Main Submodule Desk Content Rendering */}
-      <div>
-        {activeSubtab === '11.1' && (
-          <TriageDesk
-            triageList={triageList}
-            bays={bays}
-            patients={patients}
-            doctors={doctors}
-            loading={loading}
-            onCreateTriage={handleCreateTriage}
-            onNavigateSubtab={handleSelectSubtab}
-            onSelectTriagePatient={setSelectedTriagePatient}
-          />
-        )}
+            {/* Global Action Controls matching FinanceView */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={RotateCcw}
+                onClick={handleResetData}
+                title="Reset to clean hospital emergency seed data"
+              >
+                Reset Demo Data
+              </Button>
 
-        {activeSubtab === '11.2' && (
-          <MlcRegistryDesk
-            mlcList={mlcList}
-            triageList={triageList}
-            patients={patients}
-            doctors={doctors}
-            loading={loading}
-            onCreateMlc={handleCreateMlc}
-          />
-        )}
+              <Button
+                variant="outline"
+                size="sm"
+                icon={RefreshCw}
+                loading={loading}
+                onClick={fetchEmergencyData}
+                title="Refresh Live ED Data from Database"
+              >
+                Sync ED Census
+              </Button>
 
-        {activeSubtab === '11.3' && (
-          <EmergencyBaysDesk
-            bays={bays}
-            triageList={triageList}
-            loading={loading}
-            onAllocateBay={handleAllocateBay}
-            onVacateBay={handleVacateBay}
-          />
-        )}
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Plus}
+                onClick={() => handleSelectSubtab('11.1')}
+              >
+                New Triage Intake
+              </Button>
+            </div>
+          </div>
 
-        {activeSubtab === '11.4' && (
-          <TraumaChartingDesk
-            traumaCharts={traumaCharts}
-            triageList={triageList}
-            doctors={doctors}
-            activeTriagePatient={selectedTriagePatient}
-            loading={loading}
-            onCreateTraumaChart={handleCreateTraumaChart}
-          />
-        )}
+          {/* Toast Notification Banner matching FinanceView */}
+          {toastMessage && (
+            <div
+              style={{
+                backgroundColor: 'var(--color-success-bg)',
+                color: 'var(--color-success)',
+                border: '1px solid var(--color-success-border)',
+                padding: '10px 16px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+              }}
+            >
+              <CheckCircle2 size={16} />
+              <span>{toastMessage}</span>
+            </div>
+          )}
 
-        {activeSubtab === '11.5' && (
-          <RapidDispositionDesk
-            dispositions={dispositions}
-            triageList={triageList}
-            doctors={doctors}
-            activeTriagePatient={selectedTriagePatient}
-            loading={loading}
-            onCreateDisposition={handleCreateDisposition}
-          />
-        )}
-      </div>
+          {/* 5 Submodule Tab Navigation Bar matching FinanceView */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '6px',
+              borderBottom: '2px solid var(--color-border)',
+              marginBottom: '4px',
+              overflowX: 'auto',
+              paddingBottom: '2px'
+            }}
+          >
+            {EMERGENCY_SUBMODULES.map((submodule) => {
+              const isActive = activeSubtab === submodule.id;
+              const Icon = submodule.icon;
+              const badgeText = tabBadges[submodule.id];
+
+              return (
+                <button
+                  type="button"
+                  key={submodule.id}
+                  onClick={() => handleSelectSubtab(submodule.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '9px 16px',
+                    border: 'none',
+                    borderBottom: isActive ? '3px solid var(--color-primary-teal)' : '3px solid transparent',
+                    backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                    color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                    fontWeight: isActive ? '700' : '500',
+                    fontSize: '0.86rem',
+                    cursor: 'pointer',
+                    borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Icon size={16} color={isActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)'} />
+                  <span>{submodule.shortLabel}</span>
+                  {badgeText && (
+                    <span
+                      style={{
+                        backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : 'var(--color-border-subtle)',
+                        color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)',
+                        padding: '1px 7px',
+                        borderRadius: '10px',
+                        fontSize: '0.70rem',
+                        fontWeight: '700'
+                      }}
+                    >
+                      {badgeText}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Main Submodule Desk Content Rendering */}
+          <div>
+            {activeSubtab === '11.1' && (
+              <TriageDesk
+                triageList={triageList}
+                bays={bays}
+                patients={patients}
+                doctors={doctors}
+                loading={loading}
+                onCreateTriage={handleCreateTriage}
+                onNavigateSubtab={handleSelectSubtab}
+                onSelectTriagePatient={setSelectedTriagePatient}
+              />
+            )}
+
+            {activeSubtab === '11.2' && (
+              <MlcRegistryDesk
+                mlcList={mlcList}
+                triageList={triageList}
+                patients={patients}
+                doctors={doctors}
+                loading={loading}
+                onCreateMlc={handleCreateMlc}
+              />
+            )}
+
+            {activeSubtab === '11.3' && (
+              <EmergencyBaysDesk
+                bays={bays}
+                triageList={triageList}
+                loading={loading}
+                onAllocateBay={handleAllocateBay}
+                onVacateBay={handleVacateBay}
+              />
+            )}
+
+            {activeSubtab === '11.4' && (
+              <TraumaChartingDesk
+                traumaCharts={traumaCharts}
+                triageList={triageList}
+                doctors={doctors}
+                activeTriagePatient={selectedTriagePatient}
+                loading={loading}
+                onCreateTraumaChart={handleCreateTraumaChart}
+              />
+            )}
+
+            {activeSubtab === '11.5' && (
+              <RapidDispositionDesk
+                dispositions={dispositions}
+                triageList={triageList}
+                doctors={doctors}
+                activeTriagePatient={selectedTriagePatient}
+                loading={loading}
+                onCreateDisposition={handleCreateDisposition}
+              />
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Module 12: Patient Clinical Records */}
+      {activeSubtab.startsWith('12.') && (
+        <EmrView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('emr:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 13: Finance & Accounting */}
+      {activeSubtab.startsWith('13.') && (
+        <FinanceView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('finance:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 14: Asset Management */}
+      {activeSubtab.startsWith('14.') && (
+        <FixedAssetView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('fixed-asset:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 15: Hospital & Master Configuration */}
+      {activeSubtab.startsWith('15.') && (
+        <GeneralView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('general:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 17: Inpatient Department (IPD) */}
+      {activeSubtab.startsWith('17.') && (
+        <IpdView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('ipd:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 18: IVF & Fertility */}
+      {activeSubtab.startsWith('18.') && (
+        <IvfView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('ivf:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 19: Laboratory Services */}
+      {activeSubtab.startsWith('19.') && (
+        <LaboratoryView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('laboratory:', '').replace('lab:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 20: Medical Records & Clinical Coding */}
+      {activeSubtab.startsWith('20.') && (
+        <MrdView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('mrd:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 21: Nursing Services */}
+      {activeSubtab.startsWith('21.') && (
+        <NursingView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('nursing:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Module 22: Outpatient Department (OPD) */}
+      {activeSubtab.startsWith('22.') && (
+        <OpdView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('opd:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Modules 16, 23 through 32: Inventory, Pharmacy, Purchasing, OT, Registration, POS, Audit, Profile, Work Orders, Analytics */}
+      {(activeSubtab.startsWith('16.') || (parseInt(activeSubtab, 10) >= 23 && parseInt(activeSubtab, 10) <= 32)) && (
+        <InventoryView
+          initialSubtab={activeSubtab}
+          onNavigate={(sub) => {
+            const cleanSub = String(sub).replace('inventory:', '').replace('emergency:', '');
+            handleSelectSubtab(cleanSub);
+          }}
+        />
+      )}
+
+      {/* Clean fallback for any other submodules */}
+      {!activeSubtab.startsWith('11.') &&
+       !activeSubtab.startsWith('12.') &&
+       !activeSubtab.startsWith('13.') &&
+       !activeSubtab.startsWith('14.') &&
+       !activeSubtab.startsWith('15.') &&
+       !activeSubtab.startsWith('17.') &&
+       !activeSubtab.startsWith('18.') &&
+       !activeSubtab.startsWith('19.') &&
+       !activeSubtab.startsWith('20.') &&
+       !activeSubtab.startsWith('21.') &&
+       !activeSubtab.startsWith('22.') &&
+       !(activeSubtab.startsWith('16.') || (parseInt(activeSubtab, 10) >= 23 && parseInt(activeSubtab, 10) <= 32)) && (
+        <SubmodulesView
+          submodule={{
+            id: currentSubmodule.id,
+            title: currentSubmodule.label,
+            groupName: currentGroup.name,
+            subtitle: currentSubmodule.label,
+            icon: currentSubmodule.icon
+          }}
+          onBack={() => handleSelectSubtab('11.1')}
+          onNavigateSubmodule={handleSelectSubtab}
+        />
+      )}
     </div>
   );
 }
