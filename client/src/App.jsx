@@ -6,6 +6,8 @@ import { LoginPage } from './components/auth/LoginPage';
 import { AppShell } from './components/layout/AppShell';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { PatientsView } from './components/patients/PatientsView';
+import { PharmacyView } from './components/pharmacy/PharmacyView';
+import { PurchaseView } from './components/purchase/PurchaseView';
 import { AppointmentsView } from './components/appointments/AppointmentsView';
 import { ClinicalsView } from './components/clinicals/ClinicalsView';
 import { BillingView } from './components/billing/BillingView';
@@ -45,6 +47,8 @@ const NAVIGATION_STORAGE_KEY = 'medicsprime_active_route';
 const VALID_ROUTE_BASES = new Set([
   'dashboard',
   'patients',
+  'pharmacy',
+  'purchase',
   'appointments',
   'billing',
   'credit-billing',
@@ -125,6 +129,12 @@ export function App() {
 
       case 'patients':
         return <PatientsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+
+      case 'pharmacy':
+        return <PharmacyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+
+      case 'purchase':
+        return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'appointments':
         return <AppointmentsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -240,6 +250,12 @@ export function App() {
         }
         if (routeSubtab && (routeSubtab.startsWith('24.') || routeSubtab === '24')) {
           return <PatientsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('25.') || routeSubtab === '25')) {
+          return <PharmacyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab.startsWith('27.') || routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.') || ['26','27','28','29','30','31','32'].includes(routeSubtab))) {
+          return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
           return <InventoryView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

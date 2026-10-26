@@ -14,7 +14,7 @@ export const PATIENT_SUBMODULES = [
   {
     id: '24.1',
     routeId: 'patients:24.1',
-    label: '24.1 New Patient Registration',
+    label: 'New Patient Registration',
     shortLabel: 'New Registration',
     icon: UserPlus,
     badge: 'Registration',
@@ -23,7 +23,7 @@ export const PATIENT_SUBMODULES = [
   {
     id: '24.2',
     routeId: 'patients:24.2',
-    label: '24.2 UHID Generation & Smart Card Print',
+    label: 'UHID Generation & Smart Card Print',
     shortLabel: 'UHID & Smart Card',
     icon: Tag,
     badge: 'UHID Card',
@@ -32,7 +32,7 @@ export const PATIENT_SUBMODULES = [
   {
     id: '24.3',
     routeId: 'patients:24.3',
-    label: '24.3 Create New Visit / Encounter',
+    label: 'Create New Visit / Encounter',
     shortLabel: 'New Visit / Encounter',
     icon: Calendar,
     badge: 'Encounters',
@@ -41,7 +41,7 @@ export const PATIENT_SUBMODULES = [
   {
     id: '24.4',
     routeId: 'patients:24.4',
-    label: '24.4 Patient Search & Record Merge',
+    label: 'Patient Search & Record Merge',
     shortLabel: 'Search & Merge',
     icon: Search,
     badge: 'Search & Merge',
@@ -50,7 +50,7 @@ export const PATIENT_SUBMODULES = [
   {
     id: '24.5',
     routeId: 'patients:24.5',
-    label: '24.5 Demographic & Identity Updates',
+    label: 'Demographic & Identity Updates',
     shortLabel: 'Demographic Updates',
     icon: RefreshCw,
     badge: 'Updates',

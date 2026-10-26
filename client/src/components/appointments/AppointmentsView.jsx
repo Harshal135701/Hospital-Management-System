@@ -14,6 +14,8 @@ import { EmbryologyView } from '../embryology/EmbryologyView';
 import { EmergencyView } from '../emergency/EmergencyView';
 import { FinanceView } from '../finance/FinanceView';
 import { PatientsView } from '../patients/PatientsView';
+import { PharmacyView } from '../pharmacy/PharmacyView';
+import { PurchaseView } from '../purchase/PurchaseView';
 import { SubmodulesView } from './SubmodulesView';
 import { MODULE_GROUPS, SUBMODULES } from './submoduleRegistry';
 
@@ -179,6 +181,32 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
         if (activeSubmodule.id.startsWith('24.')) {
           return (
             <PatientsView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Group 25: Pharmacy Management
+        if (activeSubmodule.id.startsWith('25.')) {
+          return (
+            <PharmacyView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
+        // Groups 26–32: Purchase Module (Procurement, Radiology/PACS, OTC, Admin, Preferences, Work Orders, Analytics)
+        if (
+          activeSubmodule.id.startsWith('26.') ||
+          activeSubmodule.id.startsWith('27.') ||
+          activeSubmodule.id.startsWith('28.') ||
+          activeSubmodule.id.startsWith('29.') ||
+          activeSubmodule.id.startsWith('30.') ||
+          activeSubmodule.id.startsWith('31.') ||
+          activeSubmodule.id.startsWith('32.')
+        ) {
+          return (
+            <PurchaseView
               initialSubtab={activeSubmodule.id}
               onNavigate={handleSelectSubmodule}
             />
