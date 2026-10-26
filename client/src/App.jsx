@@ -19,6 +19,7 @@ import { DietView } from './components/diet/DietView';
 import { EmrView } from './components/emr/EmrView';
 import { EmbryologyView } from './components/embryology/EmbryologyView';
 import { EmergencyView } from './components/emergency/EmergencyView';
+import { OperationTheatreView } from './components/ot/OperationTheatreView';
 import { FinanceView } from './components/finance/FinanceView';
 import { FixedAssetView } from './components/fixed-asset/FixedAssetView';
 import { GeneralView } from './components/general/GeneralView';
@@ -61,6 +62,7 @@ const VALID_ROUTE_BASES = new Set([
   'nursing',
   'opd',
   'emergency',
+  'ot',
   'finance',
   'submodule',
   'doctors',
@@ -172,6 +174,9 @@ export function App() {
       case 'emergency':
         return <EmergencyView initialSubtab={routeSubtab || '11.1'} onNavigate={setCurrentRoute} />;
 
+      case 'ot':
+        return <OperationTheatreView initialSubtab={routeSubtab || '23.1'} onNavigate={setCurrentRoute} />;
+
       case 'finance':
         return <FinanceView initialSubtab={routeSubtab || '13.1'} onNavigate={setCurrentRoute} />;
 
@@ -229,6 +234,9 @@ export function App() {
         }
         if (routeSubtab && (routeSubtab.startsWith('22.') || routeSubtab === '22')) {
           return <OpdView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('23.') || routeSubtab === '23')) {
+          return <OperationTheatreView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
           return <InventoryView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;

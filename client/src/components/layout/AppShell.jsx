@@ -52,6 +52,10 @@ import {
   EMERGENCY_MODULE_GROUPS,
   findEmergencyGroupBySubmoduleId
 } from '../emergency/emergencyConstants';
+import {
+  OT_MODULE_GROUPS,
+  findOtGroupBySubmoduleId
+} from '../ot/otConstants';
 import sarjiLogo from '../../assets/sarji-logo.png';
 
 export const AppShell = ({
@@ -124,6 +128,9 @@ export const AppShell = ({
   const [expandedIpdGroups, setExpandedIpdGroups] = useState({});
   const [expandedEmergencyGroups, setExpandedEmergencyGroups] = useState({
     '11': true
+  });
+  const [expandedOtGroups, setExpandedOtGroups] = useState({
+    '23': true
   });
   const [expandedSubmodules, setExpandedSubmodules] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -232,6 +239,13 @@ export const AppShell = ({
       const subId = parts[1] || '11.1';
       const modId = subId.replace('emergency:', '').replace('submodule:', '').split('.')[0] || '11';
       setExpandedEmergencyGroups({ [modId]: true });
+    }
+
+    if (activeSectionId === 'ot') {
+      const parts = typeof currentRoute === 'string' ? currentRoute.split(':') : [];
+      const subId = parts[1] || '23.1';
+      const modId = subId.replace('ot:', '').replace('submodule:', '').split('.')[0] || '23';
+      setExpandedOtGroups({ [modId]: true });
     }
   }, [currentRoute]);
 
@@ -346,6 +360,12 @@ export const AppShell = ({
           label: 'Emergency',
           icon: Siren,
           isEmergencyHierarchy: true
+        },
+        {
+          id: 'ot',
+          label: 'Operation Theatre',
+          icon: Activity,
+          isOtHierarchy: true
         },
         {
           id: 'clinical',
@@ -985,7 +1005,7 @@ export const AppShell = ({
                   const isItemActive = currentRoute === item.id ||
                     (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
-                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || item.isInventoryHierarchy || item.isIpdHierarchy || item.isEmergencyHierarchy || (item.subItems && item.subItems.length > 0));
+                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || item.isInventoryHierarchy || item.isIpdHierarchy || item.isEmergencyHierarchy || item.isOtHierarchy || (item.subItems && item.subItems.length > 0));
                   const isExpanded = Boolean(
                     expandedSectionsManual[item.id] !== undefined
                       ? expandedSectionsManual[item.id]
@@ -1062,6 +1082,21 @@ export const AppShell = ({
                           setExpandedEmergencyGroups({ '11': true });
                         } else {
                           setExpandedSectionsManual(prev => ({ ...prev, emergency: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
+                    if (item.isOtHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('ot:23.1');
+                      } else {
+                        if (currentRoute !== 'ot' && !currentRoute.startsWith('ot:')) {
+                          handleSelectNav('ot:23.1');
+                          setExpandedSectionsManual(prev => ({ ...prev, ot: true }));
+                          setExpandedOtGroups({ '23': true });
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, ot: !isExpanded }));
                         }
                       }
                       return;
@@ -2002,8 +2037,181 @@ export const AppShell = ({
                         </div>
                       )}
 
+                      {/* Expandable Operation Theatre (OT) Module Hierarchy (Matching Appointment Module Design Exactly) */}
+                      {item.isOtHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '4px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
+                            maxHeight: '360px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#49769F transparent'
+                          }}
+                        >
+                          {OT_MODULE_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedOtGroups[group.id]);
+                            const isGroupActive =
+                              currentRoute === `ot:group:${group.id}` ||
+                              (typeof currentRoute === 'string' &&
+                                group.submodules.some(
+                                  (s) =>
+                                    currentRoute === s.routeId ||
+                                    currentRoute === `ot:${s.id}` ||
+                                    (s.id === '23.1' && (currentRoute === 'ot' || currentRoute === 'ot:overview')) ||
+                                    currentRoute === `submodule:${s.id}`
+                                ));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row - Identical to Appointment Group Row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  {/* Click group title -> Navigates to first submodule & opens group */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const firstSub = group.submodules[0];
+                                      if (firstSub) {
+                                        handleSelectNav(firstSub.routeId || `ot:${firstSub.id}`);
+                                      }
+                                      setExpandedOtGroups((prev) => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={group.name}
+                                  >
+                                    {group.name}
+                                  </button>
+
+                                  {/* Toggle Group Chevron */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedOtGroups((prev) => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'rgba(255, 255, 255, 0.7)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.name}` : `Expand ${group.name}`}
+                                    aria-label={isGroupExpanded ? `Collapse ${group.name}` : `Expand ${group.name}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Nested Sub-modules (Simple non-numerical bullet points matching Appointment) */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {group.submodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === sub.routeId ||
+                                        currentRoute === `ot:${sub.id}` ||
+                                        (sub.id === '23.1' && (currentRoute === 'ot' || currentRoute === 'ot:overview')) ||
+                                        currentRoute === `submodule:${sub.id}`;
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(sub.routeId || `ot:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={sub.label}
+                                        >
+                                          {/* Simple non-numerical bullet point matching Appointment */}
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {sub.label}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Expandable Sub-Navigation for other modules (e.g. Clinical) */}
-                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && !item.isInventoryHierarchy && !item.isIpdHierarchy && !item.isEmergencyHierarchy && hasSubItems && isExpanded && (
+                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && !item.isInventoryHierarchy && !item.isIpdHierarchy && !item.isEmergencyHierarchy && !item.isOtHierarchy && hasSubItems && isExpanded && (
                         <div
                           style={{
                             display: 'flex',
