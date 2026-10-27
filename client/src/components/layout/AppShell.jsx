@@ -41,7 +41,9 @@ import {
   HeartPulse,
   Archive,
   Pill,
-  ShoppingBag
+  ShoppingBag,
+  Wrench,
+  BarChart3
 } from 'lucide-react';
 import { Button, Modal, Badge } from '../common/UIPrimitives';
 import { useHospitalState } from '../../context/HospitalStateContext';
@@ -179,11 +181,15 @@ export const AppShell = ({
       else if (subId.startsWith('22.')) activeSectionId = 'opd';
       else if (subId.startsWith('24.')) activeSectionId = 'patients';
       else if (subId.startsWith('25.')) activeSectionId = 'pharmacy';
-      else if (subId.startsWith('26.') || subId.startsWith('27.') || subId.startsWith('28.') || subId.startsWith('29.') || subId.startsWith('30.') || subId.startsWith('31.') || subId.startsWith('32.')) {
+      else if (subId.startsWith('26.') || subId.startsWith('27.') || subId.startsWith('28.')) {
         activeSectionId = 'purchase';
         const groupNum = subId.split('.')[0];
         setExpandedPurchaseGroups({ [groupNum]: true });
       }
+      else if (subId.startsWith('29.')) activeSectionId = 'system';
+      else if (subId.startsWith('30.')) activeSectionId = 'user';
+      else if (subId.startsWith('31.')) activeSectionId = 'work-order';
+      else if (subId.startsWith('32.')) activeSectionId = 'analytics';
     }
 
     // Keep only the active module expanded by default so sidebar doesn't get cluttered with multiple open accordions
@@ -765,12 +771,221 @@ export const AppShell = ({
           icon: BedDouble,
           badge: '17 Groups',
           isIpdHierarchy: true
+        },
+        {
+          id: 'work-order',
+          label: 'Work Order',
+          icon: Wrench,
+          subItems: [
+            {
+              id: 'work-order:31.1',
+              label: 'Record Work Order',
+              subsubItems: [
+                { id: 'work-order:31.1:31.1.1', label: 'Breakdown Ticket Creation' },
+                { id: 'work-order:31.1:31.1.2', label: 'Asset Barcode Lookup' },
+                { id: 'work-order:31.1:31.1.3', label: 'Safety & Isolation LOTO' }
+              ]
+            },
+            {
+              id: 'work-order:31.2',
+              label: 'Record Requisition',
+              subsubItems: [
+                { id: 'work-order:31.2:31.2.1', label: 'Spare Parts Indent' },
+                { id: 'work-order:31.2:31.2.2', label: 'Vendor Service Indent' },
+                { id: 'work-order:31.2:31.2.3', label: 'Calibration Gas Indent' }
+              ]
+            },
+            {
+              id: 'work-order:31.3',
+              label: 'Record Receipt',
+              subsubItems: [
+                { id: 'work-order:31.3:31.3.1', label: 'Service Completion Entry' },
+                { id: 'work-order:31.3:31.3.2', label: 'Scrap Handover Pass' },
+                { id: 'work-order:31.3:31.3.3', label: 'Vendor Invoice Attachment' }
+              ]
+            },
+            {
+              id: 'work-order:31.4',
+              label: 'View Work Orders',
+              subsubItems: [
+                { id: 'work-order:31.4:31.4.1', label: 'Work Order Register' },
+                { id: 'work-order:31.4:31.4.2', label: 'Requisitions Register' },
+                { id: 'work-order:31.4:31.4.3', label: 'Service Receipts Register' }
+              ]
+            },
+            {
+              id: 'work-order:31.5',
+              label: 'ORDERS Approval',
+              subsubItems: [
+                { id: 'work-order:31.5:31.5.1', label: 'Supervisor Approval Queue' },
+                { id: 'work-order:31.5:31.5.2', label: 'Dispatch & Confirmation' },
+                { id: 'work-order:31.5:31.5.3', label: 'Rejected Review Desk' }
+              ]
+            },
+            {
+              id: 'work-order:31.6',
+              label: 'RECEIPTS Approval',
+              subsubItems: [
+                { id: 'work-order:31.6:31.6.1', label: 'Electrical Safety Test' },
+                { id: 'work-order:31.6:31.6.2', label: 'Final Supervisor Sign-off' },
+                { id: 'work-order:31.6:31.6.3', label: 'Asset Census Restoration' }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       title: 'Administration',
       items: [
+        {
+          id: 'system',
+          label: 'System Admin',
+          icon: ShieldCheck,
+          subItems: [
+            {
+              id: 'system:29.1',
+              label: 'View User Sessions',
+              subsubItems: [
+                { id: 'system:29.1:29.1.1', label: 'Active Sessions Desk' },
+                { id: 'system:29.1:29.1.2', label: 'Remote Kill & Revocation' },
+                { id: 'system:29.1:29.1.3', label: 'Idle Timeout & Policies' }
+              ]
+            },
+            {
+              id: 'system:29.2',
+              label: 'Audit Trails',
+              subsubItems: [
+                { id: 'system:29.2:29.2.1', label: 'Clinical Event Audit' },
+                { id: 'system:29.2:29.2.2', label: 'System Action Audit' },
+                { id: 'system:29.2:29.2.3', label: 'SHA-256 Immutability Test' }
+              ]
+            },
+            {
+              id: 'system:29.3',
+              label: 'Master Setup',
+              subsubItems: [
+                { id: 'system:29.3:29.3.1', label: 'Department Hierarchy' },
+                { id: 'system:29.3:29.3.2', label: 'Sequence Numbering' },
+                { id: 'system:29.3:29.3.3', label: 'Module Activation' }
+              ]
+            },
+            {
+              id: 'system:29.4',
+              label: 'Event Config',
+              subsubItems: [
+                { id: 'system:29.4:29.4.1', label: 'Event Trigger Engine' },
+                { id: 'system:29.4:29.4.2', label: 'SMS & Email Alerts' },
+                { id: 'system:29.4:29.4.3', label: 'Archival Retention' }
+              ]
+            },
+            {
+              id: 'system:29.5',
+              label: 'RBAC Permissions',
+              subsubItems: [
+                { id: 'system:29.5:29.5.1', label: '32-Module RBAC Matrix' },
+                { id: 'system:29.5:29.5.2', label: 'Custom Role Authoring' },
+                { id: 'system:29.5:29.5.3', label: 'Least Privilege Audit' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'user',
+          label: 'User Profile & Security',
+          icon: User,
+          subItems: [
+            {
+              id: 'user:30.1',
+              label: 'Manage Profile',
+              subsubItems: [
+                { id: 'user:30.1:30.1.1', label: 'Personal & Medical Profile' },
+                { id: 'user:30.1:30.1.2', label: 'Digital Signature & Seal' },
+                { id: 'user:30.1:30.1.3', label: 'Emergency Contact Master' }
+              ]
+            },
+            {
+              id: 'user:30.2',
+              label: 'Password & Security',
+              subsubItems: [
+                { id: 'user:30.2:30.2.1', label: 'Password Reset & Rotation' },
+                { id: 'user:30.2:30.2.2', label: 'Two-Factor Auth (2FA)' },
+                { id: 'user:30.2:30.2.3', label: 'Trusted Workstations' }
+              ]
+            },
+            {
+              id: 'user:30.3',
+              label: 'Switch Hospital Branch',
+              subsubItems: [
+                { id: 'user:30.3:30.3.1', label: 'Active Campus Selection' },
+                { id: 'user:30.3:30.3.2', label: 'Department Access Scope' },
+                { id: 'user:30.3:30.3.3', label: 'Campus Transition Log' }
+              ]
+            },
+            {
+              id: 'user:30.4',
+              label: 'Switch Active Role',
+              subsubItems: [
+                { id: 'user:30.4:30.4.1', label: 'Multi-Role Persona Toggle' },
+                { id: 'user:30.4:30.4.2', label: 'Delegated Acting Authority' },
+                { id: 'user:30.4:30.4.3', label: 'Active Privilege Matrix' }
+              ]
+            },
+            {
+              id: 'user:30.5',
+              label: 'UI Preferences & Theme',
+              subsubItems: [
+                { id: 'user:30.5:30.5.1', label: 'Theme & Display Density' },
+                { id: 'user:30.5:30.5.2', label: 'Default Startup Station' },
+                { id: 'user:30.5:30.5.3', label: 'Panic Chimes & Audio' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'analytics',
+          label: 'Analytics & Data Export',
+          icon: BarChart3,
+          subItems: [
+            {
+              id: 'analytics:32.1',
+              label: 'Domain Analytics',
+              subsubItems: [
+                { id: 'analytics:32.1:32.1.1', label: 'Billing & Revenue Trends' },
+                { id: 'analytics:32.1:32.1.2', label: 'Pharmacy Stock Telemetry' },
+                { id: 'analytics:32.1:32.1.3', label: 'Vendor & Lead Times' },
+                { id: 'analytics:32.1:32.1.4', label: 'System & ASTM Traffic' }
+              ]
+            },
+            {
+              id: 'analytics:32.2',
+              label: 'Data Export Wizard',
+              subsubItems: [
+                { id: 'analytics:32.2:32.2.1', label: 'Billing Financial Ledger' },
+                { id: 'analytics:32.2:32.2.2', label: 'System Audit JSON Dump' },
+                { id: 'analytics:32.2:32.2.3', label: 'Scheduled SFTP Backup' }
+              ]
+            },
+            {
+              id: 'analytics:32.3',
+              label: 'Executive KPI Widgets',
+              subsubItems: [
+                { id: 'analytics:32.3:32.3.1', label: 'Hospital Command Center' },
+                { id: 'analytics:32.3:32.3.2', label: 'NABH Quality Indicators' },
+                { id: 'analytics:32.3:32.3.3', label: 'Department Performance' }
+              ]
+            },
+            {
+              id: 'analytics:32.4',
+              label: 'Tabular Data Export',
+              subsubItems: [
+                { id: 'analytics:32.4:32.4.1', label: 'Query Column Builder' },
+                { id: 'analytics:32.4:32.4.2', label: 'Direct CSV / Excel File' },
+                { id: 'analytics:32.4:32.4.3', label: 'PHI Compliance Redaction' }
+              ]
+            }
+          ]
+        },
         { id: 'reports', label: 'Reports & Audit Logs', icon: FileText },
         { id: 'settings', label: 'System Settings', icon: Settings },
         { id: 'login', label: 'Login Portal', icon: LogIn }
