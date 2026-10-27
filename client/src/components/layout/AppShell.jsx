@@ -776,7 +776,6 @@ export const AppShell = ({
           id: 'work-order',
           label: 'Work Order',
           icon: Wrench,
-          badge: '6 Modules',
           subItems: [
             {
               id: 'work-order:31.1',
@@ -843,7 +842,6 @@ export const AppShell = ({
           id: 'system',
           label: 'System Admin',
           icon: ShieldCheck,
-          badge: '5 Modules',
           subItems: [
             {
               id: 'system:29.1',
@@ -896,7 +894,6 @@ export const AppShell = ({
           id: 'user',
           label: 'User Profile & Security',
           icon: User,
-          badge: '5 Modules',
           subItems: [
             {
               id: 'user:30.1',
@@ -949,7 +946,6 @@ export const AppShell = ({
           id: 'analytics',
           label: 'Analytics & Data Export',
           icon: BarChart3,
-          badge: '4 Modules',
           subItems: [
             {
               id: 'analytics:32.1',
