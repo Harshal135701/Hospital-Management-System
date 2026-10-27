@@ -235,8 +235,8 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate }) {
   };
 
   const subtabs = [
-    { id: '8.1', label: 'Admissions & Booking', icon: Calendar, badge: admissions.length },
-    { id: '8.2', label: 'Chair & Station Allocation', icon: Layers, badge: chairs.filter(c => c.status === 'occupied').length },
+    { id: '8.1', label: 'Admissions & Booking', icon: Calendar },
+    { id: '8.2', label: 'Chair & Station Allocation', icon: Layers },
     { id: '8.3', label: 'Procedure Monitoring', icon: Activity },
     { id: '8.4', label: 'Discharge Summary', icon: FileText }
   ];
@@ -387,20 +387,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate }) {
             >
               <IconComponent size={16} />
               <span>{tab.label}</span>
-              {tab.badge != null && (
-                <span
-                  style={{
-                    padding: '2px 6px',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: '0.72rem',
-                    fontWeight: '600',
-                    backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : '#EEF2F2',
-                    color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)'
-                  }}
-                >
-                  {tab.badge}
-                </span>
-              )}
+              
             </button>
           );
         })}

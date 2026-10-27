@@ -154,10 +154,10 @@ export function DietView({ initialSubtab = '9.1', onNavigate }) {
   };
 
   const subtabs = [
-    { id: '9.1', label: 'Nutritional Assessment', icon: Scale, badge: assessments.length },
-    { id: '9.2', label: 'Diet Ordering', icon: Utensils, badge: orders.filter(o => o.status === 'active').length },
+    { id: '9.1', label: 'Nutritional Assessment', icon: Scale },
+    { id: '9.2', label: 'Diet Ordering', icon: Utensils },
     { id: '9.3', label: 'Kitchen Production', icon: ChefHat },
-    { id: '9.4', label: 'Ward Delivery Tracking', icon: Truck, badge: deliveries.filter(d => d.status === 'in_transit').length || null }
+    { id: '9.4', label: 'Ward Delivery Tracking', icon: Truck }
   ];
 
   return (
@@ -211,20 +211,20 @@ export function DietView({ initialSubtab = '9.1', onNavigate }) {
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '4px' }}>
           <Button
-            variant={activeSubtab === '9.2' ? 'primary' : 'outline'}
-            size="sm"
-            icon={Plus}
-            onClick={() => handleSubtabChange('9.2')}
-          >
-            New Diet Order
-          </Button>
-          <Button
             variant={activeSubtab === '9.1' ? 'primary' : 'outline'}
             size="sm"
             icon={Scale}
             onClick={() => handleSubtabChange('9.1')}
           >
             Nutritional Assessment
+          </Button>
+          <Button
+            variant={activeSubtab === '9.2' ? 'primary' : 'outline'}
+            size="sm"
+            icon={Plus}
+            onClick={() => handleSubtabChange('9.2')}
+          >
+            New Diet Order
           </Button>
           <Button
             variant={activeSubtab === '9.3' ? 'primary' : 'outline'}
@@ -235,7 +235,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate }) {
             Kitchen Batches
           </Button>
           <Button
-            variant={activeSubtab === '9.4' ? 'primary' : 'soft'}
+            variant={activeSubtab === '9.4' ? 'primary' : 'outline'}
             size="sm"
             icon={Truck}
             onClick={() => handleSubtabChange('9.4')}
@@ -307,20 +307,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate }) {
             >
               <IconComponent size={16} />
               <span>{tab.label}</span>
-              {tab.badge != null && (
-                <span
-                  style={{
-                    padding: '2px 6px',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: '0.72rem',
-                    fontWeight: '600',
-                    backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : '#EEF2F2',
-                    color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)'
-                  }}
-                >
-                  {tab.badge}
-                </span>
-              )}
+              
             </button>
           );
         })}
