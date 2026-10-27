@@ -327,26 +327,10 @@ export function App() {
         );
 
       case 'reports':
-        return (
-          <PlaceholderView
-            title="Clinical Audit Logs & Reports"
-            subtitle="Immutable audit trail of component movements, patient transfers, and system actions."
-            icon={FileText}
-            imageKey="nurseCare"
-            onBack={() => setCurrentRoute('dashboard')}
-          />
-        );
+        return <SystemView initialSubtab="29.2" onNavigate={setCurrentRoute} />;
 
       case 'settings':
-        return (
-          <PlaceholderView
-            title="Hospital System Configuration"
-            subtitle="Tenant management, electronic signature policies, and clinical threshold settings."
-            icon={Settings}
-            imageKey="surgeonStaff"
-            onBack={() => setCurrentRoute('dashboard')}
-          />
-        );
+        return <SystemView initialSubtab="29.3" onNavigate={setCurrentRoute} />;
 
       case 'login':
         return <LoginPage onLoginSuccess={() => setCurrentRoute('dashboard')} />;
