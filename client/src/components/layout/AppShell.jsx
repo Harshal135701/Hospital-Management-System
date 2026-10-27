@@ -303,7 +303,7 @@ export const AppShell = ({
 
   const navSections = [
     {
-      title: 'Workspace',
+      title: '',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }
       ]
@@ -1045,6 +1045,10 @@ export const AppShell = ({
             <>
               {/* White Logo Container Box as in Photo 1 */}
               <div
+                onClick={() => handleSelectNav('dashboard')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectNav('dashboard'); }}
                 style={{
                   backgroundColor: '#FFFFFF',
                   borderRadius: '8px',
@@ -1057,8 +1061,10 @@ export const AppShell = ({
                   flex: 1,
                   marginRight: '8px',
                   height: '48px',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  cursor: 'pointer'
                 }}
+                title="Sarji Hospital Dashboard"
               >
                 <img
                   src={sarjiLogo}
@@ -1121,6 +1127,10 @@ export const AppShell = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <div
+                onClick={() => handleSelectNav('dashboard')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectNav('dashboard'); }}
                 style={{
                   width: '40px',
                   height: '40px',
@@ -1131,9 +1141,10 @@ export const AppShell = ({
                   justifyContent: 'center',
                   boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
                   padding: '3px',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  cursor: 'pointer'
                 }}
-                title="Sarji Group of Hospitals"
+                title="Sarji Hospital Dashboard"
               >
                 <img
                   src={sarjiLogo}
@@ -1171,93 +1182,11 @@ export const AppShell = ({
           )}
         </div>
 
-        {/* Hospital Identity Header */}
-        <div style={{ padding: effectiveCollapsed ? '8px 8px 4px' : '10px 12px 4px', flexShrink: 0 }}>
-          {!effectiveCollapsed ? (
-            <div
-              style={{
-                padding: '8px 10px',
-                backgroundColor: 'rgba(73, 118, 159, 0.25)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid #49769F',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                <div
-                  style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    backgroundColor: '#10B981',
-                    flexShrink: 0,
-                    boxShadow: '0 0 6px #10B981'
-                  }}
-                />
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: '#FFFFFF',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
-                    Sarji Group of Hospitals
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '0.65rem',
-                      color: '#D1E4F5',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
-                    Trusted empathy in healthcare
-                  </div>
-                </div>
-              </div>
-              <ShieldCheck size={14} color="#FFFFFF" style={{ flexShrink: 0 }} />
-            </div>
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '34px',
-                backgroundColor: 'rgba(73, 118, 159, 0.25)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid #49769F',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px'
-              }}
-              title="Sarji Group of Hospitals • Trusted empathy in healthcare"
-            >
-              <div
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10B981'
-                }}
-              />
-              <ShieldCheck size={14} color="#FFFFFF" />
-            </div>
-          )}
-        </div>
-
         {/* Navigation Sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: effectiveCollapsed ? '8px 8px' : '8px 10px' }}>
           {navSections.map((section, idx) => (
-            <div key={section.title} style={{ marginBottom: effectiveCollapsed ? '8px' : '12px' }}>
-              {!effectiveCollapsed ? (
+            <div key={section.title || `sec-${idx}`} style={{ marginBottom: effectiveCollapsed ? '8px' : '12px' }}>
+              {!effectiveCollapsed && section.title ? (
                 <div
                   style={{
                     fontSize: '0.68rem',
