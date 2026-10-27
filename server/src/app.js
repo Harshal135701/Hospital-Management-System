@@ -56,6 +56,7 @@ const emrRoutes = require("./modules/emr/emr.routes");
 const financeRoutes = require("./modules/finance/finance.routes");
 const assetRoutes = require("./modules/assets/assets.routes");
 const enterpriseRoutes = require("./modules/enterprise/enterprise.routes");
+const radiologyRoutes = require("./modules/radiology/radiology.routes");
 
 const app = express();
 
@@ -158,6 +159,7 @@ app.use("/api/emr", emrRoutes);
 app.use("/api/finance", financeRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/enterprise", enterpriseRoutes);
+app.use("/api/radiology", radiologyRoutes);
 
 // Error Handling (must remain last)
 app.use(notFoundHandler);

@@ -1987,3 +1987,103 @@ export const EmbryologyService = {
     return res?.data;
   }
 };
+
+
+// Module 27 — Radiology & PACS Services
+export const RadiologyService = {
+  async getModalities() {
+    try {
+      const res = await apiFetch('/radiology/modalities');
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[RadiologyService] getModalities fallback:', err.message);
+      return [];
+    }
+  },
+
+  async getStudies(params = {}) {
+    try {
+      const qs = new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '' && v !== 'all')
+        )
+      ).toString();
+      const res = await apiFetch(`/radiology/studies${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[RadiologyService] getStudies fallback:', err.message);
+      return [];
+    }
+  },
+
+  async getStudyById(id) {
+    const res = await apiFetch(`/radiology/studies/${encodeURIComponent(id)}`);
+    return res?.data;
+  },
+
+  async scheduleStudy(data) {
+    const res = await apiFetch('/radiology/studies', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async updateStudyStatus(id, data) {
+    const res = await apiFetch(`/radiology/studies/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async getReport(studyId) {
+    try {
+      const res = await apiFetch(`/radiology/reports/${encodeURIComponent(studyId)}`);
+      return res?.data || null;
+    } catch (err) {
+      console.warn('[RadiologyService] getReport fallback:', err.message);
+      return null;
+    }
+  },
+
+  async saveReport(data) {
+    const res = await apiFetch('/radiology/reports', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async verifyReport(reportId) {
+    const res = await apiFetch(`/radiology/reports/${encodeURIComponent(reportId)}/verify`, {
+      method: 'PATCH',
+      body: JSON.stringify({})
+    });
+    return res?.data;
+  },
+
+  async distributeReport(reportId) {
+    const res = await apiFetch(`/radiology/reports/${encodeURIComponent(reportId)}/distribute`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+    return res?.data;
+  },
+
+  async getPacsStatus() {
+    try {
+      const res = await apiFetch('/radiology/pacs/status');
+      return res?.data;
+    } catch (err) {
+      console.warn('[RadiologyService] getPacsStatus fallback:', err.message);
+      return {
+        isConfigured: false,
+        status: 'disconnected',
+        localAeTitle: 'HMS_RADIOLOGY_SCU',
+        localPort: 11112,
+        message: 'No live external DICOM PACS Server connection is active.'
+      };
+    }
+  }
+};

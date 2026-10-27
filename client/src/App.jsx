@@ -33,6 +33,7 @@ import { MrdView } from './components/mrd/MrdView';
 import { NursingView } from './components/nursing/NursingView';
 import { OpdView } from './components/opd/OpdView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
+import { RadiologyView } from './components/radiology/RadiologyView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
 import {
@@ -50,6 +51,7 @@ const VALID_ROUTE_BASES = new Set([
   'pharmacy',
   'purchase',
   'appointments',
+  'radiology',
   'billing',
   'credit-billing',
   'insurance',
@@ -138,6 +140,9 @@ export function App() {
 
       case 'appointments':
         return <AppointmentsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+
+      case 'radiology':
+        return <RadiologyView initialSubtab={routeSubtab || '27.1'} onNavigate={setCurrentRoute} />;
 
       case 'billing':
         return <BillingView initialSubtab={routeSubtab || '4.1'} onNavigate={setCurrentRoute} />;
@@ -254,7 +259,10 @@ export function App() {
         if (routeSubtab && (routeSubtab.startsWith('25.') || routeSubtab === '25')) {
           return <PharmacyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
-        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab.startsWith('27.') || routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.') || ['26','27','28','29','30','31','32'].includes(routeSubtab))) {
+        if (routeSubtab && (routeSubtab.startsWith('27.') || routeSubtab === '27')) {
+          return <RadiologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.') || ['26','28','29','30','31','32'].includes(routeSubtab))) {
           return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
