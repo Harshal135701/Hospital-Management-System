@@ -439,7 +439,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, color: '#233746' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: 11, background: '#E5F5F5', color: '#087F8C' }}>
+          <div style={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: 11, background: '#E5F5F5', color: '#49769F' }}>
             <Calculator size={21} />
           </div>
           <div>
@@ -452,7 +452,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={restore} style={buttonStyle}><RefreshCw size={14} /> Restore demo data</button>
           <button type="button" onClick={exportCsv} style={buttonStyle}><Download size={14} /> Export CSV</button>
-          <button type="button" onClick={openCreate} style={{ ...buttonStyle, background: '#087F8C', borderColor: '#087F8C', color: '#FFFFFF' }}>
+          <button type="button" onClick={openCreate} style={{ ...buttonStyle, background: '#49769F', borderColor: '#49769F', color: '#FFFFFF' }}>
             <Plus size={15} /> Add Asset
           </button>
         </div>
@@ -465,7 +465,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
         <Metric icon={IndianRupee} label="Total acquisition cost" value={money(totals.cost)} hint="Recorded assets" color="#2457A7" bg="#EAF2FF" />
         <Metric icon={TrendingDown} label="Accumulated depreciation" value={money(totals.accumulated)} hint="Calculated to date" color="#B45309" bg="#FFF0E2" />
-        <Metric icon={Landmark} label="Net book value" value={money(totals.bookValue)} hint="Current carrying value" color="#087F8C" bg="#E5F5F5" />
+        <Metric icon={Landmark} label="Net book value" value={money(totals.bookValue)} hint="Current carrying value" color="#49769F" bg="#E5F5F5" />
         <Metric icon={CalendarDays} label="Fully depreciated" value={totals.fullyDepreciated} hint="Based on useful life" color="#18794E" bg="#E6F6ED" />
       </div>
 
@@ -507,7 +507,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
                 <tr key={asset.id} style={{ borderBottom: '1px solid #EDF1F3' }}>
                   <td style={{ padding: 13, verticalAlign: 'top' }}>
                     <div style={{ fontSize: 12, fontWeight: 750 }}>{asset.assetName}</div>
-                    <div style={{ fontSize: 10, color: '#087F8C', marginTop: 4 }}>{asset.assetCode || 'No asset code'}</div>
+                    <div style={{ fontSize: 10, color: '#49769F', marginTop: 4 }}>{asset.assetCode || 'No asset code'}</div>
                     <div style={{ fontSize: 10, color: '#83919C', marginTop: 4 }}>{asset.department}</div>
                   </td>
                   <td style={{ padding: 13, verticalAlign: 'top', fontSize: 11, fontWeight: 650, whiteSpace: 'nowrap' }}>{money(asset.calculation.cost)}</td>
@@ -518,7 +518,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
                   <td style={{ padding: 13, verticalAlign: 'top', fontSize: 11 }}>{asset.usefulLife} years<div style={{ fontSize: 10, color: '#83919C', marginTop: 4 }}>Age: {asset.calculation.age} years</div></td>
                   <td style={{ padding: 13, verticalAlign: 'top', fontSize: 11, whiteSpace: 'nowrap' }}>{money(asset.calculation.annualDepreciation)}</td>
                   <td style={{ padding: 13, verticalAlign: 'top', fontSize: 11, whiteSpace: 'nowrap' }}>{money(asset.calculation.accumulatedDepreciation)}</td>
-                  <td style={{ padding: 13, verticalAlign: 'top', fontSize: 11, fontWeight: 750, color: '#087F8C', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: 13, verticalAlign: 'top', fontSize: 11, fontWeight: 750, color: '#49769F', whiteSpace: 'nowrap' }}>
                     {money(asset.calculation.bookValue)}
                     <div style={{ fontSize: 10, color: '#83919C', marginTop: 4 }}>Residual: {money(asset.calculation.residual)}</div>
                   </td>
@@ -567,7 +567,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
                 </div>
                 {Number(form.purchaseCost) > 0 && Number(form.residualValue) >= 0 && Number(form.residualValue) <= Number(form.purchaseCost) && Number(form.usefulLife) > 0 && (
                   <div style={{ padding: 14, borderRadius: 9, background: '#F0F8F8', border: '1px solid #D2EAEA' }}>
-                    <div style={{ fontSize: 11, fontWeight: 750, color: '#087F8C', marginBottom: 7 }}>Estimated calculation preview</div>
+                    <div style={{ fontSize: 11, fontWeight: 750, color: '#49769F', marginBottom: 7 }}>Estimated calculation preview</div>
                     <div style={{ fontSize: 12, color: '#3B5A63' }}>
                       {form.method === 'Straight-Line'
                         ? `Annual depreciation: ${money((Number(form.purchaseCost) - Number(form.residualValue)) / Number(form.usefulLife))}`
@@ -578,7 +578,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
               </div>
               <div style={{ padding: '14px 21px', background: '#FAFCFD', borderTop: '1px solid #E7EDF0', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button type="button" onClick={() => setModal('')} style={buttonStyle}>Cancel</button>
-                <button type="submit" style={{ ...buttonStyle, background: '#087F8C', borderColor: '#087F8C', color: '#FFFFFF' }}><Save size={14} />{editingId ? 'Save Changes' : 'Add Asset'}</button>
+                <button type="submit" style={{ ...buttonStyle, background: '#49769F', borderColor: '#49769F', color: '#FFFFFF' }}><Save size={14} />{editingId ? 'Save Changes' : 'Add Asset'}</button>
               </div>
             </form>
           </div>
@@ -589,7 +589,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(''); }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(16,34,45,.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ width: '100%', maxWidth: 760, maxHeight: '90vh', overflowY: 'auto', background: '#FFFFFF', borderRadius: 14 }}>
             <div style={{ padding: 21, borderBottom: '1px solid #E7EDF0', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <div><div style={{ fontSize: 10, color: '#087F8C', fontWeight: 750 }}>{selected.id} · {selected.assetCode || 'No asset code'}</div><h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3><div style={{ fontSize: 11, color: '#81909B' }}>{selected.department} · Purchased {formatDate(selected.purchaseDate)}</div></div>
+              <div><div style={{ fontSize: 10, color: '#49769F', fontWeight: 750 }}>{selected.id} · {selected.assetCode || 'No asset code'}</div><h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3><div style={{ fontSize: 11, color: '#81909B' }}>{selected.department} · Purchased {formatDate(selected.purchaseDate)}</div></div>
               <button type="button" onClick={() => setModal('')} style={buttonStyle}><X size={15} /></button>
             </div>
             <div style={{ padding: 21 }}>
@@ -641,7 +641,7 @@ export function AssetDepreciationDesk({ assets = [], onToast }) {
             </div>
             <div style={{ padding: '14px 21px', borderTop: '1px solid #E7EDF0', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button type="button" onClick={() => setModal('')} style={buttonStyle}>Close</button>
-              <button type="button" onClick={() => openEdit(selected)} style={{ ...buttonStyle, background: '#087F8C', borderColor: '#087F8C', color: '#FFFFFF' }}><Pencil size={14} /> Edit Asset</button>
+              <button type="button" onClick={() => openEdit(selected)} style={{ ...buttonStyle, background: '#49769F', borderColor: '#49769F', color: '#FFFFFF' }}><Pencil size={14} /> Edit Asset</button>
             </div>
           </div>
         </div>

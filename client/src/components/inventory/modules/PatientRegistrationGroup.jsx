@@ -378,7 +378,7 @@ export function PatientRegistrationGroup({ activeSubtab = '24.1', onNavigateSubm
             width: '320px',
             height: '190px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #087F8C 0%, #066974 100%)',
+            background: 'linear-gradient(135deg, #49769F 0%, #066974 100%)',
             color: '#FFFFFF',
             padding: '16px',
             display: 'flex',

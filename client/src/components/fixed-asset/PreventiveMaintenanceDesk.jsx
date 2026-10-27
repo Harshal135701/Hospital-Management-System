@@ -569,7 +569,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
                 height: 40,
                 borderRadius: 11,
                 background: '#E5F5F5',
-                color: '#087F8C',
+                color: '#49769F',
                 display: 'grid',
                 placeItems: 'center',
               }}
@@ -596,8 +596,8 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
             onClick={openCreate}
             style={{
               ...buttonStyle,
-              background: '#087F8C',
-              borderColor: '#087F8C',
+              background: '#49769F',
+              borderColor: '#49769F',
               color: '#FFFFFF',
               padding: '10px 15px',
             }}
@@ -819,7 +819,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
                     <div style={{ fontSize: 12, fontWeight: 750, color: '#253B4A' }}>
                       {item.assetName}
                     </div>
-                    <div style={{ fontSize: 10, color: '#087F8C', marginTop: 4 }}>
+                    <div style={{ fontSize: 10, color: '#49769F', marginTop: 4 }}>
                       {item.assetCode || 'No asset code'}
                     </div>
                     <div style={{ fontSize: 10, color: '#8A98A2', marginTop: 3 }}>
@@ -1008,7 +1008,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
             <form onSubmit={saveSchedule}>
               <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <section>
-                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#087F8C' }}>
+                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#49769F' }}>
                     Asset & location
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 13 }}>
@@ -1021,7 +1021,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
                 </section>
 
                 <section>
-                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#087F8C' }}>
+                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#49769F' }}>
                     Maintenance plan
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 13 }}>
@@ -1035,7 +1035,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
                 </section>
 
                 <section>
-                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#087F8C' }}>
+                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#49769F' }}>
                     Assignment & notes
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 13 }}>
@@ -1070,8 +1070,8 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
                   type="submit"
                   style={{
                     ...buttonStyle,
-                    background: '#087F8C',
-                    borderColor: '#087F8C',
+                    background: '#49769F',
+                    borderColor: '#49769F',
                     color: '#FFFFFF',
                   }}
                 >
@@ -1112,7 +1112,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
           >
             <div style={{ padding: 21, borderBottom: '1px solid #E7EDF0', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
               <div>
-                <div style={{ fontSize: 10, color: '#087F8C', fontWeight: 750 }}>{selected.id}</div>
+                <div style={{ fontSize: 10, color: '#49769F', fontWeight: 750 }}>{selected.id}</div>
                 <h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3>
                 <div style={{ fontSize: 11, color: '#81909B' }}>{selected.assetCode || 'No asset code'}</div>
               </div>
@@ -1193,7 +1193,7 @@ export function PreventiveMaintenanceDesk({ assets = [], onToast }) {
                 <button
                   type="button"
                   onClick={() => openEdit(selected)}
-                  style={{ ...buttonStyle, background: '#087F8C', borderColor: '#087F8C', color: '#FFFFFF' }}
+                  style={{ ...buttonStyle, background: '#49769F', borderColor: '#49769F', color: '#FFFFFF' }}
                 >
                   <Pencil size={14} /> Edit
                 </button>

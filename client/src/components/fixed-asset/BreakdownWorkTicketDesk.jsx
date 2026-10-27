@@ -348,7 +348,7 @@ export function BreakdownWorkTicketDesk({ assets = [], onToast }) {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={restore} style={buttonStyle}><RefreshCw size={14} /> Restore demo data</button>
-          <button type="button" onClick={openCreate} style={{ ...buttonStyle, background: '#087F8C', borderColor: '#087F8C', color: '#FFFFFF' }}>
+          <button type="button" onClick={openCreate} style={{ ...buttonStyle, background: '#49769F', borderColor: '#49769F', color: '#FFFFFF' }}>
             <Plus size={15} /> Report Breakdown
           </button>
         </div>
@@ -412,7 +412,7 @@ export function BreakdownWorkTicketDesk({ assets = [], onToast }) {
                   <td style={{ padding: 13, verticalAlign: 'top' }}>
                     <div style={{ fontSize: 12, fontWeight: 750 }}>{t.id}</div>
                     <div style={{ fontSize: 11, marginTop: 5 }}>{t.assetName}</div>
-                    <div style={{ fontSize: 10, color: '#087F8C', marginTop: 4 }}>{t.assetCode || 'No asset code'}</div>
+                    <div style={{ fontSize: 10, color: '#49769F', marginTop: 4 }}>{t.assetCode || 'No asset code'}</div>
                   </td>
                   <td style={{ padding: 13, verticalAlign: 'top' }}>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 11 }}><Building2 size={13} color="#82919D" />{t.department}</div>
@@ -459,7 +459,7 @@ export function BreakdownWorkTicketDesk({ assets = [], onToast }) {
             <form onSubmit={save}>
               <div style={{ padding: 21, display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <section>
-                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#087F8C' }}>Equipment & incident</h4>
+                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#49769F' }}>Equipment & incident</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 13 }}>
                     {field('Asset name', 'assetName', { required: true, placeholder: 'Equipment name' })}
                     {field('Asset code', 'assetCode', { placeholder: 'e.g. AST-0001' })}
@@ -474,7 +474,7 @@ export function BreakdownWorkTicketDesk({ assets = [], onToast }) {
                   <textarea required value={form.description} onChange={(e) => update('description', e.target.value)} rows={3} placeholder="Describe symptoms, error codes and when the issue occurred..." style={{ ...inputStyle, resize: 'vertical' }} />
                 </section>
                 <section>
-                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#087F8C' }}>Repair assignment & resolution</h4>
+                  <h4 style={{ margin: '0 0 13px', fontSize: 12, color: '#49769F' }}>Repair assignment & resolution</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 13 }}>
                     {field('Assigned technician', 'technician', { placeholder: 'Technician name' })}
                     {field('Service vendor', 'vendor', { placeholder: 'Vendor / in-house team' })}
@@ -489,7 +489,7 @@ export function BreakdownWorkTicketDesk({ assets = [], onToast }) {
               </div>
               <div style={{ padding: '14px 21px', background: '#FAFCFD', borderTop: '1px solid #E7EDF0', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button type="button" onClick={() => setModal('')} style={buttonStyle}>Cancel</button>
-                <button type="submit" style={{ ...buttonStyle, background: '#087F8C', borderColor: '#087F8C', color: '#FFFFFF' }}><Save size={14} />{editingId ? 'Save Changes' : 'Create Work Ticket'}</button>
+                <button type="submit" style={{ ...buttonStyle, background: '#49769F', borderColor: '#49769F', color: '#FFFFFF' }}><Save size={14} />{editingId ? 'Save Changes' : 'Create Work Ticket'}</button>
               </div>
             </form>
           </div>
@@ -500,7 +500,7 @@ export function BreakdownWorkTicketDesk({ assets = [], onToast }) {
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(''); }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(16,34,45,.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', background: '#FFFFFF', borderRadius: 14 }}>
             <div style={{ padding: 21, borderBottom: '1px solid #E7EDF0', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <div><div style={{ fontSize: 10, color: '#087F8C', fontWeight: 750 }}>{selected.id}</div><h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3><div style={{ fontSize: 11, color: '#81909B' }}>{selected.assetCode || 'No asset code'}</div></div>
+              <div><div style={{ fontSize: 10, color: '#49769F', fontWeight: 750 }}>{selected.id}</div><h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3><div style={{ fontSize: 11, color: '#81909B' }}>{selected.assetCode || 'No asset code'}</div></div>
               <button type="button" onClick={() => setModal('')} style={buttonStyle}><X size={15} /></button>
             </div>
             <div style={{ padding: 21 }}>

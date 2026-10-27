@@ -73,8 +73,8 @@ const inputStyle = {
 
 const primary = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-  gap: 7, padding: '9px 13px', border: '1px solid #087F8C',
-  borderRadius: 8, background: '#087F8C', color: '#FFFFFF',
+  gap: 7, padding: '9px 13px', border: '1px solid #49769F',
+  borderRadius: 8, background: '#49769F', color: '#FFFFFF',
   fontWeight: 700, fontSize: 11, cursor: 'pointer',
 };
 
@@ -226,7 +226,7 @@ export function ServiceContractsDesk({ assets = [], onToast }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
         {[
-          { title: 'Total Contracts', value: contracts.length, icon: FileText, color: '#087F8C', bg: '#E5F5F5' },
+          { title: 'Total Contracts', value: contracts.length, icon: FileText, color: '#49769F', bg: '#E5F5F5' },
           { title: 'Renewal Due Soon', value: expiring, icon: CalendarClock, color: '#A66A00', bg: '#FFF5DB' },
           { title: 'Expired Contracts', value: expired, icon: AlertTriangle, color: '#B42318', bg: '#FDECEC' },
           { title: 'Contract Value', value: money(annualCost), icon: IndianRupee, color: '#2665B0', bg: '#EAF2FF' },
@@ -250,7 +250,7 @@ export function ServiceContractsDesk({ assets = [], onToast }) {
       <section style={{ background: '#FFFFFF', border: '1px solid #E2E9ED', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: 16, borderBottom: '1px solid #E8EEF1' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Search size={16} color="#087F8C" /><strong style={{ fontSize: 13 }}>Contract Register</strong>
+            <Search size={16} color="#49769F" /><strong style={{ fontSize: 13 }}>Contract Register</strong>
             <span style={{ fontSize: 11, color: '#83919E' }}>({rows.length} results)</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
@@ -276,7 +276,7 @@ export function ServiceContractsDesk({ assets = [], onToast }) {
                   <div style={{ fontSize: 10, color: '#7C8A98', marginTop: 3 }}>{c.assetId || 'Asset ID not linked'}</div>
                 </td>
                 <td style={{ padding: '13px 14px' }}>
-                  <span style={{ fontSize: 10, background: '#E8F6F6', color: '#087F8C', padding: '4px 7px', borderRadius: 5, fontWeight: 750 }}>{c.type}</span>
+                  <span style={{ fontSize: 10, background: '#E8F6F6', color: '#49769F', padding: '4px 7px', borderRadius: 5, fontWeight: 750 }}>{c.type}</span>
                   <div style={{ fontSize: 11, marginTop: 6 }}>{c.provider}</div>
                 </td>
                 <td style={{ padding: '13px 14px', fontSize: 11, whiteSpace: 'nowrap' }}>
@@ -329,7 +329,7 @@ export function ServiceContractsDesk({ assets = [], onToast }) {
         <div style={{ width: 'min(560px, 100%)', maxHeight: '90vh', overflowY: 'auto', background: '#FFFFFF', borderRadius: 14 }}>
           <div style={{ padding: 18, display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E8EEF1' }}><h3 style={{ margin: 0, fontSize: 16 }}>Contract Details</h3><button onClick={() => setModal('')} style={{ ...secondary, padding: 7 }}><X size={15} /></button></div>
           <div style={{ padding: 20 }}>
-            <div style={{ background: '#F3FAFA', borderRadius: 9, padding: 14, marginBottom: 16 }}><div style={{ color: '#087F8C', fontSize: 10, fontWeight: 700 }}>{selected.contractNo}</div><h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3><Pill value={contractStatus(selected)} /></div>
+            <div style={{ background: '#F3FAFA', borderRadius: 9, padding: 14, marginBottom: 16 }}><div style={{ color: '#49769F', fontSize: 10, fontWeight: 700 }}>{selected.contractNo}</div><h3 style={{ margin: '6px 0', fontSize: 17 }}>{selected.assetName}</h3><Pill value={contractStatus(selected)} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
               {[
                 ['Type', selected.type], ['Provider', selected.provider], ['Asset ID', selected.assetId || 'Not linked'],

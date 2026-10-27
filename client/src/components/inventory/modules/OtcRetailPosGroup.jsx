@@ -500,7 +500,7 @@ export function OtcRetailPosGroup({ activeSubtab = '28.1', onNavigateSubmodule: 
                 <div style={{ padding: '16px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
                   <div style={{ fontWeight: '700', color: '#166534', marginBottom: '8px' }}>Scan with Any UPI App (GPay / PhonePe / Paytm / BHIM)</div>
                   <div style={{ display: 'inline-block', padding: '12px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #D1D5DB' }}>
-                    <QrCode size={130} color="#087F8C" />
+                    <QrCode size={130} color="#49769F" />
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#15803D', marginTop: '8px' }}>
                     VPA: <strong>medicsprime.pos@icici</strong> • Amount: <strong>₹{totalPayable.toFixed(2)}</strong>
@@ -734,7 +734,7 @@ export function OtcRetailPosGroup({ activeSubtab = '28.1', onNavigateSubmodule: 
             <div style={{ padding: '16px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
               <div style={{ fontWeight: '700', color: '#166534', marginBottom: '8px' }}>Scan with Any UPI App (GPay / PhonePe / Paytm)</div>
               <div style={{ display: 'inline-block', padding: '12px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #D1D5DB' }}>
-                <QrCode size={110} color="#087F8C" />
+                <QrCode size={110} color="#49769F" />
               </div>
               <div style={{ fontSize: '0.75rem', color: '#15803D', marginTop: '6px' }}>VPA: medicsprime.pos@icici • Amount: ₹{totalPayable.toFixed(2)}</div>
             </div>

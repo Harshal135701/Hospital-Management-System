@@ -174,8 +174,8 @@ export function AssetMasterDesk({ assets, setAssets, onToast }) {
   const selectStyle = { ...inputStyle, cursor: 'pointer' };
   const primaryButton = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    gap: 7, padding: '10px 14px', border: '1px solid #087F8C',
-    borderRadius: 8, background: '#087F8C', color: '#FFFFFF',
+    gap: 7, padding: '10px 14px', border: '1px solid #49769F',
+    borderRadius: 8, background: '#49769F', color: '#FFFFFF',
     fontWeight: 700, fontSize: 12, cursor: 'pointer',
   };
   const secondaryButton = {
@@ -211,7 +211,7 @@ export function AssetMasterDesk({ assets, setAssets, onToast }) {
         gap: 12,
       }}>
         {[
-          { label: 'Total Registered Assets', value: assets.length, detail: 'All asset categories', icon: Package, color: '#087F8C', bg: '#E5F5F5' },
+          { label: 'Total Registered Assets', value: assets.length, detail: 'All asset categories', icon: Package, color: '#49769F', bg: '#E5F5F5' },
           { label: 'Total Acquisition Value', value: money(totalValue), detail: 'Recorded purchase cost', icon: IndianRupee, color: '#2665B0', bg: '#EAF2FF' },
           { label: 'Operational Assets', value: activeCount, detail: 'Currently marked active', icon: Activity, color: '#16835D', bg: '#E8F7EF' },
           { label: 'Needs Attention', value: maintenanceCount + breakdownCount, detail: `${maintenanceCount} maintenance · ${breakdownCount} breakdown`, icon: Wrench, color: '#B7791F', bg: '#FFF5DB' },
@@ -238,7 +238,7 @@ export function AssetMasterDesk({ assets, setAssets, onToast }) {
       <section style={{ background: '#FFFFFF', border: '1px solid #E2E9ED', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: 16, borderBottom: '1px solid #E8EEF1' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 13 }}>
-            <Search size={16} color="#087F8C" />
+            <Search size={16} color="#49769F" />
             <strong style={{ fontSize: 13 }}>Find an Asset</strong>
             <span style={{ fontSize: 11, color: '#83919E' }}>({filtered.length} results)</span>
             <button onClick={resetFilters} style={{ ...secondaryButton, padding: '6px 9px', marginLeft: 'auto' }}>
@@ -277,7 +277,7 @@ export function AssetMasterDesk({ assets, setAssets, onToast }) {
                   <td style={{ padding: '13px 14px' }}>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{asset.name}</div>
                     <div style={{ fontSize: 10, color: '#7C8A98', marginTop: 4 }}>{asset.id} · SN: {asset.serialNumber}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5, color: '#087F8C', fontSize: 10 }}><Barcode size={13} /> {asset.barcode}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5, color: '#49769F', fontSize: 10 }}><Barcode size={13} /> {asset.barcode}</div>
                   </td>
                   <td style={{ padding: '13px 14px', fontSize: 11 }}>{asset.category}</td>
                   <td style={{ padding: '13px 14px' }}>
@@ -348,7 +348,7 @@ export function AssetMasterDesk({ assets, setAssets, onToast }) {
             {modal === 'details' ? (
               <div style={{ padding: 20 }}>
                 <div style={{ background: '#F3FAFA', borderRadius: 10, padding: 14, marginBottom: 15 }}>
-                  <div style={{ fontSize: 10, color: '#087F8C', fontWeight: 700 }}>{selected.id}</div>
+                  <div style={{ fontSize: 10, color: '#49769F', fontWeight: 700 }}>{selected.id}</div>
                   <h3 style={{ margin: '5px 0', fontSize: 18 }}>{selected.name}</h3>
                   <StatusBadge status={selected.status} />
                 </div>

@@ -78,7 +78,7 @@ export function FixedAssetView({ initialSubtab = '14.1', onNavigate }) {
                 gap: 14, flexWrap: 'wrap',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 11, background: '#087F8C', color: '#FFFFFF', display: 'grid', placeItems: 'center' }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 11, background: '#49769F', color: '#FFFFFF', display: 'grid', placeItems: 'center' }}>
                         <Landmark size={21} />
                     </div>
                     <div>
@@ -104,9 +104,9 @@ export function FixedAssetView({ initialSubtab = '14.1', onNavigate }) {
                         <button key={item.id} onClick={() => changeTab(item.id)} style={{
                             flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', gap: 7,
                             padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-                            border: `1px solid ${active ? '#087F8C' : '#E0E8EB'}`,
+                            border: `1px solid ${active ? '#49769F' : '#E0E8EB'}`,
                             background: active ? '#E8F6F6' : '#FFFFFF',
-                            color: active ? '#087F8C' : '#627385',
+                            color: active ? '#49769F' : '#627385',
                             fontWeight: active ? 750 : 600, fontSize: 11,
                         }}>
                            <Icon size={15} /> {item.label}
@@ -157,7 +157,7 @@ export function FixedAssetView({ initialSubtab = '14.1', onNavigate }) {
                         textAlign: 'center',
                     }}
                 >
-                    <Package size={30} color="#087F8C" />
+                    <Package size={30} color="#49769F" />
                     <h3 style={{ fontSize: 16, margin: '12px 0 6px' }}>
                         {current.label}
                     </h3>

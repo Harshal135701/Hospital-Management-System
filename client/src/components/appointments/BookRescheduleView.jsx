@@ -76,7 +76,7 @@ const STATUS_LABELS = {
 };
 
 const STATUS_COLORS = {
-  booked: '#087f8c',
+  booked: '#49769F',
   arrived: '#5267b8',
   waiting: '#b7791f',
   in_consultation: '#0f766e',
@@ -241,7 +241,7 @@ const styles = {
   primaryButton: {
     background: 'var(--color-primary-teal, #fff)',
     color: '#fff',
-    border: '1px solid var(--color-primary-teal, #087f8c)',
+    border: '1px solid var(--color-primary-teal, #49769F)',
   },
   dangerButton: {
     background: '#fff',
@@ -1294,7 +1294,7 @@ export default function BookRescheduleView() {
               style={{
                 ...styles.button,
                 ...(activeTab === 'appointments'
-                  ? { background: '#087f8c', color: '#fff', borderColor: '#087f8c' }
+                  ? { background: '#49769F', color: '#fff', borderColor: '#49769F' }
                   : {}),
               }}
             >
@@ -1309,7 +1309,7 @@ export default function BookRescheduleView() {
               style={{
                 ...styles.button,
                 ...(activeTab === 'blood_requests'
-                  ? { background: '#087f8c', color: '#fff', borderColor: '#087f8c' }
+                  ? { background: '#49769F', color: '#fff', borderColor: '#49769F' }
                   : {}),
               }}
             >
@@ -1445,7 +1445,7 @@ export default function BookRescheduleView() {
                     {filteredAppointments.map((appointment) => (
                       <tr key={appointment.id}>
                         <td style={styles.td}>
-                          <div style={{ fontWeight: 800, color: '#087f8c', fontSize: '13px' }}>
+                          <div style={{ fontWeight: 800, color: '#49769F', fontSize: '13px' }}>
                             Token {appointment.token_number || '—'}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
@@ -1768,7 +1768,7 @@ export default function BookRescheduleView() {
                   </div>
                 </div>
                 {bookForm.startTime && (
-                  <span style={{ fontSize: '12px', color: '#087f8c', fontWeight: 750 }}>
+                  <span style={{ fontSize: '12px', color: '#49769F', fontWeight: 750 }}>
                     Selected: {formatTime(bookForm.startTime)}
                   </span>
                 )}
@@ -1793,7 +1793,7 @@ export default function BookRescheduleView() {
                         style={{
                           ...styles.slot,
                           ...(selected
-                            ? { background: '#087f8c', borderColor: '#087f8c', color: '#fff', fontWeight: 750 }
+                            ? { background: '#49769F', borderColor: '#49769F', color: '#fff', fontWeight: 750 }
                             : {}),
                           ...(!available
                             ? { background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', textDecoration: 'line-through' }
@@ -1995,7 +1995,7 @@ export default function BookRescheduleView() {
                     style={{
                       ...styles.slot,
                       ...(selected
-                        ? { background: '#087f8c', borderColor: '#087f8c', color: '#fff', fontWeight: 750 }
+                        ? { background: '#49769F', borderColor: '#49769F', color: '#fff', fontWeight: 750 }
                         : {}),
                       ...(!available
                         ? { background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', textDecoration: 'line-through' }
