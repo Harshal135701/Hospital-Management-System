@@ -14,7 +14,7 @@ export const FINANCE_SUBMODULES = [
   {
     id: '13.1',
     code: '13.1',
-    label: '13.1 Chart of Accounts & General Ledger',
+    label: 'Chart of Accounts & General Ledger',
     shortLabel: 'Chart of Accounts & GL',
     icon: Landmark,
     badge: 'General Ledger',
@@ -23,7 +23,7 @@ export const FINANCE_SUBMODULES = [
   {
     id: '13.2',
     code: '13.2',
-    label: '13.2 Debit / Credit Payment Vouchers',
+    label: 'Debit / Credit Payment Vouchers',
     shortLabel: 'Debit / Credit Vouchers',
     icon: Receipt,
     badge: 'Payment Vouchers',
@@ -32,7 +32,7 @@ export const FINANCE_SUBMODULES = [
   {
     id: '13.3',
     code: '13.3',
-    label: '13.3 Doctor Payout & Revenue Share Calculation',
+    label: 'Doctor Payout & Revenue Share Calculation',
     shortLabel: 'Doctor Payouts & Share',
     icon: Award,
     badge: 'Doctor Payout',
@@ -41,7 +41,7 @@ export const FINANCE_SUBMODULES = [
   {
     id: '13.4',
     code: '13.4',
-    label: '13.4 Bank Reconciliation',
+    label: 'Bank Reconciliation',
     shortLabel: 'Bank Reconciliation',
     icon: Building2,
     badge: 'Bank Reconciliation',
@@ -50,7 +50,7 @@ export const FINANCE_SUBMODULES = [
   {
     id: '13.5',
     code: '13.5',
-    label: '13.5 Profit & Loss / Balance Sheet Reporting',
+    label: 'Profit & Loss / Balance Sheet Reporting',
     shortLabel: 'P&L / Balance Sheet',
     icon: BarChart3,
     badge: 'Financial Statements',

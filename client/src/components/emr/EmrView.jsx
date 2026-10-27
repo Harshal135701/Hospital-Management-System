@@ -301,31 +301,31 @@ export function EmrView({ initialSubtab = '12.1', onNavigate }) {
   const SUBTABS = [
     {
       id: '12.1',
-      label: '12.1 Patient Timeline',
+      label: 'Patient Timeline',
       icon: Calendar,
       description: 'Unified longitudinal patient journey across all clinical events'
     },
     {
       id: '12.2',
-      label: '12.2 Prescription Studio',
+      label: 'Prescription Studio',
       icon: Pill,
       description: 'Formulary-driven digital prescription composer & print studio'
     },
     {
       id: '12.3',
-      label: '12.3 ICD-10 Diagnoses',
+      label: 'ICD-10 Diagnoses',
       icon: Tag,
       description: 'Standardized WHO ICD-10 diagnostic coding & chronic condition registry'
     },
     {
       id: '12.4',
-      label: '12.4 Encounters Browser',
+      label: 'Encounters Browser',
       icon: Stethoscope,
       description: 'Comprehensive historical outpatient visits & clinical observations'
     },
     {
       id: '12.5',
-      label: '12.5 Clinical Documents',
+      label: 'Clinical Documents',
       icon: Paperclip,
       description: 'External diagnostics, operative records, scan reports & attachments'
     }
@@ -374,9 +374,6 @@ export function EmrView({ initialSubtab = '12.1', onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-                Submodules 12.1 – 12.5
-              </span>
               <Badge variant="teal" size="sm">Longitudinal Patient Chart</Badge>
             </div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>

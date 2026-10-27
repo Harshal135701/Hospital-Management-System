@@ -15,14 +15,12 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge } from '../common/UIPrimitives';
 
-export function TraumaChartingDesk({
-  traumaCharts = [],
+export function TraumaChartingDesk({ traumaCharts = [],
   triageList = [],
   doctors = [],
   activeTriagePatient = null,
   loading = false,
-  onCreateTraumaChart
-}) {
+  onCreateTraumaChart, showToast }) {
   const [selectedTriageId, setSelectedTriageId] = useState(activeTriagePatient?.id || (triageList[0]?.id || ''));
   const [showNewChartModal, setShowNewChartModal] = useState(false);
 
@@ -50,7 +48,7 @@ export function TraumaChartingDesk({
   const handleSubmitChart = async (e) => {
     e.preventDefault();
     if (!selectedTriageId) {
-      alert('Please select a triage patient for trauma charting.');
+      (showToast ? showToast('Please select a triage patient for trauma charting.') : alert('Please select a triage patient for trauma charting.'));
       return;
     }
 
@@ -59,7 +57,7 @@ export function TraumaChartingDesk({
       await onCreateTraumaChart(selectedTriageId, formData);
       setShowNewChartModal(false);
     } catch (err) {
-      alert('Failed to record trauma charting: ' + err.message);
+      (showToast ? showToast('Failed to record trauma charting: ' + err.message) : alert('Failed to record trauma charting: ' + err.message));
     } finally {
       setFormSubmitting(false);
     }

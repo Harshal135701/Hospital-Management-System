@@ -235,10 +235,10 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate }) {
   };
 
   const subtabs = [
-    { id: '8.1', label: '8.1 Admissions & Booking', icon: Calendar, badge: admissions.length },
-    { id: '8.2', label: '8.2 Chair & Station Allocation', icon: Layers, badge: chairs.filter(c => c.status === 'occupied').length },
-    { id: '8.3', label: '8.3 Procedure Monitoring', icon: Activity },
-    { id: '8.4', label: '8.4 Discharge Summary', icon: FileText }
+    { id: '8.1', label: 'Admissions & Booking', icon: Calendar },
+    { id: '8.2', label: 'Chair & Station Allocation', icon: Layers },
+    { id: '8.3', label: 'Procedure Monitoring', icon: Activity },
+    { id: '8.4', label: 'Discharge Summary', icon: FileText }
   ];
 
   return (
@@ -260,9 +260,6 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-                Submodules 8.1 – 8.4
-              </span>
               <Badge variant="teal" size="sm">Ambulatory & Short-Stay Care</Badge>
             </div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
@@ -390,20 +387,7 @@ export function DayCareView({ initialSubtab = '8.1', onNavigate }) {
             >
               <IconComponent size={16} />
               <span>{tab.label}</span>
-              {tab.badge != null && (
-                <span
-                  style={{
-                    padding: '2px 6px',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: '0.72rem',
-                    fontWeight: '600',
-                    backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : '#EEF2F2',
-                    color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)'
-                  }}
-                >
-                  {tab.badge}
-                </span>
-              )}
+              
             </button>
           );
         })}

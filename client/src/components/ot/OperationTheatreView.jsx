@@ -225,7 +225,7 @@ export function OperationTheatreView({ initialSubtab = '23.1', onNavigate }) {
                 >
                   Operation Theatre (OT) Management
                 </h1>
-                <Badge variant="teal">Module 23</Badge>
+                <Badge variant="teal">WHO Surgical Safety Certified</Badge>
               </div>
               <p
                 style={{
@@ -339,20 +339,7 @@ export function OperationTheatreView({ initialSubtab = '23.1', onNavigate }) {
                 >
                   <Icon size={16} color={isActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)'} />
                   <span>{submodule.shortLabel}</span>
-                  {badgeText && (
-                    <span
-                      style={{
-                        backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : 'var(--color-border-subtle)',
-                        color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)',
-                        padding: '1px 7px',
-                        borderRadius: '10px',
-                        fontSize: '0.70rem',
-                        fontWeight: '700'
-                      }}
-                    >
-                      {badgeText}
-                    </span>
-                  )}
+                  
                 </button>
               );
             })}

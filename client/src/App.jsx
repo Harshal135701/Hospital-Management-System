@@ -32,6 +32,10 @@ import { LaboratoryView } from './components/laboratory/LaboratoryView';
 import { MrdView } from './components/mrd/MrdView';
 import { NursingView } from './components/nursing/NursingView';
 import { OpdView } from './components/opd/OpdView';
+import { SystemView } from './components/system/SystemView';
+import { UserView } from './components/user/UserView';
+import { WorkOrderView } from './components/work-order/WorkOrderView';
+import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { RadiologyView } from './components/radiology/RadiologyView';
 import { OperationsView } from './components/operations/OperationsView';
@@ -84,6 +88,10 @@ const VALID_ROUTE_BASES = new Set([
   'ipd',
   'reports',
   'settings',
+  'system',
+  'user',
+  'work-order',
+  'analytics',
   'login'
 ]);
 
@@ -139,8 +147,23 @@ export function App() {
         return <PharmacyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'purchase':
-        if (routeSubtab && (routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.'))) {
+        if (routeSubtab && (routeSubtab.startsWith('27.') || routeSubtab === '27')) {
+          return <RadiologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('28.') || routeSubtab === '28')) {
           return <OperationsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('29.') || routeSubtab === '29')) {
+          return <SystemView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('30.') || routeSubtab === '30')) {
+          return <UserView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('31.') || routeSubtab === '31')) {
+          return <WorkOrderView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('32.') || routeSubtab === '32')) {
+          return <AnalyticsView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
         }
         return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
@@ -195,6 +218,18 @@ export function App() {
 
       case 'opd':
         return <OpdView initialSubtab={routeSubtab || '22.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'system':
+        return <SystemView initialSubtab={routeSubtab || '29.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'user':
+        return <UserView initialSubtab={routeSubtab || '30.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'work-order':
+        return <WorkOrderView initialSubtab={routeSubtab || '31.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+
+      case 'analytics':
+        return <AnalyticsView initialSubtab={routeSubtab || '32.1'} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
 
       case 'emergency':
         return <EmergencyView initialSubtab={routeSubtab || '11.1'} onNavigate={setCurrentRoute} />;
@@ -269,14 +304,26 @@ export function App() {
         if (routeSubtab && (routeSubtab.startsWith('25.') || routeSubtab === '25')) {
           return <PharmacyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
+        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab === '26')) {
+          return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
         if (routeSubtab && (routeSubtab.startsWith('27.') || routeSubtab === '27')) {
           return <RadiologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
-        if (routeSubtab && (routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.') || ['28','29','30','31','32'].includes(routeSubtab))) {
+        if (routeSubtab && (routeSubtab.startsWith('28.') || routeSubtab === '28')) {
           return <OperationsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
-        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab === '26')) {
-          return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        if (routeSubtab && (routeSubtab.startsWith('29.') || routeSubtab === '29')) {
+          return <SystemView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('30.') || routeSubtab === '30')) {
+          return <UserView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('31.') || routeSubtab === '31')) {
+          return <WorkOrderView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('32.') || routeSubtab === '32')) {
+          return <AnalyticsView initialSubtab={routeSubtab} initialSubsubtab={routeSubsubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {
           return <InventoryView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -316,26 +363,10 @@ export function App() {
         );
 
       case 'reports':
-        return (
-          <PlaceholderView
-            title="Clinical Audit Logs & Reports"
-            subtitle="Immutable audit trail of component movements, patient transfers, and system actions."
-            icon={FileText}
-            imageKey="nurseCare"
-            onBack={() => setCurrentRoute('dashboard')}
-          />
-        );
+        return <SystemView initialSubtab="29.2" onNavigate={setCurrentRoute} />;
 
       case 'settings':
-        return (
-          <PlaceholderView
-            title="Hospital System Configuration"
-            subtitle="Tenant management, electronic signature policies, and clinical threshold settings."
-            icon={Settings}
-            imageKey="surgeonStaff"
-            onBack={() => setCurrentRoute('dashboard')}
-          />
-        );
+        return <SystemView initialSubtab="29.3" onNavigate={setCurrentRoute} />;
 
       case 'login':
         return <LoginPage onLoginSuccess={() => setCurrentRoute('dashboard')} />;

@@ -167,8 +167,7 @@ export function PatientsView({ initialSubtab, onNavigate }) {
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Badge variant="teal">Module 24</Badge>
-          <Badge variant="neutral">5 Submodules</Badge>
+          <Badge variant="teal">UHID Master Patient Index</Badge>
         </div>
       </div>
 

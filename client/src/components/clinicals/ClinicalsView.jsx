@@ -588,8 +588,8 @@ export const ClinicalsView = ({ initialSubtab, onNavigate }) => {
     { id: 'consultation', label: 'Consultation Desk', icon: Stethoscope },
     { id: 'vitals', label: 'Vitals & Examination', icon: Activity },
     { id: 'history', label: 'Complaints & History', icon: ClipboardList },
-    { id: 'orders', label: 'Orders (CPOE)', icon: FileText, badge: activePatient?.orders?.length || null },
-    { id: 'notes', label: 'Progress Notes', icon: CheckCircle2, badge: activePatient?.notes?.length || null }
+    { id: 'orders', label: 'Orders (CPOE)', icon: FileText },
+    { id: 'notes', label: 'Progress Notes', icon: CheckCircle2 }
   ];
 
   return (
@@ -737,20 +737,7 @@ export const ClinicalsView = ({ initialSubtab, onNavigate }) => {
                 >
                   <Icon size={16} />
                   <span>{tab.label}</span>
-                  {tab.badge !== null && tab.badge !== undefined && (
-                    <span
-                      style={{
-                        padding: '1px 6px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: '0.68rem',
-                        fontWeight: '700',
-                        backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : '#EEF2F2',
-                        color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)'
-                      }}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
+                  
                 </button>
               );
             })}

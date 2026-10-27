@@ -201,8 +201,7 @@ export function PharmacyView({ initialSubtab, onNavigate }) {
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Badge variant="teal">Module 25</Badge>
-          <Badge variant="neutral">5 Submodules</Badge>
+          <Badge variant="teal">NABH Drug Safety & CDSCO Compliant</Badge>
         </div>
       </div>
 

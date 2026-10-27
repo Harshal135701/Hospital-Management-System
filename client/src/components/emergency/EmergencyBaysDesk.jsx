@@ -16,13 +16,11 @@ import {
 import { Card, Button, Badge } from '../common/UIPrimitives';
 import { BAY_ZONES, TRIAGE_LEVELS } from './emergencyConstants';
 
-export function EmergencyBaysDesk({
-  bays = [],
+export function EmergencyBaysDesk({ bays = [],
   triageList = [],
   loading = false,
   onAllocateBay,
-  onVacateBay
-}) {
+  onVacateBay, showToast }) {
   const [selectedZoneFilter, setSelectedZoneFilter] = useState('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,7 +68,7 @@ export function EmergencyBaysDesk({
   const handleConfirmAllocation = async (e) => {
     e.preventDefault();
     if (!selectedTriageId || !targetBayForAllocation) {
-      alert('Please select a triage patient.');
+      (showToast ? showToast('Please select a triage patient.') : alert('Please select a triage patient.'));
       return;
     }
 
@@ -79,7 +77,7 @@ export function EmergencyBaysDesk({
       await onAllocateBay(selectedTriageId, targetBayForAllocation.id, allocatedBy);
       setShowAllocateModal(false);
     } catch (err) {
-      alert('Failed to allocate bay: ' + err.message);
+      (showToast ? showToast('Failed to allocate bay: ' + err.message) : alert('Failed to allocate bay: ' + err.message));
     } finally {
       setIsSubmitting(false);
     }
@@ -89,7 +87,7 @@ export function EmergencyBaysDesk({
     // Locate triage record associated with this bay
     const trg = triageList.find(t => t.bay_id === bay.id || t.bay_number === bay.bay_number);
     if (!trg && !bay.patient_name) {
-      alert('No active patient assigned to this bay.');
+      (showToast ? showToast('No active patient assigned to this bay.') : alert('No active patient assigned to this bay.'));
       return;
     }
 
@@ -101,7 +99,7 @@ export function EmergencyBaysDesk({
     try {
       await onVacateBay(triageIdToVacate);
     } catch (err) {
-      alert('Failed to release bay: ' + err.message);
+      (showToast ? showToast('Failed to release bay: ' + err.message) : alert('Failed to release bay: ' + err.message));
     }
   };
 
