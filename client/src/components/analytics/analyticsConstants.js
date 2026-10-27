@@ -1,7 +1,10 @@
+import { BarChart3, Database, Activity, FileSpreadsheet } from 'lucide-react';
+
 export const ANALYTICS_SUBMODULES = [
   {
     id: '32.1',
-    label: 'ANALYTICS: Billing, Inventory, Purchase, System',
+    label: 'Domain Analytics',
+    icon: BarChart3,
     badge: 'Real-time',
     description: 'Cross-functional executive analytics: daily collection trends, inventory consumption, vendor lead times, and ASTM telemetry.',
     subsubmodules: [
@@ -13,7 +16,8 @@ export const ANALYTICS_SUBMODULES = [
   },
   {
     id: '32.2',
-    label: 'DATA EXPORT: Billing & System Exports',
+    label: 'Data Export Wizard',
+    icon: Database,
     badge: 'Exports',
     description: 'Generate audited financial ledgers, clinical visit archives, automated SFTP snapshots, and compliance dumps.',
     subsubmodules: [
@@ -24,7 +28,8 @@ export const ANALYTICS_SUBMODULES = [
   },
   {
     id: '32.3',
-    label: 'Executive KPI Dashboard Widgets',
+    label: 'Executive KPI Dashboard',
+    icon: Activity,
     badge: 'Command',
     description: 'Hospital command center: live inpatient census, ALOS, bed turnover rate, NABH clinical quality ratios, and department matrix.',
     subsubmodules: [
@@ -35,7 +40,8 @@ export const ANALYTICS_SUBMODULES = [
   },
   {
     id: '32.4',
-    label: 'Tabular Data Export (Excel / CSV)',
+    label: 'Tabular Data Export',
+    icon: FileSpreadsheet,
     badge: 'CSV / XLSX',
     description: 'Custom column query designer, PHI data masking policies, and direct download to Excel (.xlsx) and CSV files.',
     subsubmodules: [

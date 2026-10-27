@@ -157,45 +157,44 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
         </div>
       )}
 
-      {/* Module Header Card */}
-      <Card
+      {/* Enterprise Header Banner */}
+      <div
         style={{
-          padding: '20px 24px',
+          padding: '24px 28px',
           backgroundColor: '#FFFFFF',
+          borderRadius: 'var(--radius-xl)',
           border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-sm)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '10px',
+                width: '44px',
+                height: '44px',
+                borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--color-bg-pale-aqua)',
                 color: 'var(--color-primary-teal)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(10, 65, 116, 0.15)',
-                flexShrink: 0
+                boxShadow: '0 2px 6px rgba(8, 127, 140, 0.15)'
               }}
             >
-              <BarChart3 size={26} />
+              <BarChart3 size={24} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#0A4174', margin: 0, letterSpacing: '-0.02em' }}>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--color-text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
                   Enterprise Analytics & Comprehensive Data Export
                 </h1>
-                <Badge variant="teal">Module 32</Badge>
+                <Badge variant="teal">Enterprise BI & Data Governance</Badge>
               </div>
-              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: '4px 0 0' }}>
+              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: '4px 0 0', maxWidth: '780px' }}>
                 Executive command telemetry, departmental revenues, clinical quality indicators (NABH), query builder, and tabular Excel / CSV downloads.
               </p>
             </div>
@@ -208,15 +207,15 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 14px',
-                borderRadius: '20px',
+                borderRadius: 'var(--radius-full)',
                 backgroundColor: 'var(--color-bg-pale-aqua)',
-                border: '1px solid rgba(73, 118, 159, 0.35)',
-                fontSize: '0.78rem',
+                border: '1px solid rgba(8, 127, 140, 0.25)',
+                fontSize: 'var(--font-size-xs)',
                 fontWeight: '600',
-                color: '#0A4174'
+                color: 'var(--color-primary-teal)'
               }}
             >
-              <Activity size={14} color="#0A4174" />
+              <Activity size={14} color="var(--color-primary-teal)" />
               <span>Census: <strong>{KPI_SUMMARY.occupiedBeds} / {KPI_SUMMARY.totalBeds} ({KPI_SUMMARY.occupancyRate}%)</strong></span>
             </div>
 
@@ -226,10 +225,10 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 14px',
-                borderRadius: '20px',
+                borderRadius: 'var(--radius-full)',
                 backgroundColor: '#ECFDF5',
                 border: '1px solid #10B981',
-                fontSize: '0.78rem',
+                fontSize: 'var(--font-size-xs)',
                 fontWeight: '600',
                 color: '#065F46'
               }}
@@ -240,142 +239,76 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
           </div>
         </div>
 
-        {/* Clean, Non-Cluttered Dropdown Selectors */}
+        {/* Level 2 Submodule Tabs */}
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
-            paddingTop: '12px',
-            borderTop: '1px solid var(--color-border)'
+            gap: '8px',
+            borderBottom: '1.5px solid var(--color-border)',
+            overflowX: 'auto',
+            paddingBottom: '2px',
+            marginTop: '8px'
           }}
         >
-          {/* Submodule Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Submodule:
-            </span>
-            <select
-              value={activeSubtab}
-              onChange={(e) => handleSelectSubtab(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: '1.5px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
-                color: '#0A4174',
-                fontWeight: '700',
-                fontSize: '0.84rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {ANALYTICS_SUBMODULES.map(sub => (
-                <option key={sub.id} value={sub.id}>
-                  {sub.id} {sub.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Workflow / Subsubmodule Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Workflow:
-            </span>
-            <select
-              value={activeSubsubtab}
-              onChange={(e) => handleSelectSubsubtab(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: '1.5px solid var(--color-border)',
-                backgroundColor: '#FFFFFF',
-                color: '#1E293B',
-                fontWeight: '600',
-                fontSize: '0.84rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {activeSubmoduleObj.subsubmodules.map(ss => (
-                <option key={ss.id} value={ss.id}>
-                  {ss.id} {ss.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Clean Horizontal Submodule Navigation Pills */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
-          {ANALYTICS_SUBMODULES.map(sub => {
-            const isActive = activeSubtab === sub.id;
+          {ANALYTICS_SUBMODULES.map(tab => {
+            const Icon = tab.icon || BarChart3;
+            const isActive = activeSubtab === tab.id;
             return (
               <button
-                key={sub.id}
+                key={tab.id}
                 type="button"
-                onClick={() => handleSelectSubtab(sub.id)}
+                onClick={() => handleSelectSubtab(tab.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '7px 14px',
-                  borderRadius: '20px',
-                  border: isActive ? '1.5px solid #0A4174' : '1px solid var(--color-border)',
-                  backgroundColor: isActive ? '#0A4174' : '#FFFFFF',
-                  color: isActive ? '#FFFFFF' : '#475569',
-                  fontSize: '0.8rem',
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+                  borderTop: isActive ? '2px solid var(--color-primary-teal)' : '2px solid transparent',
+                  borderLeft: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                  borderRight: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                  borderBottom: isActive ? '1px solid #FFFFFF' : 'none',
+                  backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                  color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
                   fontWeight: isActive ? '700' : '500',
+                  fontSize: '0.86rem',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
+                  marginBottom: '-1.5px',
                   transition: 'all 0.15s ease'
                 }}
               >
-                <span>{sub.id}</span>
-                <span>{sub.label}</span>
-                {sub.badge && (
-                  <span
-                    style={{
-                      padding: '1px 6px',
-                      borderRadius: '10px',
-                      fontSize: '0.7rem',
-                      backgroundColor: isActive ? 'rgba(255, 255, 255, 0.22)' : 'var(--color-bg-pale-aqua)',
-                      color: isActive ? '#FFFFFF' : '#0A4174',
-                      fontWeight: '600'
-                    }}
-                  >
-                    {sub.badge}
-                  </span>
-                )}
+                <Icon size={16} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Subsubmodule action badges / pills */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingTop: '4px' }}>
-          {activeSubmoduleObj.subsubmodules.map(ss => {
-            const isSsActive = activeSubsubtab === ss.id;
+        {/* Level 3 Subsubmodule Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Workflows:
+          </span>
+          {ANALYTICS_SUBMODULES.find(s => s.id === activeSubtab)?.subsubmodules.map(subsub => {
+            const isSubsubActive = activeSubsubtab === subsub.id;
             return (
               <button
-                key={ss.id}
+                key={subsub.id}
                 type="button"
-                onClick={() => handleSelectSubsubtab(ss.id)}
+                onClick={() => handleSelectSubsubtab(subsub.id)}
                 style={{
+                  padding: '5px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  border: isSubsubActive ? '1.5px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
+                  backgroundColor: isSubsubActive ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
+                  color: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                  fontWeight: isSubsubActive ? '700' : '500',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '5px 12px',
-                  borderRadius: '6px',
-                  border: isSsActive ? '1px solid #49769F' : '1px solid #E2E8F0',
-                  backgroundColor: isSsActive ? 'var(--color-bg-pale-aqua)' : '#F8FAFC',
-                  color: isSsActive ? '#0A4174' : '#64748B',
-                  fontSize: '0.76rem',
-                  fontWeight: isSsActive ? '700' : '500',
-                  cursor: 'pointer'
+                  gap: '6px'
                 }}
               >
                 <span
@@ -383,15 +316,15 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    backgroundColor: isSsActive ? '#0A4174' : '#CBD5E1'
+                    backgroundColor: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)'
                   }}
                 />
-                <span>{ss.id} {ss.label}</span>
+                {subsub.label}
               </button>
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {/* SUBMODULE 32.1: CROSS-FUNCTIONAL ANALYTICS */}
       {activeSubtab === '32.1' && (

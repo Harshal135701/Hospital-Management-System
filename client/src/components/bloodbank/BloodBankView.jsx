@@ -738,9 +738,6 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-                Submodules 5.1 – 5.6
-              </span>
               <Badge variant="blood" size="sm">Dual-Gated Transfusion Safety</Badge>
             </div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
@@ -905,13 +902,13 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
         }}
       >
         {[
-          { id: 'donors', label: '1. Donors & Screening', icon: Users },
-          { id: 'collection', label: '2. Bag Collection & Barcodes', icon: QrCode },
-          { id: 'inventory', label: '3. Component Inventory & Cold Chain', icon: Layers },
-          { id: 'serology', label: '4. Serology & Safe Release Gate', icon: FlaskConical },
-          { id: 'requisitions', label: '5. Requisitions & Crossmatching', icon: FileCheck },
-          { id: 'handover', label: '6. Issue & Handover Dispatch', icon: Box },
-          { id: 'audit', label: '7. Immutable Audit Trail', icon: ShieldCheck }
+          { id: 'donors', label: 'Donors & Screening', icon: Users },
+          { id: 'collection', label: 'Bag Collection & Barcodes', icon: QrCode },
+          { id: 'inventory', label: 'Component Inventory & Cold Chain', icon: Layers },
+          { id: 'serology', label: 'Serology & Safe Release Gate', icon: FlaskConical },
+          { id: 'requisitions', label: 'Requisitions & Crossmatching', icon: FileCheck },
+          { id: 'handover', label: 'Issue & Handover Dispatch', icon: Box },
+          { id: 'audit', label: 'Immutable Audit Trail', icon: ShieldCheck }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;

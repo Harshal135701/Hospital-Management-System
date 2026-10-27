@@ -469,7 +469,7 @@ export function FinanceView({ initialSubtab = '13.1', onNavigate }) {
             >
               Hospital Finance & Accounts (FAMS)
             </h1>
-            <Badge variant="teal">Module 13</Badge>
+            <Badge variant="teal">Statutory Financial Governance</Badge>
           </div>
           <p
             style={{

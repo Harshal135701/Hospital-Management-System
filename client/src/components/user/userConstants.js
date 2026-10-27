@@ -1,7 +1,10 @@
+import { User, Key, Building2, Shield, Sliders } from 'lucide-react';
+
 export const USER_SUBMODULES = [
   {
     id: '30.1',
     label: 'Manage Profile',
+    icon: User,
     badge: 'KMC-74912',
     description: 'Personal demographics, clinical credentials, digital signature stamp, and emergency contacts.',
     subsubmodules: [
@@ -13,6 +16,7 @@ export const USER_SUBMODULES = [
   {
     id: '30.2',
     label: 'Change Password & Security',
+    icon: Key,
     badge: '2FA Enforced',
     description: 'Credential rotation, password strength policy, TOTP two-factor authentication, and active trusted devices.',
     subsubmodules: [
@@ -24,6 +28,7 @@ export const USER_SUBMODULES = [
   {
     id: '30.3',
     label: 'Switch Active Hospital Branch',
+    icon: Building2,
     badge: '4 Campuses',
     description: 'Multi-campus federation: switch active operational branch, review localized store allocations, and audit logs.',
     subsubmodules: [
@@ -35,6 +40,7 @@ export const USER_SUBMODULES = [
   {
     id: '30.4',
     label: 'Switch Active Role',
+    icon: Shield,
     badge: '3 Assigned',
     description: 'Persona switcher: toggle between Consultant, Head of Department, and On-Call Specialist privileges.',
     subsubmodules: [
@@ -46,6 +52,7 @@ export const USER_SUBMODULES = [
   {
     id: '30.5',
     label: 'User UI Preferences & Theme',
+    icon: Sliders,
     badge: 'Workspace',
     description: 'Custom UI density, clinical high-contrast palette, default startup workspace module, and notification audio.',
     subsubmodules: [

@@ -165,45 +165,44 @@ export function SystemView({ initialSubtab = '29.1', initialSubsubtab = null, on
         </div>
       )}
 
-      {/* Module Header Card */}
-      <Card
+      {/* Enterprise Header Banner */}
+      <div
         style={{
-          padding: '20px 24px',
+          padding: '24px 28px',
           backgroundColor: '#FFFFFF',
+          borderRadius: 'var(--radius-xl)',
           border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-sm)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '10px',
+                width: '44px',
+                height: '44px',
+                borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--color-bg-pale-aqua)',
                 color: 'var(--color-primary-teal)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(10, 65, 116, 0.15)',
-                flexShrink: 0
+                boxShadow: '0 2px 6px rgba(8, 127, 140, 0.15)'
               }}
             >
-              <ShieldCheck size={26} />
+              <ShieldCheck size={24} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#0A4174', margin: 0, letterSpacing: '-0.02em' }}>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--color-text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
                   System Administration & Governance
                 </h1>
-                <Badge variant="teal">Module 29</Badge>
+                <Badge variant="teal">NABH & ISO 27001 Compliant</Badge>
               </div>
-              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: '4px 0 0' }}>
+              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: '4px 0 0', maxWidth: '780px' }}>
                 Enterprise hospital system monitoring: live user sessions, dual clinical & system audit trails, department master sequence setups, event trigger engines, and 32-module RBAC permissions.
               </p>
             </div>
@@ -215,90 +214,30 @@ export function SystemView({ initialSubtab = '29.1', initialSubsubtab = null, on
               alignItems: 'center',
               gap: '6px',
               padding: '6px 14px',
-              borderRadius: '20px',
+              borderRadius: 'var(--radius-full)',
               backgroundColor: 'var(--color-bg-pale-aqua)',
-              border: '1px solid rgba(73, 118, 159, 0.35)',
-              fontSize: '0.78rem',
+              border: '1px solid rgba(8, 127, 140, 0.25)',
+              fontSize: 'var(--font-size-xs)',
               fontWeight: '600',
-              color: '#0A4174'
+              color: 'var(--color-primary-teal)'
             }}
           >
-            <Lock size={14} color="#10B981" />
-            <span>NABH Compliance & Audit Shield Active</span>
+            <ShieldCheck size={16} color="var(--color-success)" />
+            NABH Compliance & Audit Shield Active
           </div>
         </div>
 
-        {/* Clean, Non-Cluttered Dropdown Selectors */}
+        {/* Level 2 Submodule Tabs */}
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
-            paddingTop: '12px',
-            borderTop: '1px solid var(--color-border)'
+            gap: '8px',
+            borderBottom: '1.5px solid var(--color-border)',
+            overflowX: 'auto',
+            paddingBottom: '2px',
+            marginTop: '8px'
           }}
         >
-          {/* Submodule Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Submodule:
-            </span>
-            <select
-              value={activeSubtab}
-              onChange={(e) => handleSelectSubtab(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: '1.5px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-pale-aqua)',
-                color: '#0A4174',
-                fontWeight: '700',
-                fontSize: '0.84rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {SYSTEM_SUBMODULES.map(sub => (
-                <option key={sub.id} value={sub.id}>
-                  {sub.id} {sub.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Workflow / Subsubmodule Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Workflow:
-            </span>
-            <select
-              value={activeSubsubtab}
-              onChange={(e) => handleSelectSubsubtab(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: '1.5px solid var(--color-border)',
-                backgroundColor: '#FFFFFF',
-                color: '#1E293B',
-                fontWeight: '600',
-                fontSize: '0.84rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {activeSubmoduleObj.subsubmodules.map(ss => (
-                <option key={ss.id} value={ss.id}>
-                  {ss.id} {ss.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Clean Horizontal Submodule Navigation Pills */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
           {SYSTEM_SUBMODULES.map(tab => {
             const Icon = tab.icon;
             const isActive = activeSubtab === tab.id;
@@ -310,26 +249,70 @@ export function SystemView({ initialSubtab = '29.1', initialSubsubtab = null, on
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 14px',
-                  borderRadius: '20px',
-                  border: `1.5px solid ${isActive ? '#0A4174' : 'var(--color-border)'}`,
-                  backgroundColor: isActive ? '#0A4174' : '#FFFFFF',
-                  color: isActive ? '#FFFFFF' : '#475569',
-                  fontWeight: isActive ? '700' : '600',
-                  fontSize: '0.78rem',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+                  borderTop: isActive ? '2px solid var(--color-primary-teal)' : '2px solid transparent',
+                  borderLeft: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                  borderRight: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                  borderBottom: isActive ? '1px solid #FFFFFF' : 'none',
+                  backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                  color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                  fontWeight: isActive ? '700' : '500',
+                  fontSize: '0.86rem',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
+                  marginBottom: '-1.5px',
                   transition: 'all 0.15s ease'
                 }}
               >
-                <Icon size={14} color={isActive ? '#FFFFFF' : '#0A4174'} />
-                <span>{tab.shortLabel}</span>
+                <Icon size={16} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
-      </Card>
+
+        {/* Level 3 Subsubmodule Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Workflows:
+          </span>
+          {SYSTEM_SUBMODULES.find(s => s.id === activeSubtab)?.subsubmodules.map(subsub => {
+            const isSubsubActive = activeSubsubtab === subsub.id;
+            return (
+              <button
+                key={subsub.id}
+                type="button"
+                onClick={() => handleSelectSubsubtab(subsub.id)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  border: isSubsubActive ? '1.5px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
+                  backgroundColor: isSubsubActive ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
+                  color: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                  fontWeight: isSubsubActive ? '700' : '500',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: isSubsubActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)'
+                  }}
+                />
+                {subsub.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* SUBMODULE 29.1: VIEW USER SESSIONS */}
       {activeSubtab === '29.1' && (

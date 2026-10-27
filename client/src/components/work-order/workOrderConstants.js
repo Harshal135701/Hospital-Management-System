@@ -1,7 +1,10 @@
+import { Wrench, ShoppingCart, CheckSquare, ClipboardList, CheckCircle, ShieldCheck } from 'lucide-react';
+
 export const WORK_ORDER_SUBMODULES = [
   {
     id: '31.1',
     label: 'Record Work Order',
+    icon: Wrench,
     badge: 'New WO',
     description: 'Log new breakdown tickets, asset tagging, fault severity, clinical downtime, and bio-med dispatch.',
     subsubmodules: [
@@ -13,6 +16,7 @@ export const WORK_ORDER_SUBMODULES = [
   {
     id: '31.2',
     label: 'Record Work Order Requisition',
+    icon: ShoppingCart,
     badge: 'Parts Indent',
     description: 'Indent spare parts, OEM manufacturer engineering requisition, calibration gas, and external technician quotes.',
     subsubmodules: [
@@ -24,6 +28,7 @@ export const WORK_ORDER_SUBMODULES = [
   {
     id: '31.3',
     label: 'Record Work Order Receipt',
+    icon: CheckSquare,
     badge: 'Completion',
     description: 'Record technician work completion, labor hours, scrap handover, and vendor invoice attachment.',
     subsubmodules: [
@@ -34,7 +39,8 @@ export const WORK_ORDER_SUBMODULES = [
   },
   {
     id: '31.4',
-    label: 'View Work Orders / Requisitions / Receipts',
+    label: 'View Work Orders',
+    icon: ClipboardList,
     badge: 'Registers',
     description: 'Master registers, equipment uptime telemetry, cost history, and lifecycle audit registers.',
     subsubmodules: [
@@ -45,7 +51,8 @@ export const WORK_ORDER_SUBMODULES = [
   },
   {
     id: '31.5',
-    label: 'ORDERS: Work Order Approval Workflow',
+    label: 'Orders Approval',
+    icon: CheckCircle,
     badge: 'Approval',
     description: 'Biomedical supervisor approvals, purchase budget release, vendor dispatch confirmation, and rejected review.',
     subsubmodules: [
@@ -56,7 +63,8 @@ export const WORK_ORDER_SUBMODULES = [
   },
   {
     id: '31.6',
-    label: 'RECEIPTS: Work Order Receipt Approval Workflow',
+    label: 'Receipts Approval',
+    icon: ShieldCheck,
     badge: 'Sign-off',
     description: 'Electrical safety analyzer testing, biomedical calibration sign-off, and asset census return to active inventory.',
     subsubmodules: [

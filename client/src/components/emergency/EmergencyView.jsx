@@ -632,7 +632,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 >
                   Emergency Department (EDMS)
                 </h1>
-                <Badge variant="teal">Module 11</Badge>
+                <Badge variant="teal">NABH Level 1 Trauma Care</Badge>
               </div>
               <p
                 style={{

@@ -154,10 +154,10 @@ export function DietView({ initialSubtab = '9.1', onNavigate }) {
   };
 
   const subtabs = [
-    { id: '9.1', label: '9.1 Nutritional Assessment', icon: Scale, badge: assessments.length },
-    { id: '9.2', label: '9.2 Diet Ordering', icon: Utensils, badge: orders.filter(o => o.status === 'active').length },
-    { id: '9.3', label: '9.3 Kitchen Production', icon: ChefHat },
-    { id: '9.4', label: '9.4 Ward Delivery Tracking', icon: Truck, badge: deliveries.filter(d => d.status === 'in_transit').length || null }
+    { id: '9.1', label: 'Nutritional Assessment', icon: Scale, badge: assessments.length },
+    { id: '9.2', label: 'Diet Ordering', icon: Utensils, badge: orders.filter(o => o.status === 'active').length },
+    { id: '9.3', label: 'Kitchen Production', icon: ChefHat },
+    { id: '9.4', label: 'Ward Delivery Tracking', icon: Truck, badge: deliveries.filter(d => d.status === 'in_transit').length || null }
   ];
 
   return (
@@ -179,9 +179,7 @@ export function DietView({ initialSubtab = '9.1', onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-teal)' }}>
-                Submodules 9.1 – 9.4
-              </span>
+              
               <Badge variant="teal" size="sm">Therapeutic Clinical Nutrition</Badge>
             </div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>

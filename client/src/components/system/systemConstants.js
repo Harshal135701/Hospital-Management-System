@@ -18,7 +18,7 @@ import {
 export const SYSTEM_SUBMODULES = [
   {
     id: '29.1',
-    label: 'View User Sessions',
+    label: 'User Sessions',
     shortLabel: 'User Sessions',
     icon: Users,
     badge: 'Live Sessions',
@@ -31,7 +31,7 @@ export const SYSTEM_SUBMODULES = [
   },
   {
     id: '29.2',
-    label: 'AUDIT: System & Clinical Audit Trails',
+    label: 'Audit Trails',
     shortLabel: 'Audit Trails',
     icon: ShieldCheck,
     badge: 'Audit Logs',
@@ -44,7 +44,7 @@ export const SYSTEM_SUBMODULES = [
   },
   {
     id: '29.3',
-    label: 'SETUP: Department & Module Master Setup',
+    label: 'Department & Module Master Setup',
     shortLabel: 'Department Master Setup',
     icon: Settings,
     badge: 'Master Setup',
@@ -57,7 +57,7 @@ export const SYSTEM_SUBMODULES = [
   },
   {
     id: '29.4',
-    label: 'SYSTEM: Event Configuration',
+    label: 'Event Configuration',
     shortLabel: 'Event Configuration',
     icon: Bell,
     badge: 'Event Triggers',

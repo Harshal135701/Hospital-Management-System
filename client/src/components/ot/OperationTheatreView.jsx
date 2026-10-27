@@ -225,7 +225,7 @@ export function OperationTheatreView({ initialSubtab = '23.1', onNavigate }) {
                 >
                   Operation Theatre (OT) Management
                 </h1>
-                <Badge variant="teal">Module 23</Badge>
+                <Badge variant="teal">WHO Surgical Safety Certified</Badge>
               </div>
               <p
                 style={{
