@@ -34,6 +34,7 @@ import { NursingView } from './components/nursing/NursingView';
 import { OpdView } from './components/opd/OpdView';
 import { SubmodulesView } from './components/appointments/SubmodulesView';
 import { RadiologyView } from './components/radiology/RadiologyView';
+import { OperationsView } from './components/operations/OperationsView';
 import { SUBMODULES } from './components/appointments/submoduleRegistry';
 import { PlaceholderView } from './components/common/PlaceholderView';
 import {
@@ -52,6 +53,8 @@ const VALID_ROUTE_BASES = new Set([
   'purchase',
   'appointments',
   'radiology',
+  'operations',
+  'retail-operations',
   'billing',
   'credit-billing',
   'insurance',
@@ -136,6 +139,9 @@ export function App() {
         return <PharmacyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'purchase':
+        if (routeSubtab && (routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.'))) {
+          return <OperationsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
         return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
       case 'appointments':
@@ -143,6 +149,10 @@ export function App() {
 
       case 'radiology':
         return <RadiologyView initialSubtab={routeSubtab || '27.1'} onNavigate={setCurrentRoute} />;
+
+      case 'operations':
+      case 'retail-operations':
+        return <OperationsView initialSubtab={routeSubtab || '28.1'} onNavigate={setCurrentRoute} />;
 
       case 'billing':
         return <BillingView initialSubtab={routeSubtab || '4.1'} onNavigate={setCurrentRoute} />;
@@ -262,7 +272,10 @@ export function App() {
         if (routeSubtab && (routeSubtab.startsWith('27.') || routeSubtab === '27')) {
           return <RadiologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
-        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.') || ['26','28','29','30','31','32'].includes(routeSubtab))) {
+        if (routeSubtab && (routeSubtab.startsWith('28.') || routeSubtab.startsWith('29.') || routeSubtab.startsWith('30.') || routeSubtab.startsWith('31.') || routeSubtab.startsWith('32.') || ['28','29','30','31','32'].includes(routeSubtab))) {
+          return <OperationsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('26.') || routeSubtab === '26')) {
           return <PurchaseView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && (parseInt(routeSubtab, 10) >= 16 && parseInt(routeSubtab, 10) <= 32)) {

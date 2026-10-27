@@ -52,6 +52,7 @@ import { BILLING_GROUPS } from '../billing/billingConstants';
 import { INVENTORY_GROUPS } from '../inventory/inventoryConstants';
 import { IPD_GROUPS } from '../ipd/ipdConstants';
 import { RADIOLOGY_MODULE_GROUPS, ALL_RADIOLOGY_SUBMODULES, stripNumericPrefix as stripRadNumericPrefix } from '../radiology/radiologyConstants';
+import { OPERATIONS_MODULE_GROUPS, ALL_OPERATIONS_SUBMODULES, stripNumericPrefix as stripOpsNumericPrefix } from '../operations/operationsConstants';
 import {
   EMERGENCY_MODULE_GROUPS,
   findEmergencyGroupBySubmoduleId
@@ -145,6 +146,9 @@ export const AppShell = ({
   const [expandedRadiologyGroups, setExpandedRadiologyGroups] = useState({
     'radiology-pacs': true
   });
+  const [expandedOperationsGroups, setExpandedOperationsGroups] = useState({
+    '28': true
+  });
   const [expandedSubmodules, setExpandedSubmodules] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -188,10 +192,14 @@ export const AppShell = ({
         activeSectionId = 'radiology';
         setExpandedRadiologyGroups({ 'radiology-pacs': true });
       }
-      else if (subId.startsWith('26.') || subId.startsWith('28.') || subId.startsWith('29.') || subId.startsWith('30.') || subId.startsWith('31.') || subId.startsWith('32.')) {
-        activeSectionId = 'purchase';
+      else if (subId.startsWith('28.') || subId.startsWith('29.') || subId.startsWith('30.') || subId.startsWith('31.') || subId.startsWith('32.')) {
+        activeSectionId = 'operations';
         const groupNum = subId.split('.')[0];
-        setExpandedPurchaseGroups({ [groupNum]: true });
+        setExpandedOperationsGroups({ [groupNum]: true });
+      }
+      else if (subId.startsWith('26.')) {
+        activeSectionId = 'purchase';
+        setExpandedPurchaseGroups({ '26': true });
       }
     }
 
@@ -229,6 +237,14 @@ export const AppShell = ({
       } else {
         setExpandedRadiologyGroups({ 'radiology-pacs': true });
       }
+    }
+
+    if (activeSectionId === 'operations' || activeSectionId === 'retail-operations') {
+      const parts = typeof currentRoute === 'string' ? currentRoute.split(':') : [];
+      const subId = parts[1] || '28.1';
+      const clean = subId.replace('operations:', '').replace('purchase:', '').replace('submodule:', '');
+      const groupNum = clean.split('.')[0] || '28';
+      setExpandedOperationsGroups({ [groupNum]: true });
     }
 
     if (activeSectionId === 'appointments') {
@@ -375,6 +391,13 @@ export const AppShell = ({
           icon: ScanLine,
           badge: '13 Groups',
           isRadiologyHierarchy: true
+        },
+        {
+          id: 'operations',
+          label: 'Retail Sales & Operations',
+          icon: ShoppingBag,
+          badge: '5 Groups',
+          isOperationsHierarchy: true
         },
         {
           id: 'billing',
@@ -1104,7 +1127,7 @@ export const AppShell = ({
                   const isItemActive = currentRoute === item.id ||
                     (typeof currentRoute === 'string' && currentRoute.startsWith(item.id + ':'));
                   const Icon = item.icon;
-                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || item.isInventoryHierarchy || item.isIpdHierarchy || item.isEmergencyHierarchy || item.isOtHierarchy || item.isPurchaseHierarchy || item.isRadiologyHierarchy || (item.subItems && item.subItems.length > 0));
+                  const hasSubItems = Boolean(item.isAppointmentHierarchy || item.isBillingHierarchy || item.isInventoryHierarchy || item.isIpdHierarchy || item.isEmergencyHierarchy || item.isOtHierarchy || item.isPurchaseHierarchy || item.isRadiologyHierarchy || item.isOperationsHierarchy || (item.subItems && item.subItems.length > 0));
                   const isExpanded = Boolean(
                     expandedSectionsManual[item.id] !== undefined
                       ? expandedSectionsManual[item.id]
@@ -1166,6 +1189,21 @@ export const AppShell = ({
                           setExpandedRadiologyGroups({ 'radiology-pacs': true });
                         } else {
                           setExpandedSectionsManual(prev => ({ ...prev, radiology: !isExpanded }));
+                        }
+                      }
+                      return;
+                    }
+
+                    if (item.isOperationsHierarchy) {
+                      if (effectiveCollapsed) {
+                        handleSelectNav('operations:28.1');
+                      } else {
+                        if (currentRoute !== 'operations' && !currentRoute.startsWith('operations:')) {
+                          handleSelectNav('operations:28.1');
+                          setExpandedSectionsManual(prev => ({ ...prev, operations: true }));
+                          setExpandedOperationsGroups({ '28': true });
+                        } else {
+                          setExpandedSectionsManual(prev => ({ ...prev, operations: !isExpanded }));
                         }
                       }
                       return;
@@ -2716,8 +2754,183 @@ export const AppShell = ({
                         </div>
                       )}
 
+                      {/* Expandable Retail Sales & Operations Complete 5 Groups Hierarchy (Matching Appointment Reference Exactly) */}
+                      {item.isOperationsHierarchy && isExpanded && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            marginTop: '4px',
+                            marginLeft: '10px',
+                            paddingLeft: '8px',
+                            borderLeft: '1.5px solid rgba(73, 118, 159, 0.45)',
+                            maxHeight: '360px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#49769F transparent'
+                          }}
+                        >
+                          {OPERATIONS_MODULE_GROUPS.map((group) => {
+                            const isGroupExpanded = Boolean(expandedOperationsGroups[group.id]);
+                            const isGroupActive =
+                              currentRoute === `operations:group:${group.id}` ||
+                              (typeof currentRoute === 'string' &&
+                                group.submodules.some(
+                                  (s) =>
+                                    currentRoute === s.routeId ||
+                                    currentRoute === `operations:${s.id}` ||
+                                    currentRoute === `purchase:${s.id}` ||
+                                    (s.id === '28.1' && (currentRoute === 'operations' || currentRoute === 'retail-operations')) ||
+                                    currentRoute === `submodule:${s.id}`
+                                ));
+
+                            return (
+                              <div key={group.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                {/* Group Header Row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: isGroupActive ? '#49769F' : 'transparent',
+                                    color: isGroupActive ? '#FFFFFF' : '#D1E4F5',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isGroupActive ? '600' : '500',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                  className="group-tree-row"
+                                >
+                                  {/* Click group title -> Navigates to first submodule & opens group */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const firstSub = group.submodules[0];
+                                      if (firstSub) {
+                                        handleSelectNav(firstSub.routeId || `operations:${firstSub.id}`);
+                                      }
+                                      setExpandedOperationsGroups((prev) => ({ ...prev, [group.id]: true }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: 0,
+                                      textAlign: 'left',
+                                      color: 'inherit',
+                                      fontWeight: 'inherit',
+                                      fontSize: 'inherit',
+                                      cursor: 'pointer',
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={stripOpsNumericPrefix(group.label)}
+                                  >
+                                    {stripOpsNumericPrefix(group.label)}
+                                  </button>
+
+                                  {/* Toggle Group Chevron */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedOperationsGroups((prev) => ({
+                                        ...prev,
+                                        [group.id]: !isGroupExpanded
+                                      }));
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '2px',
+                                      color: 'rgba(255, 255, 255, 0.7)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      flexShrink: 0
+                                    }}
+                                    title={isGroupExpanded ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                                    aria-label={isGroupExpanded ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                                  >
+                                    {isGroupExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                  </button>
+                                </div>
+
+                                {/* Nested Sub-modules (Simple non-numerical bullet points matching Appointment reference) */}
+                                {isGroupExpanded && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '1px',
+                                      marginLeft: '8px',
+                                      paddingLeft: '8px',
+                                      borderLeft: '1px solid rgba(73, 118, 159, 0.35)',
+                                      marginTop: '2px',
+                                      marginBottom: '4px'
+                                    }}
+                                  >
+                                    {group.submodules.map((sub) => {
+                                      const isSubActive =
+                                        currentRoute === sub.routeId ||
+                                        currentRoute === `operations:${sub.id}` ||
+                                        currentRoute === `purchase:${sub.id}` ||
+                                        (sub.id === '28.1' && (currentRoute === 'operations' || currentRoute === 'retail-operations')) ||
+                                        currentRoute === `submodule:${sub.id}`;
+
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={sub.id}
+                                          onClick={() => handleSelectNav(sub.routeId || `operations:${sub.id}`)}
+                                          className={`nav-subitem ${isSubActive ? 'nav-subitem-active' : ''}`}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '4px 6px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            backgroundColor: isSubActive ? 'rgba(73, 118, 159, 0.55)' : 'transparent',
+                                            color: isSubActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
+                                            fontWeight: isSubActive ? '600' : '400',
+                                            fontSize: '0.73rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.12s ease'
+                                          }}
+                                          title={stripOpsNumericPrefix(sub.label)}
+                                        >
+                                          {/* Simple non-numerical bullet point matching Appointment */}
+                                          <span
+                                            style={{
+                                              width: '4px',
+                                              height: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isSubActive ? '#FFFFFF' : 'rgba(73, 118, 159, 0.7)',
+                                              flexShrink: 0
+                                            }}
+                                          />
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {stripOpsNumericPrefix(sub.label)}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Expandable Sub-Navigation for other modules (e.g. Clinical) */}
-                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && !item.isInventoryHierarchy && !item.isIpdHierarchy && !item.isEmergencyHierarchy && !item.isOtHierarchy && !item.isPurchaseHierarchy && !item.isRadiologyHierarchy && hasSubItems && isExpanded && (
+                      {!item.isAppointmentHierarchy && !item.isBillingHierarchy && !item.isInventoryHierarchy && !item.isIpdHierarchy && !item.isEmergencyHierarchy && !item.isOtHierarchy && !item.isPurchaseHierarchy && !item.isRadiologyHierarchy && !item.isOperationsHierarchy && hasSubItems && isExpanded && (
                         <div
                           style={{
                             display: 'flex',
