@@ -76,6 +76,12 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
 
   // State: Profile Form
   const [profile, setProfile] = useState(INITIAL_USER_PROFILE);
+  const [delegationForm, setDelegationForm] = useState({
+    delegatee: 'Dr. Shruthi Hegde (Consultant Cardiologist - Reg: KMC-88123)',
+    fromDate: '2026-10-28',
+    toDate: '2026-11-04',
+    notes: ''
+  });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileDraft, setProfileDraft] = useState(INITIAL_USER_PROFILE);
 
@@ -353,7 +359,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: 0 }}>
-                    30.1.1 Personal & Professional Clinical Profile
+                    Personal & Professional Clinical Profile
                   </h3>
                   <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>
                     NABH practitioner verified credentials and medical council registration data.
@@ -559,7 +565,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.1.2' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.1.2 Digital Prescription Signature & Clinical Seal
+                Digital Prescription Signature & Clinical Seal
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Authenticated cryptographic signature stamped onto e-prescriptions, lab verifications, and discharge summaries.
@@ -668,7 +674,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.1.3' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.1.3 Emergency Contact & Next of Kin Registry
+                Emergency Contact & Next of Kin Registry
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Mandatory hospital HR record for urgent medical communications, night duty emergencies, and trauma notifications.
@@ -681,7 +687,13 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   </label>
                   <input
                     type="text"
-                    defaultValue={profile.emergencyContact.name}
+                    name="contact_person_name"
+                    placeholder="Full Name"
+                    value={profile.emergencyContact.name}
+                    onChange={(e) => setProfile(prev => ({
+                      ...prev,
+                      emergencyContact: { ...prev.emergencyContact, name: e.target.value }
+                    }))}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', fontWeight: '600' }}
                   />
                 </div>
@@ -691,7 +703,13 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   </label>
                   <input
                     type="text"
-                    defaultValue={profile.emergencyContact.relation}
+                    name="contact_relationship"
+                    placeholder="e.g. Spouse, Father, Sibling"
+                    value={profile.emergencyContact.relation}
+                    onChange={(e) => setProfile(prev => ({
+                      ...prev,
+                      emergencyContact: { ...prev.emergencyContact, relation: e.target.value }
+                    }))}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', fontWeight: '600' }}
                   />
                 </div>
@@ -701,7 +719,13 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   </label>
                   <input
                     type="text"
-                    defaultValue={profile.emergencyContact.mobile}
+                    name="contact_primary_mobile"
+                    placeholder="+91 98450 00000"
+                    value={profile.emergencyContact.mobile}
+                    onChange={(e) => setProfile(prev => ({
+                      ...prev,
+                      emergencyContact: { ...prev.emergencyContact, mobile: e.target.value }
+                    }))}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', fontWeight: '600' }}
                   />
                 </div>
@@ -711,7 +735,13 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   </label>
                   <input
                     type="text"
-                    defaultValue={profile.emergencyContact.alternateMobile}
+                    name="contact_alt_mobile"
+                    placeholder="+91 8182 220000"
+                    value={profile.emergencyContact.alternateMobile}
+                    onChange={(e) => setProfile(prev => ({
+                      ...prev,
+                      emergencyContact: { ...prev.emergencyContact, alternateMobile: e.target.value }
+                    }))}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', fontWeight: '600' }}
                   />
                 </div>
@@ -721,7 +751,13 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   </label>
                   <input
                     type="text"
-                    defaultValue={profile.emergencyContact.residentialAddress}
+                    name="contact_address"
+                    placeholder="Residential address"
+                    value={profile.emergencyContact.residentialAddress}
+                    onChange={(e) => setProfile(prev => ({
+                      ...prev,
+                      emergencyContact: { ...prev.emergencyContact, residentialAddress: e.target.value }
+                    }))}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)', fontWeight: '600' }}
                   />
                 </div>
@@ -748,7 +784,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {(activeSubsubtab === '30.2.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.2.1 Password Reset & 90-Day Rotation Policy
+                Password Reset & 90-Day Rotation Policy
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Complying with NABH Digital Health Guidelines: Passwords expire every 90 days and require min 10 characters with mixed cases and symbols.
@@ -842,7 +878,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: 0 }}>
-                    30.2.2 Two-Factor Authentication (2FA / TOTP)
+                    Two-Factor Authentication (2FA / TOTP)
                   </h3>
                   <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>
                     Time-based One-Time Password via Google Authenticator, Microsoft Authenticator, or SMS OTP.
@@ -897,7 +933,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.2.3' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.2.3 Registered Trusted Workstations & Clinical Tablets
+                Registered Trusted Workstations & Clinical Tablets
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
                 Hardware fingerprints authorized to access Sarji EMR and LIS workstations.
@@ -977,7 +1013,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {(activeSubsubtab === '30.3.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.3.1 Sarji Group Hospital Network — Active Campus Selection
+                Sarji Group Hospital Network — Active Campus Selection
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Switching active branch dynamically re-routes your active ward rosters, local pharmacy stores, and bed matrices.
@@ -1061,7 +1097,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.3.2' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.3.2 Department & Ward Accessibility Matrix — {currentBranch.name}
+                Department & Ward Accessibility Matrix — {currentBranch.name}
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
                 Physical wards, operation theatres, and diagnostic suites unlocked for your clinician ID at this campus.
@@ -1140,7 +1176,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {(activeSubsubtab === '30.4.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.4.1 Assigned Persona Roles & Privilege Switcher
+                Assigned Persona Roles & Privilege Switcher
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Seamlessly toggle between Senior Consultant clinician duties, Head of Department approvals, and Acute Trauma overrides.
@@ -1207,7 +1243,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.4.2' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.4.2 Temporary Delegated Authority (Acting Charge Handover)
+                Temporary Delegated Authority (Acting Charge Handover)
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Delegate clinical sign-off, ward rounds authorization, or department indents to a peer doctor during annual leave or conference travel.
@@ -1218,7 +1254,11 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
                     Delegate Authority To (Clinician)
                   </label>
-                  <select style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+                  <select
+                    value={delegationForm.delegatee}
+                    onChange={(e) => setDelegationForm(prev => ({ ...prev, delegatee: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                  >
                     <option>Dr. Shruthi Hegde (Consultant Cardiologist - Reg: KMC-88123)</option>
                     <option>Dr. Vinay Kumar (Associate Consultant - Reg: KMC-99412)</option>
                   </select>
@@ -1228,14 +1268,24 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
                     Delegation Effective From
                   </label>
-                  <input type="date" defaultValue="2026-10-28" style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }} />
+                  <input
+                    type="date"
+                    value={delegationForm.fromDate}
+                    onChange={(e) => setDelegationForm(prev => ({ ...prev, fromDate: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                  />
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
                     Delegation Effective Until
                   </label>
-                  <input type="date" defaultValue="2026-11-04" style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }} />
+                  <input
+                    type="date"
+                    value={delegationForm.toDate}
+                    onChange={(e) => setDelegationForm(prev => ({ ...prev, toDate: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                  />
                 </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -1245,6 +1295,8 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
                   <textarea
                     rows={3}
                     placeholder="Provide specific instructions regarding unstable CICU inpatients and pending lab cultures..."
+                    value={delegationForm.notes}
+                    onChange={(e) => setDelegationForm(prev => ({ ...prev, notes: e.target.value }))}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
                   />
                 </div>
@@ -1266,7 +1318,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.4.3' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.4.3 Active Persona Privilege Matrix Inspector
+                Active Persona Privilege Matrix Inspector
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
                 Current operative authorization for: <strong>{currentRole.name}</strong> ({currentRole.department}).
@@ -1299,7 +1351,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {(activeSubsubtab === '30.5.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.5.1 Visual Theme Palette & Display Density
+                Visual Theme Palette & Display Density
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Tailor the workstation color scheme and data density for high-throughput OPD cabins or dark OT suites.
@@ -1390,7 +1442,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.5.2' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.5.2 Default Startup Module & Clinical Workspace
+                Default Startup Module & Clinical Workspace
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Choose which hospital station opens immediately upon biometric or password workstation login.
@@ -1437,7 +1489,7 @@ export function UserView({ initialSubtab = '30.1', initialSubsubtab = null, onNa
           {activeSubsubtab === '30.5.3' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                30.5.3 Auditory Chimes & Clinical Alarm Audio
+                Auditory Chimes & Clinical Alarm Audio
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Configure sound frequency and speaker output for life-critical alerts vs standard notifications.

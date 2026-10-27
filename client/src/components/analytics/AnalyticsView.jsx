@@ -333,7 +333,7 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
           {(activeSubsubtab === '32.1.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                32.1.1 Hospital Billing & Revenue Stream Analytics
+                Hospital Billing & Revenue Stream Analytics
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Multi-channel settlement breakdown: TPA cashless, Cash/UPI POS, and corporate insurance claims.
@@ -378,7 +378,7 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
           {activeSubsubtab === '32.1.2' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                32.1.2 Pharmacy Stock & Material Consumption Telemetry
+                Pharmacy Stock & Material Consumption Telemetry
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
                 Real-time stock turnover rates, 90-day expiry forecast, and buffer threshold warnings.
@@ -432,7 +432,7 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
       {activeSubtab === '32.2' && (
         <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-            32.2 Billing & System Master Data Export Wizard
+            Billing & System Master Data Export Wizard
           </h3>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
             Generate authenticated financial ledgers, clinical summaries, or schedule automated midnight SFTP cloud archives.
@@ -551,7 +551,7 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
           {/* Departmental Performance Matrix */}
           <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 16px' }}>
-              32.3.3 Departmental Volume, Revenue Share & Bed Occupancy
+              Departmental Volume, Revenue Share & Bed Occupancy
             </h3>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
@@ -591,7 +591,7 @@ export function AnalyticsView({ initialSubtab = '32.1', initialSubsubtab = null,
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: 0 }}>
-                32.4 Custom Column Query Builder & Direct File Download
+                Custom Column Query Builder & Direct File Download
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>
                 Select required data attributes, toggle HIPAA/NABH PHI masking, and export to Excel (.xlsx) or CSV.

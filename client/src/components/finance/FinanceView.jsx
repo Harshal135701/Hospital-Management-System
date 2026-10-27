@@ -569,21 +569,7 @@ export function FinanceView({ initialSubtab = '13.1', onNavigate }) {
             >
               <Icon size={16} />
               <span>{sub.label}</span>
-              {badgeText && (
-                <span
-                  style={{
-                    backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : '#F1F5F9',
-                    color: isActive ? 'var(--color-primary-teal)' : '#64748B',
-                    padding: '1px 7px',
-                    borderRadius: '10px',
-                    fontSize: '0.70rem',
-                    fontWeight: '700',
-                    marginLeft: '4px'
-                  }}
-                >
-                  {badgeText}
-                </span>
-              )}
+              
             </button>
           );
         })}

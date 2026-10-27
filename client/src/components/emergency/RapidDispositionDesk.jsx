@@ -17,14 +17,12 @@ import {
 import { Card, Button, Badge } from '../common/UIPrimitives';
 import { DISPOSITION_DESTINATIONS, TRIAGE_LEVELS } from './emergencyConstants';
 
-export function RapidDispositionDesk({
-  dispositions = [],
+export function RapidDispositionDesk({ dispositions = [],
   triageList = [],
   doctors = [],
   activeTriagePatient = null,
   loading = false,
-  onCreateDisposition
-}) {
+  onCreateDisposition, showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDispositionModal, setShowDispositionModal] = useState(false);
   const [selectedTriageId, setSelectedTriageId] = useState(activeTriagePatient?.id || (triageList[0]?.id || ''));
@@ -68,11 +66,11 @@ export function RapidDispositionDesk({
   const handleSubmitDisposition = async (e) => {
     e.preventDefault();
     if (!selectedTriageId) {
-      alert('Please select a triage patient for disposition.');
+      (showToast ? showToast('Please select a triage patient for disposition.') : alert('Please select a triage patient for disposition.'));
       return;
     }
     if (!formData.handover_summary) {
-      alert('Please record the clinical handover summary.');
+      (showToast ? showToast('Please record the clinical handover summary.') : alert('Please record the clinical handover summary.'));
       return;
     }
 
@@ -81,7 +79,7 @@ export function RapidDispositionDesk({
       await onCreateDisposition(selectedTriageId, formData);
       setShowDispositionModal(false);
     } catch (err) {
-      alert('Failed to record rapid disposition: ' + err.message);
+      (showToast ? showToast('Failed to record rapid disposition: ' + err.message) : alert('Failed to record rapid disposition: ' + err.message));
     } finally {
       setFormSubmitting(false);
     }

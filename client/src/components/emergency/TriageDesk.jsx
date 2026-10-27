@@ -20,16 +20,14 @@ import {
 import { Card, Button, Badge } from '../common/UIPrimitives';
 import { TRIAGE_LEVELS, ARRIVAL_MODES } from './emergencyConstants';
 
-export function TriageDesk({
-  triageList = [],
+export function TriageDesk({ triageList = [],
   bays = [],
   patients = [],
   doctors = [],
   loading = false,
   onCreateTriage,
   onNavigateSubtab,
-  onSelectTriagePatient
-}) {
+  onSelectTriagePatient, showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLevelFilter, setSelectedLevelFilter] = useState('ALL');
   const [selectedModeFilter, setSelectedModeFilter] = useState('ALL');
@@ -105,7 +103,7 @@ export function TriageDesk({
   const handleSubmitTriage = async (e) => {
     e.preventDefault();
     if (!formData.chief_complaint) {
-      alert('Please specify the chief complaint.');
+      (showToast ? showToast('Please specify the chief complaint.') : alert('Please specify the chief complaint.'));
       return;
     }
 
@@ -132,7 +130,7 @@ export function TriageDesk({
         triaged_by: 'Staff Nurse on Duty'
       });
     } catch (err) {
-      alert('Error creating triage entry: ' + err.message);
+      (showToast ? showToast('Error creating triage entry: ' + err.message) : alert('Error creating triage entry: ' + err.message));
     } finally {
       setFormSubmitting(false);
     }

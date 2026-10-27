@@ -422,7 +422,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           {(activeSubsubtab === '31.1.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                31.1.1 Log New Biomedical Breakdown / Maintenance Work Order
+                Log New Biomedical Breakdown / Maintenance Work Order
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Generates hospital WO ticket with instant alert dispatch to Biomedical Engineering and Department In-Charge.
@@ -531,7 +531,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           {activeSubsubtab === '31.1.2' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                31.1.2 Biomedical Asset Barcode Lookup & Warranty Contracts
+                Biomedical Asset Barcode Lookup & Warranty Contracts
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
                 Scan physical asset barcode sticker or search equipment to verify active AMC/CMC service coverage.
@@ -559,7 +559,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           {activeSubsubtab === '31.1.3' && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                31.1.3 Clinical Isolation & Lock-Out Tag-Out (LOTO) Protocol
+                Clinical Isolation & Lock-Out Tag-Out (LOTO) Protocol
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
                 Mandatory pre-service biomedical isolation checklist to prevent accidental clinical utilization during repairs.
@@ -590,7 +590,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           {(activeSubsubtab === '31.2.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                31.2.1 Record Work Order Spare Parts Requisition & Store Indent
+                Record Work Order Spare Parts Requisition & Store Indent
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Issue indent to Central Engineering Store or Procurement Desk for replacement components.
@@ -753,7 +753,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           {(activeSubsubtab === '31.3.1' || !activeSubsubtab) && (
             <Card style={{ padding: '24px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: '0 0 8px' }}>
-                31.3.1 Record Work Order Service Completion Receipt
+                Record Work Order Service Completion Receipt
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px' }}>
                 Log repair completion details, technician labor hours, replaced parts cost, and electrical calibration verification.
@@ -855,7 +855,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: 0 }}>
-                31.4 Work Orders, Requisitions & Service Receipts Register
+                Work Orders, Requisitions & Service Receipts Register
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>
                 Live filterable master list of hospital equipment maintenance tickets.
@@ -964,7 +964,7 @@ export function WorkOrderView({ initialSubtab = '31.1', initialSubsubtab = null,
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0A4174', margin: 0 }}>
-                31.5 Supervisor Approval Queue (Screenshot 4 Reference)
+                Supervisor Approval Queue (Screenshot 4 Reference)
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>
                 Review and authorize maintenance budget releases, repair scopes, or reject unverified breakdown orders.

@@ -740,20 +740,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 >
                   <Icon size={16} color={isActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)'} />
                   <span>{submodule.shortLabel}</span>
-                  {badgeText && (
-                    <span
-                      style={{
-                        backgroundColor: isActive ? 'var(--color-bg-pale-aqua)' : 'var(--color-border-subtle)',
-                        color: isActive ? 'var(--color-primary-teal)' : 'var(--color-text-muted)',
-                        padding: '1px 7px',
-                        borderRadius: '10px',
-                        fontSize: '0.70rem',
-                        fontWeight: '700'
-                      }}
-                    >
-                      {badgeText}
-                    </span>
-                  )}
+                  
                 </button>
               );
             })}
@@ -771,6 +758,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 onCreateTriage={handleCreateTriage}
                 onNavigateSubtab={handleSelectSubtab}
                 onSelectTriagePatient={setSelectedTriagePatient}
+                showToast={showToast}
               />
             )}
 
@@ -782,6 +770,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 doctors={doctors}
                 loading={loading}
                 onCreateMlc={handleCreateMlc}
+                showToast={showToast}
               />
             )}
 
@@ -792,6 +781,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 loading={loading}
                 onAllocateBay={handleAllocateBay}
                 onVacateBay={handleVacateBay}
+                showToast={showToast}
               />
             )}
 
@@ -803,6 +793,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 activeTriagePatient={selectedTriagePatient}
                 loading={loading}
                 onCreateTraumaChart={handleCreateTraumaChart}
+                showToast={showToast}
               />
             )}
 
@@ -814,6 +805,7 @@ export function EmergencyView({ initialSubtab = '11.1', onNavigate }) {
                 activeTriagePatient={selectedTriagePatient}
                 loading={loading}
                 onCreateDisposition={handleCreateDisposition}
+                showToast={showToast}
               />
             )}
           </div>

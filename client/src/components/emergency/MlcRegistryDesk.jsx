@@ -17,14 +17,12 @@ import {
 import { Card, Button, Badge } from '../common/UIPrimitives';
 import { MLC_CASE_TYPES } from './emergencyConstants';
 
-export function MlcRegistryDesk({
-  mlcList = [],
+export function MlcRegistryDesk({ mlcList = [],
   triageList = [],
   patients = [],
   doctors = [],
   loading = false,
-  onCreateMlc
-}) {
+  onCreateMlc, showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCaseTypeFilter, setSelectedCaseTypeFilter] = useState('ALL');
   const [showNewMlcModal, setShowNewMlcModal] = useState(false);
@@ -66,11 +64,11 @@ export function MlcRegistryDesk({
   const handleSubmitMlc = async (e) => {
     e.preventDefault();
     if (!formData.injury_details) {
-      alert('Please specify the clinical injury details.');
+      (showToast ? showToast('Please specify the clinical injury details.') : alert('Please specify the clinical injury details.'));
       return;
     }
     if (!formData.police_station) {
-      alert('Please provide the jurisdictional police station name.');
+      (showToast ? showToast('Please provide the jurisdictional police station name.') : alert('Please provide the jurisdictional police station name.'));
       return;
     }
 
@@ -97,7 +95,7 @@ export function MlcRegistryDesk({
         registered_by: 'Dr. Alok Verma, MD (Emergency Medicine)'
       });
     } catch (err) {
-      alert('Error registering MLC: ' + err.message);
+      (showToast ? showToast('Error registering MLC: ' + err.message) : alert('Error registering MLC: ' + err.message));
     } finally {
       setFormSubmitting(false);
     }

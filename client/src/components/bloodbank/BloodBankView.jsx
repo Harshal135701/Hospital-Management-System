@@ -103,6 +103,11 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
     emergency_contact_phone: ''
   });
   const [donorFormError, setDonorFormError] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 4500);
+  };
 
   // Screening Modal State
   const [isScreeningModalOpen, setIsScreeningModalOpen] = useState(false);
@@ -653,7 +658,7 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
     const comp = components.find(c => c.component_barcode === handoverTargetReq.crossmatch?.component_barcode) ||
                  components.find(c => c.status === 'reserved' || c.status === 'safe_for_release');
     if (!comp) {
-      alert('Compatible unit not found in inventory.');
+      showToast('Compatible unit not found in inventory.');
       return;
     }
 
@@ -672,9 +677,9 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
       });
       await loadBloodBankData();
       setIsHandoverModalOpen(false);
-      alert('Blood unit handover successfully verified and dispatched.');
+      showToast('Blood unit handover successfully verified and dispatched.');
     } catch (err) {
-      alert(`Handover Blocked: ${err.message}`);
+      showToast(`Handover Blocked: ${err.message}`);
     }
   };
 
@@ -682,17 +687,17 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
   const handleEmergencySubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!emergencyForm.requisitionId) {
-      alert('Please select a target requisition.');
+      showToast('Please select a target requisition.');
       return;
     }
     const req = requisitions.find(r => r.id === emergencyForm.requisitionId);
     if (!req) {
-      alert('Selected requisition not found.');
+      showToast('Selected requisition not found.');
       return;
     }
     const comp = components.find(c => c.status === 'safe_for_release') || components[0];
     if (!comp) {
-      alert('No blood component in safe_for_release status available in inventory.');
+      showToast('No blood component in safe_for_release status available in inventory.');
       return;
     }
 
@@ -712,9 +717,9 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
       });
       await loadBloodBankData();
       setIsEmergencyModalOpen(false);
-      alert('Emergency exception verified and logged with immutable audit record.');
+      showToast('Emergency exception verified and logged with immutable audit record.');
     } catch (err) {
-      alert(`Emergency Release Blocked: ${err.message}`);
+      showToast(`Emergency Release Blocked: ${err.message}`);
     }
   };
 
@@ -785,7 +790,7 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
                 setSelectedDonorForScreening(donors[0]);
                 setIsScreeningModalOpen(true);
               } else {
-                alert('No donors registered yet. Please click "Register Donor" first.');
+                showToast('No donors registered yet. Please click Register Donor first.');
               }
             }}
           >
@@ -1830,7 +1835,7 @@ export const BloodBankView = ({ initialTab = 'donors', initialSubtab = 'donors',
                     setHandoverTargetReq(readyReq);
                     setIsHandoverModalOpen(true);
                   } else {
-                    alert('No pending compatible requisitions available for issue at this moment.');
+                    showToast('No pending compatible requisitions available for issue at this moment.');
                   }
                 }}
               >
