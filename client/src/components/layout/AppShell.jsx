@@ -1113,13 +1113,16 @@ export const AppShell = ({
         <div
           style={{
             minHeight: '74px',
-            padding: effectiveCollapsed ? '10px 8px' : '10px 12px',
+            padding: effectiveCollapsed ? '12px 0 10px' : '10px 12px',
             display: 'flex',
+            flexDirection: effectiveCollapsed ? 'column' : 'row',
             alignItems: 'center',
             justifyContent: effectiveCollapsed ? 'center' : 'space-between',
             borderBottom: '1px solid rgba(73, 118, 159, 0.35)',
             backgroundColor: '#0A4174',
-            flexShrink: 0
+            flexShrink: 0,
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           {!effectiveCollapsed ? (
@@ -1148,7 +1151,7 @@ export const AppShell = ({
                 title="Sarji Hospital Dashboard"
               >
                 <img
-                  src={sarjiLogo}
+                  src="/sarji-logo.png"
                   alt="Sarji Group of Hospitals"
                   style={{
                     height: '100%',
@@ -1206,35 +1209,50 @@ export const AppShell = ({
               </div>
             </>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                gap: '8px'
+              }}
+            >
               <div
                 onClick={() => handleSelectNav('dashboard')}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectNav('dashboard'); }}
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: '42px',
+                  height: '42px',
                   borderRadius: '8px',
                   backgroundColor: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
-                  padding: '3px',
+                  border: '1px solid #FFFFFF',
+                  padding: '4px',
                   overflow: 'hidden',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  margin: '0 auto'
                 }}
                 title="Sarji Hospital Dashboard"
               >
                 <img
-                  src={sarjiLogo}
-                  alt="Sarji"
+                  src="/Minize-Sidbar-Icon.png"
+                  alt="Sarji Hospital"
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'left center'
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    objectPosition: 'center',
+                    display: 'block'
                   }}
                 />
               </div>
@@ -1252,7 +1270,8 @@ export const AppShell = ({
                   color: '#FFFFFF',
                   border: '1px solid #49769F',
                   backgroundColor: 'rgba(73, 118, 159, 0.35)',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  margin: '0 auto'
                 }}
                 title="Expand sidebar"
                 aria-label="Expand sidebar"
