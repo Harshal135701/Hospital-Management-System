@@ -12,6 +12,7 @@ import { AppointmentsView } from './components/appointments/AppointmentsView';
 import { ClinicalsView } from './components/clinicals/ClinicalsView';
 import { BillingView } from './components/billing/BillingView';
 import { CreditBillingView } from './components/credit-billing/CreditBillingView';
+import { AndrologyView } from './components/andrology/AndrologyView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { DepartmentsView } from './components/departments/DepartmentsView';
@@ -62,6 +63,7 @@ const VALID_ROUTE_BASES = new Set([
   'billing',
   'credit-billing',
   'insurance',
+  'andrology',
   'clinical',
   'bloodbank',
   'daycare',
@@ -184,6 +186,9 @@ export function App() {
       case 'insurance':
         return <CreditBillingView initialSubtab={routeSubtab || '7.1'} onNavigate={setCurrentRoute} />;
 
+      case 'andrology':
+        return <AndrologyView initialSubtab={routeSubtab || '1.1'} onNavigate={setCurrentRoute} />;
+
       case 'clinical':
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
 
@@ -253,7 +258,10 @@ export function App() {
         return <IpdView initialSubtab={routeSubtab || '17.1'} onNavigate={setCurrentRoute} />;
 
       case 'submodule': {
-        if (routeSubtab && (routeSubtab.startsWith('1.') || routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
+        if (routeSubtab && routeSubtab.startsWith('1.')) {
+          return <AndrologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && (routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('5.')) {

@@ -166,7 +166,8 @@ export const AppShell = ({
     if (baseRoute === 'submodule') {
       const parts = currentRoute.split(':');
       const subId = parts[1] || '';
-      if (subId.startsWith('1.') || subId.startsWith('2.') || subId.startsWith('4.')) activeSectionId = 'billing';
+      if (subId.startsWith('1.')) activeSectionId = 'andrology';
+      else if (subId.startsWith('2.') || subId.startsWith('4.')) activeSectionId = 'billing';
       else if (subId.startsWith('5.')) activeSectionId = 'bloodbank';
       else if (subId.startsWith('7.')) activeSectionId = 'credit-billing';
       else if (subId.startsWith('8.')) activeSectionId = 'daycare';
@@ -355,7 +356,7 @@ export const AppShell = ({
           id: 'patients',
           label: 'Patient / Visit',
           icon: Users,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
             { id: 'patients:24.1', label: 'New Patient Registration' },
             { id: 'patients:24.2', label: 'UHID Generation & Smart Card Print' },
@@ -368,7 +369,7 @@ export const AppShell = ({
           id: 'pharmacy',
           label: 'Pharmacy',
           icon: Pill,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
             { id: 'pharmacy:25.1', label: 'Prescription Dispensing (OPD & IPD)' },
             { id: 'pharmacy:25.2', label: 'Medicine Master & Salt Information' },
@@ -381,55 +382,66 @@ export const AppShell = ({
           id: 'purchase',
           label: 'Purchase',
           icon: ShoppingBag,
-          badge: '7 Groups',
+          // badge: '7 Groups',
           isPurchaseHierarchy: true
         },
         {
           id: 'appointments',
           label: 'Appointments',
           icon: Calendar,
-          badge: '30 Groups',
+          // badge: '30 Groups',
           isAppointmentHierarchy: true
         },
         {
           id: 'radiology',
           label: 'Radiology',
           icon: ScanLine,
-          badge: '13 Groups',
+          // badge: '13 Groups',
           isRadiologyHierarchy: true
         },
         {
           id: 'operations',
           label: 'Retail Sales & Operations',
           icon: ShoppingBag,
-          badge: '5 Groups',
+          // badge: '5 Groups',
           isOperationsHierarchy: true
         },
         {
           id: 'billing',
           label: 'Billing',
           icon: Receipt,
-          badge: '16 Modules',
+          // badge: '16 Modules',
           isBillingHierarchy: true
+        },
+        {
+          id: 'andrology',
+          label: 'Andrology',
+          icon: FlaskConical,
+          subItems: [
+            { id: 'andrology:1.1', label: 'Semen Analysis Entry' },
+            { id: 'andrology:1.2', label: 'Cryopreservation / Semen Freezing' },
+            { id: 'andrology:1.3', label: 'Sample Thaw & Usage' },
+            { id: 'andrology:1.4', label: 'Donor Registry' }
+          ]
         },
         {
           id: 'credit-billing',
           label: 'Credit Billing',
           icon: ShieldCheck,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
-            { id: 'credit-billing:7.1', label: '7.1 TPA Pre-Authorization' },
-            { id: 'credit-billing:7.2', label: '7.2 Enhancement Requests' },
-            { id: 'credit-billing:7.3', label: '7.3 Claim Dossiers' },
-            { id: 'credit-billing:7.4', label: '7.4 Co-Pay & Deductibles' },
-            { id: 'credit-billing:7.5', label: '7.5 TPA Reconciliation' }
+            { id: 'credit-billing:7.1', label: 'TPA Pre-Authorization' },
+            { id: 'credit-billing:7.2', label: 'Enhancement Requests' },
+            { id: 'credit-billing:7.3', label: 'Claim Dossiers' },
+            { id: 'credit-billing:7.4', label: 'Co-Pay & Deductibles' },
+            { id: 'credit-billing:7.5', label: 'TPA Reconciliation' }
           ]
         },
         {
           id: 'finance',
           label: 'Finance',
           icon: Landmark,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
             { id: 'finance:13.1', label: 'Chart of Accounts & GL' },
             { id: 'finance:13.2', label: 'Debit / Credit Vouchers' },
@@ -443,7 +455,7 @@ export const AppShell = ({
           id: 'fixed-asset',
           label: 'Fixed Asset',
           icon: Package,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
             { id: 'fixed-asset:14.1', label: 'Asset Master & Barcode Tagging' },
             { id: 'fixed-asset:14.2', label: 'AMC / CMC Contracts & Warranties' },
@@ -458,7 +470,7 @@ export const AppShell = ({
           id: 'general',
           label: 'General',
           icon: Building2,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
             { id: 'general:15.1', label: 'Hospital & Branch Master' },
             { id: 'general:15.2', label: 'Department & Clinic Hierarchy' },
@@ -474,7 +486,7 @@ export const AppShell = ({
           id: 'embryology',
           label: 'Embryology',
           icon: Egg,
-          badge: '5 Modules',
+          // badge: '5 Modules',
           subItems: [
             { id: 'embryology:10.1', label: 'Oocyte Retrieval (OPU) Recording' },
             { id: 'embryology:10.2', label: 'Fertilization (Conventional IVF / ICSI)' },
@@ -816,14 +828,14 @@ export const AppShell = ({
           id: 'inventory',
           label: 'Inventory',
           icon: Boxes,
-          badge: '17 Groups',
+          // badge: '17 Groups',
           isInventoryHierarchy: true
         },
         {
           id: 'ipd',
           label: 'IPD / IPDI',
           icon: BedDouble,
-          badge: '17 Groups',
+          // badge: '17 Groups',
           isIpdHierarchy: true
         },
         {
@@ -3607,7 +3619,9 @@ export const AppShell = ({
                       onClick={() => {
                         if (sub.id.startsWith('3.')) {
                           handleSelectNav(`appointments:${sub.id}`);
-                        } else if (sub.id.startsWith('1.') || sub.id.startsWith('2.') || sub.id.startsWith('4.')) {
+                        } else if (sub.id.startsWith('1.')) {
+                          handleSelectNav(`andrology:${sub.id}`);
+                        } else if (sub.id.startsWith('2.') || sub.id.startsWith('4.')) {
                           handleSelectNav(`billing:${sub.id}`);
                         } else if (sub.id.startsWith('10.')) {
                           handleSelectNav(`embryology:${sub.id}`);

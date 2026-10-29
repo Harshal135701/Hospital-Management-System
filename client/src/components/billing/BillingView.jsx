@@ -17,6 +17,7 @@ import { Card, Button, Badge, Input } from '../common/UIPrimitives';
 import { BILLING_GROUPS, ALL_BILLING_SUBMODULES } from './billingConstants';
 
 // Group 1 — IVF & Andrology Operations
+import { AndrologyView } from '../andrology/AndrologyView';
 import { SemenAnalysisEntry } from './andrology/SemenAnalysisEntry';
 import { SemenFreezingView } from './andrology/SemenFreezingView';
 import { SampleThawUsageView } from './andrology/SampleThawUsageView';
@@ -106,13 +107,10 @@ export function BillingView({ initialSubtab = '4.1', onNavigate }) {
     switch (activeSubtab) {
       // Group 1 — IVF & Andrology Operations
       case '1.1':
-        return <SemenAnalysisEntry />;
       case '1.2':
-        return <SemenFreezingView />;
       case '1.3':
-        return <SampleThawUsageView />;
       case '1.4':
-        return <DonorRegistryView />;
+        return <AndrologyView initialSubtab={activeSubtab} onNavigate={handleSelectSubmodule} />;
 
       // Group 2 — Configuration & Integrations
       case '2.1':

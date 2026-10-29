@@ -7,6 +7,7 @@ import { TokenQueueDisplayView } from './TokenQueueDisplayView';
 import { RemindersAlertsView } from './RemindersAlertsView';
 import { GroupDashboardView } from './GroupDashboardView';
 import { BillingView } from '../billing/BillingView';
+import { AndrologyView } from '../andrology/AndrologyView';
 import { DayCareView } from '../daycare/DayCareView';
 import { DietView } from '../diet/DietView';
 import { EmrView } from '../emr/EmrView';
@@ -114,6 +115,15 @@ export function AppointmentsView({ initialSubtab, onNavigate }) {
       case '3.4':
         return <RemindersAlertsView onNavigate={handleSelectSubmodule} />;
       default:
+        // Group 1: IVF & Andrology
+        if (activeSubmodule.id.startsWith('1.')) {
+          return (
+            <AndrologyView
+              initialSubtab={activeSubmodule.id}
+              onNavigate={handleSelectSubmodule}
+            />
+          );
+        }
         // Group 4: Billing
         if (activeSubmodule.id.startsWith('4.')) {
           return (

@@ -1316,6 +1316,22 @@ export const BillingOpsService = {
   },
   async closeSettlement(data) {
     return this.createSettlement(data);
+  },
+  async getDonorCompensations(donorCode = null) {
+    try {
+      const qs = donorCode ? `?donorCode=${encodeURIComponent(donorCode)}` : '';
+      const res = await apiFetch(`/billing/donor-compensations${qs}`);
+      return res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async disburseDonorCompensation(data) {
+    const res = await apiFetch('/billing/donor-compensations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
   }
 };
 
