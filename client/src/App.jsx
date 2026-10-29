@@ -13,6 +13,7 @@ import { ClinicalsView } from './components/clinicals/ClinicalsView';
 import { BillingView } from './components/billing/BillingView';
 import { CreditBillingView } from './components/credit-billing/CreditBillingView';
 import { AndrologyView } from './components/andrology/AndrologyView';
+import { ApplicationView } from './components/application/ApplicationView';
 import { BloodBankView } from './components/bloodbank/BloodBankView';
 import { DoctorsView } from './components/doctors/DoctorsView';
 import { DepartmentsView } from './components/departments/DepartmentsView';
@@ -64,6 +65,12 @@ const VALID_ROUTE_BASES = new Set([
   'credit-billing',
   'insurance',
   'andrology',
+  '2.4',
+  '2.3',
+  '2.2',
+  '2.1',
+  'application',
+  'config',
   'clinical',
   'bloodbank',
   'daycare',
@@ -138,6 +145,10 @@ export function App() {
     const routeSubtab = routeParts[1] || null;
     const routeSubsubtab = routeParts[2] || null;
 
+    if (typeof routeBase === 'string' && routeBase.startsWith('2.')) {
+      return <ApplicationView initialSubtab={routeBase} onNavigate={setCurrentRoute} />;
+    }
+
     switch (routeBase) {
       case 'dashboard':
         return <DashboardView onNavigate={setCurrentRoute} />;
@@ -188,6 +199,10 @@ export function App() {
 
       case 'andrology':
         return <AndrologyView initialSubtab={routeSubtab || '1.1'} onNavigate={setCurrentRoute} />;
+
+      case 'application':
+      case 'config':
+        return <ApplicationView initialSubtab={routeSubtab || '2.1'} onNavigate={setCurrentRoute} />;
 
       case 'clinical':
         return <ClinicalsView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
@@ -261,7 +276,10 @@ export function App() {
         if (routeSubtab && routeSubtab.startsWith('1.')) {
           return <AndrologyView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
-        if (routeSubtab && (routeSubtab.startsWith('2.') || routeSubtab.startsWith('4.'))) {
+        if (routeSubtab && routeSubtab.startsWith('2.')) {
+          return <ApplicationView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
+        }
+        if (routeSubtab && routeSubtab.startsWith('4.')) {
           return <BillingView initialSubtab={routeSubtab} onNavigate={setCurrentRoute} />;
         }
         if (routeSubtab && routeSubtab.startsWith('5.')) {

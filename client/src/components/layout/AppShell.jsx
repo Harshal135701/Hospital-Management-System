@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
+  LayoutGrid,
   Users,
   Calendar,
   Stethoscope,
@@ -160,14 +161,17 @@ export const AppShell = ({
     const baseRoute = currentRoute.split(':')[0];
 
     let activeSectionId = baseRoute;
+    if (baseRoute === 'application') activeSectionId = 'application';
     if (baseRoute === 'insurance') activeSectionId = 'credit-billing';
+    if (baseRoute === 'config') activeSectionId = 'application';
     if (baseRoute === 'diet') activeSectionId = 'dietary';
     if (baseRoute === 'lab') activeSectionId = 'laboratory';
     if (baseRoute === 'submodule') {
       const parts = currentRoute.split(':');
       const subId = parts[1] || '';
       if (subId.startsWith('1.')) activeSectionId = 'andrology';
-      else if (subId.startsWith('2.') || subId.startsWith('4.')) activeSectionId = 'billing';
+      else if (subId.startsWith('2.')) activeSectionId = 'application';
+      else if (subId.startsWith('4.')) activeSectionId = 'billing';
       else if (subId.startsWith('5.')) activeSectionId = 'bloodbank';
       else if (subId.startsWith('7.')) activeSectionId = 'credit-billing';
       else if (subId.startsWith('8.')) activeSectionId = 'daycare';
@@ -352,67 +356,7 @@ export const AppShell = ({
     {
       title: 'Clinical Operations',
       items: [
-        {
-          id: 'patients',
-          label: 'Patient / Visit',
-          icon: Users,
-          // badge: '5 Modules',
-          subItems: [
-            { id: 'patients:24.1', label: 'New Patient Registration' },
-            { id: 'patients:24.2', label: 'UHID Generation & Smart Card Print' },
-            { id: 'patients:24.3', label: 'Create New Visit / Encounter' },
-            { id: 'patients:24.4', label: 'Patient Search & Record Merge' },
-            { id: 'patients:24.5', label: 'Demographic & Identity Updates' }
-          ]
-        },
-        {
-          id: 'pharmacy',
-          label: 'Pharmacy',
-          icon: Pill,
-          // badge: '5 Modules',
-          subItems: [
-            { id: 'pharmacy:25.1', label: 'Prescription Dispensing (OPD & IPD)' },
-            { id: 'pharmacy:25.2', label: 'Medicine Master & Salt Information' },
-            { id: 'pharmacy:25.3', label: 'FIFO Batch & Expiry Management' },
-            { id: 'pharmacy:25.4', label: 'IPD Unused Medicine Return & Credit' },
-            { id: 'pharmacy:25.5', label: 'Pharmacy Stock Indents & Reorder Alerts' }
-          ]
-        },
-        {
-          id: 'purchase',
-          label: 'Purchase',
-          icon: ShoppingBag,
-          // badge: '7 Groups',
-          isPurchaseHierarchy: true
-        },
-        {
-          id: 'appointments',
-          label: 'Appointments',
-          icon: Calendar,
-          // badge: '30 Groups',
-          isAppointmentHierarchy: true
-        },
-        {
-          id: 'radiology',
-          label: 'Radiology',
-          icon: ScanLine,
-          // badge: '13 Groups',
-          isRadiologyHierarchy: true
-        },
-        {
-          id: 'operations',
-          label: 'Retail Sales & Operations',
-          icon: ShoppingBag,
-          // badge: '5 Groups',
-          isOperationsHierarchy: true
-        },
-        {
-          id: 'billing',
-          label: 'Billing',
-          icon: Receipt,
-          // badge: '16 Modules',
-          isBillingHierarchy: true
-        },
+
         {
           id: 'andrology',
           label: 'Andrology',
@@ -422,6 +366,47 @@ export const AppShell = ({
             { id: 'andrology:1.2', label: 'Cryopreservation / Semen Freezing' },
             { id: 'andrology:1.3', label: 'Sample Thaw & Usage' },
             { id: 'andrology:1.4', label: 'Donor Registry' }
+          ]
+        },
+        {
+          id: 'appointments',
+          label: 'Appointments',
+          icon: Calendar,
+          // badge: '30 Groups',
+          isAppointmentHierarchy: true
+        },
+        {
+          id: 'billing',
+          label: 'Billing',
+          icon: Receipt,
+          // badge: '16 Modules',
+          isBillingHierarchy: true
+        },
+        {
+          id: 'bloodbank',
+          label: 'Blood Bank',
+          icon: Droplet,
+          highlight: true,
+          subItems: [
+            { id: 'bloodbank:donors', label: 'Donors & Screening' },
+            { id: 'bloodbank:collection', label: 'Bag Collection & Barcodes' },
+            { id: 'bloodbank:inventory', label: 'Inventory & Cold Chain' },
+            { id: 'bloodbank:serology', label: 'Serology & Safe Release' },
+            { id: 'bloodbank:requisitions', label: 'Requisitions & Crossmatch' },
+            { id: 'bloodbank:handover', label: 'Issue & Handover Dispatch' },
+            { id: 'bloodbank:audit', label: 'Immutable Audit Trail' }
+          ]
+        },
+        {
+          id: 'clinical',
+          label: 'Clinical Desk',
+          icon: Stethoscope,
+          subItems: [
+            { id: 'clinical:consultation', label: 'Doctor Consultation Desk' },
+            { id: 'clinical:vitals', label: 'Vitals Recording & Physical Examination' },
+            { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
+            { id: 'clinical:orders', label: 'Orders (CPOE)' },
+            { id: 'clinical:notes', label: 'Clinical Progress Notes' }
           ]
         },
         {
@@ -435,88 +420,6 @@ export const AppShell = ({
             { id: 'credit-billing:7.3', label: 'Claim Dossiers' },
             { id: 'credit-billing:7.4', label: 'Co-Pay & Deductibles' },
             { id: 'credit-billing:7.5', label: 'TPA Reconciliation' }
-          ]
-        },
-        {
-          id: 'finance',
-          label: 'Finance',
-          icon: Landmark,
-          // badge: '5 Modules',
-          subItems: [
-            { id: 'finance:13.1', label: 'Chart of Accounts & GL' },
-            { id: 'finance:13.2', label: 'Debit / Credit Vouchers' },
-            { id: 'finance:13.3', label: 'Doctor Payout & Share' },
-            { id: 'finance:13.4', label: 'Bank Reconciliation' },
-            { id: 'finance:13.5', label: 'Profit & Loss / Balance Sheet' }
-          ]
-        },
-
-        {
-          id: 'fixed-asset',
-          label: 'Fixed Asset',
-          icon: Package,
-          // badge: '5 Modules',
-          subItems: [
-            { id: 'fixed-asset:14.1', label: 'Asset Master & Barcode Tagging' },
-            { id: 'fixed-asset:14.2', label: 'AMC / CMC Contracts & Warranties' },
-            { id: 'fixed-asset:14.3', label: 'Preventive Maintenance Scheduling' },
-            { id: 'fixed-asset:14.4', label: 'Breakdown Reporting & Work Ticket' },
-            { id: 'fixed-asset:14.5', label: 'Asset Depreciation Calculation' }
-          ]
-        },
-
-
-        {
-          id: 'general',
-          label: 'General',
-          icon: Building2,
-          // badge: '5 Modules',
-          subItems: [
-            { id: 'general:15.1', label: 'Hospital & Branch Master' },
-            { id: 'general:15.2', label: 'Department & Clinic Hierarchy' },
-            { id: 'general:15.3', label: 'Doctor & Consultant Master' },
-            { id: 'general:15.4', label: 'Service Catalog & Tariff Master' },
-            { id: 'general:15.5', label: 'Corporate Tariff Rate Contracts' }
-          ]
-        },
-
-
-
-        {
-          id: 'embryology',
-          label: 'Embryology',
-          icon: Egg,
-          // badge: '5 Modules',
-          subItems: [
-            { id: 'embryology:10.1', label: 'Oocyte Retrieval (OPU) Recording' },
-            { id: 'embryology:10.2', label: 'Fertilization (Conventional IVF / ICSI)' },
-            { id: 'embryology:10.3', label: 'Embryo Morphological Grading' },
-            { id: 'embryology:10.4', label: 'Embryo Transfer (ET) Protocol' },
-            { id: 'embryology:10.5', label: 'Embryo Cryostorage Management' }
-          ]
-        },
-        {
-          id: 'emergency',
-          label: 'Emergency',
-          icon: Siren,
-          isEmergencyHierarchy: true
-        },
-        {
-          id: 'ot',
-          label: 'Operation Theatre',
-          icon: Activity,
-          isOtHierarchy: true
-        },
-        {
-          id: 'clinical',
-          label: 'Clinical Desk',
-          icon: Stethoscope,
-          subItems: [
-            { id: 'clinical:consultation', label: 'Doctor Consultation Desk' },
-            { id: 'clinical:vitals', label: 'Vitals Recording & Physical Examination' },
-            { id: 'clinical:history', label: 'Chief Complaints & Clinical History' },
-            { id: 'clinical:orders', label: 'Orders (CPOE)' },
-            { id: 'clinical:notes', label: 'Clinical Progress Notes' }
           ]
         },
         {
@@ -542,6 +445,25 @@ export const AppShell = ({
           ]
         },
         {
+          id: 'embryology',
+          label: 'Embryology',
+          icon: Egg,
+          // badge: '5 Modules',
+          subItems: [
+            { id: 'embryology:10.1', label: 'Oocyte Retrieval (OPU) Recording' },
+            { id: 'embryology:10.2', label: 'Fertilization (Conventional IVF / ICSI)' },
+            { id: 'embryology:10.3', label: 'Embryo Morphological Grading' },
+            { id: 'embryology:10.4', label: 'Embryo Transfer (ET) Protocol' },
+            { id: 'embryology:10.5', label: 'Embryo Cryostorage Management' }
+          ]
+        },
+        {
+          id: 'emergency',
+          label: 'Emergency',
+          icon: Siren,
+          isEmergencyHierarchy: true
+        },
+        {
           id: 'emr',
           label: 'EMR Records',
           icon: FileSpreadsheet,
@@ -554,19 +476,57 @@ export const AppShell = ({
           ]
         },
         {
-          id: 'bloodbank',
-          label: 'Blood Bank',
-          icon: Droplet,
-          highlight: true,
+          id: 'finance',
+          label: 'Finance',
+          icon: Landmark,
+          // badge: '5 Modules',
           subItems: [
-            { id: 'bloodbank:donors', label: 'Donors & Screening' },
-            { id: 'bloodbank:collection', label: 'Bag Collection & Barcodes' },
-            { id: 'bloodbank:inventory', label: 'Inventory & Cold Chain' },
-            { id: 'bloodbank:serology', label: 'Serology & Safe Release' },
-            { id: 'bloodbank:requisitions', label: 'Requisitions & Crossmatch' },
-            { id: 'bloodbank:handover', label: 'Issue & Handover Dispatch' },
-            { id: 'bloodbank:audit', label: 'Immutable Audit Trail' }
+            { id: 'finance:13.1', label: 'Chart of Accounts & GL' },
+            { id: 'finance:13.2', label: 'Debit / Credit Vouchers' },
+            { id: 'finance:13.3', label: 'Doctor Payout & Share' },
+            { id: 'finance:13.4', label: 'Bank Reconciliation' },
+            { id: 'finance:13.5', label: 'Profit & Loss / Balance Sheet' }
           ]
+        },
+        {
+          id: 'fixed-asset',
+          label: 'Fixed Asset',
+          icon: Package,
+          // badge: '5 Modules',
+          subItems: [
+            { id: 'fixed-asset:14.1', label: 'Asset Master & Barcode Tagging' },
+            { id: 'fixed-asset:14.2', label: 'AMC / CMC Contracts & Warranties' },
+            { id: 'fixed-asset:14.3', label: 'Preventive Maintenance Scheduling' },
+            { id: 'fixed-asset:14.4', label: 'Breakdown Reporting & Work Ticket' },
+            { id: 'fixed-asset:14.5', label: 'Asset Depreciation Calculation' }
+          ]
+        },
+        {
+          id: 'general',
+          label: 'General',
+          icon: Building2,
+          // badge: '5 Modules',
+          subItems: [
+            { id: 'general:15.1', label: 'Hospital & Branch Master' },
+            { id: 'general:15.2', label: 'Department & Clinic Hierarchy' },
+            { id: 'general:15.3', label: 'Doctor & Consultant Master' },
+            { id: 'general:15.4', label: 'Service Catalog & Tariff Master' },
+            { id: 'general:15.5', label: 'Corporate Tariff Rate Contracts' }
+          ]
+        },
+        {
+          id: 'inventory',
+          label: 'Inventory',
+          icon: Boxes,
+          // badge: '17 Groups',
+          isInventoryHierarchy: true
+        },
+        {
+          id: 'ipd',
+          label: 'IPD / IPDI',
+          icon: BedDouble,
+          // badge: '17 Groups',
+          isIpdHierarchy: true
         },
         {
           id: 'ivf',
@@ -821,23 +781,66 @@ export const AppShell = ({
             }
           ]
         },
+        {
+          id: 'ot',
+          label: 'Operation Theatre',
+          icon: Activity,
+          isOtHierarchy: true
+        },
+        {
+          id: 'patients',
+          label: 'Patient / Visit',
+          icon: Users,
+          // badge: '5 Modules',
+          subItems: [
+            { id: 'patients:24.1', label: 'New Patient Registration' },
+            { id: 'patients:24.2', label: 'UHID Generation & Smart Card Print' },
+            { id: 'patients:24.3', label: 'Create New Visit / Encounter' },
+            { id: 'patients:24.4', label: 'Patient Search & Record Merge' },
+            { id: 'patients:24.5', label: 'Demographic & Identity Updates' }
+          ]
+        },
+        {
+          id: 'pharmacy',
+          label: 'Pharmacy',
+          icon: Pill,
+          // badge: '5 Modules',
+          subItems: [
+            { id: 'pharmacy:25.1', label: 'Prescription Dispensing (OPD & IPD)' },
+            { id: 'pharmacy:25.2', label: 'Medicine Master & Salt Information' },
+            { id: 'pharmacy:25.3', label: 'FIFO Batch & Expiry Management' },
+            { id: 'pharmacy:25.4', label: 'IPD Unused Medicine Return & Credit' },
+            { id: 'pharmacy:25.5', label: 'Pharmacy Stock Indents & Reorder Alerts' }
+          ]
+        },
+        {
+          id: 'purchase',
+          label: 'Purchase',
+          icon: ShoppingBag,
+          // badge: '7 Groups',
+          isPurchaseHierarchy: true
+        },
+
+        {
+          id: 'radiology',
+          label: 'Radiology',
+          icon: ScanLine,
+          // badge: '13 Groups',
+          isRadiologyHierarchy: true
+        },
+        {
+          id: 'operations',
+          label: 'Retail Sales & Operations',
+          icon: ShoppingBag,
+          // badge: '5 Groups',
+          isOperationsHierarchy: true
+        },
+
+
+
         { id: 'doctors', label: 'Staff & Doctors', icon: UserCheck },
         { id: 'departments', label: 'Departments & Wards', icon: Building2 },
         { id: 'rooms', label: 'Beds & Inpatient', icon: Bed },
-        {
-          id: 'inventory',
-          label: 'Inventory',
-          icon: Boxes,
-          // badge: '17 Groups',
-          isInventoryHierarchy: true
-        },
-        {
-          id: 'ipd',
-          label: 'IPD / IPDI',
-          icon: BedDouble,
-          // badge: '17 Groups',
-          isIpdHierarchy: true
-        },
         {
           id: 'work-order',
           label: 'Work Order',
@@ -904,6 +907,18 @@ export const AppShell = ({
     {
       title: 'Administration',
       items: [
+        {
+          id: 'application',
+          label: 'Application',
+          icon: LayoutGrid,
+          // badge: '4 Modules',
+          subItems: [
+            { id: 'application:2.1', label: 'Widgets & Dashboard Configuration' },
+            { id: 'application:2.2', label: 'Barcode & Thermal Printer Settings' },
+            { id: 'application:2.3', label: 'Document Scanner & Attachment Setup' },
+            { id: 'application:2.4', label: 'External API Integration Status' }
+          ]
+        },
         {
           id: 'system',
           label: 'System Admin',
@@ -3106,6 +3121,7 @@ export const AppShell = ({
                             const isSubActive = (() => {
                               if (currentRoute === sub.id) return true;
                               if (typeof currentRoute === 'string' && currentRoute.startsWith(sub.id + ':')) return true;
+                              if (sub.id === 'application:2.1' && (currentRoute === 'application' || currentRoute === 'config')) return true;
                               if (sub.id === 'clinical:consultation' && currentRoute === 'clinical') return true;
                               if (sub.id === 'patients:24.1' && currentRoute === 'patients') return true;
                               if (sub.id === 'pharmacy:25.1' && currentRoute === 'pharmacy') return true;
@@ -3621,7 +3637,9 @@ export const AppShell = ({
                           handleSelectNav(`appointments:${sub.id}`);
                         } else if (sub.id.startsWith('1.')) {
                           handleSelectNav(`andrology:${sub.id}`);
-                        } else if (sub.id.startsWith('2.') || sub.id.startsWith('4.')) {
+                        } else if (sub.id.startsWith('2.')) {
+                          handleSelectNav(`application:${sub.id}`);
+                        } else if (sub.id.startsWith('4.')) {
                           handleSelectNav(`billing:${sub.id}`);
                         } else if (sub.id.startsWith('10.')) {
                           handleSelectNav(`embryology:${sub.id}`);

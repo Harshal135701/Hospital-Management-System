@@ -8,6 +8,7 @@ import { RemindersAlertsView } from './RemindersAlertsView';
 import { GroupDashboardView } from './GroupDashboardView';
 import { BillingView } from '../billing/BillingView';
 import { AndrologyView } from '../andrology/AndrologyView';
+import { ApplicationView } from '../application/ApplicationView';
 import { DayCareView } from '../daycare/DayCareView';
 import { DietView } from '../diet/DietView';
 import { EmrView } from '../emr/EmrView';

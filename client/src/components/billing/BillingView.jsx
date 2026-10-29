@@ -18,6 +18,7 @@ import { BILLING_GROUPS, ALL_BILLING_SUBMODULES } from './billingConstants';
 
 // Group 1 — IVF & Andrology Operations
 import { AndrologyView } from '../andrology/AndrologyView';
+import { ApplicationView } from '../application/ApplicationView';
 import { SemenAnalysisEntry } from './andrology/SemenAnalysisEntry';
 import { SemenFreezingView } from './andrology/SemenFreezingView';
 import { SampleThawUsageView } from './andrology/SampleThawUsageView';
