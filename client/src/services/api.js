@@ -2221,3 +2221,152 @@ export const OpdService = {
   }
 };
 
+export const NursingService = {
+  // 21.1 Ward Nursing Workstation
+  async getDashboard() {
+    try {
+      const res = await apiFetch('/nursing/dashboard');
+      return res?.data;
+    } catch (err) {
+      console.warn('[NursingService] getDashboard fallback:', err.message);
+      return null;
+    }
+  },
+
+  async getPatients(wing = 'ALL') {
+    try {
+      const qs = wing && wing !== 'ALL' ? `?wing=${encodeURIComponent(wing)}` : '';
+      const res = await apiFetch(`/nursing/patients${qs}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[NursingService] getPatients fallback:', err.message);
+      return [];
+    }
+  },
+
+  async getPatientById(id) {
+    try {
+      const res = await apiFetch(`/nursing/patients/${encodeURIComponent(id)}`);
+      return res?.data;
+    } catch (err) {
+      console.warn('[NursingService] getPatientById fallback:', err.message);
+      return null;
+    }
+  },
+
+  // 21.2 Vitals & Intake-Output Charting
+  async getVitals(patientId = null) {
+    try {
+      const path = patientId ? `/nursing/vitals/${encodeURIComponent(patientId)}` : '/nursing/vitals';
+      const res = await apiFetch(path);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[NursingService] getVitals fallback:', err.message);
+      return [];
+    }
+  },
+
+  async recordVitals(data) {
+    const res = await apiFetch('/nursing/vitals', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async getIntakeOutput(patientId = null) {
+    try {
+      const path = patientId ? `/nursing/intake-output/${encodeURIComponent(patientId)}` : '/nursing/intake-output';
+      const res = await apiFetch(path);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[NursingService] getIntakeOutput fallback:', err.message);
+      return [];
+    }
+  },
+
+  async recordIntakeOutput(data) {
+    const res = await apiFetch('/nursing/intake-output', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 21.3 Medication Administration Record (MAR)
+  async getMar(patientId = null) {
+    try {
+      const path = patientId ? `/nursing/mar/${encodeURIComponent(patientId)}` : '/nursing/mar';
+      const res = await apiFetch(path);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[NursingService] getMar fallback:', err.message);
+      return [];
+    }
+  },
+
+  async administerMedication(data) {
+    const res = await apiFetch('/nursing/mar/administer', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async withholdMedication(data) {
+    const res = await apiFetch('/nursing/mar/withhold', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 21.4 Doctor Order Execution
+  async getDoctorOrders(patientId = null) {
+    try {
+      const path = patientId ? `/nursing/doctor-orders/${encodeURIComponent(patientId)}` : '/nursing/doctor-orders';
+      const res = await apiFetch(path);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[NursingService] getDoctorOrders fallback:', err.message);
+      return [];
+    }
+  },
+
+  async executeDoctorOrder(data) {
+    const res = await apiFetch('/nursing/doctor-orders/execute', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 21.5 Shift Handover Notes
+  async getHandovers(wing = 'ALL') {
+    try {
+      const qs = wing && wing !== 'ALL' ? `?wing=${encodeURIComponent(wing)}` : '';
+      const res = await apiFetch(`/nursing/handovers${qs}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[NursingService] getHandovers fallback:', err.message);
+      return [];
+    }
+  },
+
+  async createHandover(data) {
+    const res = await apiFetch('/nursing/handovers', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async acceptHandover(id, data) {
+    const res = await apiFetch(`/nursing/handovers/${encodeURIComponent(id)}/accept`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  }
+};
+

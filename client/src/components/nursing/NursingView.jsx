@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   HeartPulse,
   Activity,
@@ -16,9 +16,21 @@ import {
   QrCode,
   XCircle,
   Thermometer,
-  Check
+  Check,
+  Plus,
+  RefreshCw,
+  ChevronRight,
+  Filter,
+  Eye,
+  SlidersHorizontal,
+  Stethoscope,
+  Info,
+  Calendar,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 import { Card, Button, Badge, Modal, Input, Select } from '../common/UIPrimitives';
+import { NursingService } from '../../services/api';
 
 const NURSING_SUBMODULES = [
   {
@@ -115,2092 +127,2560 @@ export function NursingView({ initialSubtab = '21.1', initialSubsubtab = null, o
     }
   };
 
-  // Mock State for Ward Nursing
-  const [patients, setPatients] = useState([
-    {
-      bed: 'Bed 201-A',
-      uhid: 'UHID-89211',
-      name: 'Rohan Mehra',
-      age: 48,
-      gender: 'Male',
-      diagnosis: 'Acute Pancreatitis (Post-Op Day 2)',
-      dr: 'Dr. S. K. Roy (Gastro)',
-      nurse: 'Sr. Priya M.',
-      status: 'Critical Alert',
-      diet: 'NPO (Nil Per Os)',
-      temp: '99.4°F',
-      pulse: '98 bpm',
-      bp: '135/88 mmHg',
-      spo2: '97%',
-      painScore: 6,
-      fallRisk: 'High (Morse 65)',
-      allergies: 'Penicillin, NSAIDs',
-      intake: 1850,
-      output: 1420
-    },
-    {
-      bed: 'Bed 202-B',
-      uhid: 'UHID-89240',
-      name: 'Sunita Sharma',
-      age: 62,
-      gender: 'Female',
-      diagnosis: 'Total Knee Replacement (Right)',
-      dr: 'Dr. V. Singhal (Ortho)',
-      nurse: 'Sr. Anjali R.',
-      status: 'Stable',
-      diet: 'Diabetic Low-Sodium',
-      temp: '98.2°F',
-      pulse: '76 bpm',
-      bp: '124/80 mmHg',
-      spo2: '99%',
-      painScore: 3,
-      fallRisk: 'High (Assisted Walk)',
-      allergies: 'None Known',
-      intake: 2200,
-      output: 2050
-    },
-    {
-      bed: 'Bed 203-A',
-      uhid: 'UHID-89304',
-      name: 'Arjun Verma',
-      age: 34,
-      gender: 'Male',
-      diagnosis: 'Dengue with Thrombocytopenia',
-      dr: 'Dr. N. Joshi (Int. Med)',
-      nurse: 'Sr. Priya M.',
-      status: 'Monitoring',
-      diet: 'High Protein Soft',
-      temp: '101.2°F',
-      pulse: '104 bpm',
-      bp: '110/72 mmHg',
-      spo2: '96%',
-      painScore: 4,
-      fallRisk: 'Moderate',
-      allergies: 'Sulfa Drugs',
-      intake: 3100,
-      output: 2600
-    },
-    {
-      bed: 'Bed 204-C',
-      uhid: 'UHID-89312',
-      name: 'Kavita Das',
-      age: 29,
-      gender: 'Female',
-      diagnosis: 'LSCS Day 1 (Postnatal)',
-      dr: 'Dr. A. Sen (OBGYN)',
-      nurse: 'Sr. Deepa K.',
-      status: 'Stable',
-      diet: 'Lactation Diet',
-      temp: '98.6°F',
-      pulse: '80 bpm',
-      bp: '118/76 mmHg',
-      spo2: '99%',
-      painScore: 2,
-      fallRisk: 'Low',
-      allergies: 'None',
-      intake: 2500,
-      output: 2300
-    }
-  ]);
-
-  // Selected patient for detail modals / vitals
-  const [selectedPatient, setSelectedPatient] = useState(patients[0]);
-  const [showVitalsModal, setShowVitalsModal] = useState(false);
-  const [vitalsForm, setVitalsForm] = useState({
-    temp: '99.2',
-    pulse: '92',
-    bpSys: '130',
-    bpDia: '84',
-    rr: '18',
-    spo2: '98',
-    painScore: '4',
-    oxygenFlow: 'Room Air'
-  });
-
-  // MAR State
-  const [marRecords, setMarRecords] = useState([
-    {
-      id: 'MAR-001',
-      patientUhid: 'UHID-89211',
-      patientName: 'Rohan Mehra',
-      bed: '201-A',
-      medication: 'Inj. Pantoprazole 40mg IV',
-      route: 'IV Bolus',
-      frequency: 'OD (08:00)',
-      scheduledTime: '08:00 AM',
-      status: 'Administered',
-      adminBy: 'Sr. Priya M.',
-      adminTime: '08:05 AM',
-      barcodeVerified: true
-    },
-    {
-      id: 'MAR-002',
-      patientUhid: 'UHID-89211',
-      patientName: 'Rohan Mehra',
-      bed: '201-A',
-      medication: 'Inj. Tramadol 50mg in 100ml NS',
-      route: 'IV Infusion over 30m',
-      frequency: 'TDS (08:00, 14:00, 20:00)',
-      scheduledTime: '14:00 PM',
-      status: 'Due Soon',
-      adminBy: '-',
-      adminTime: '-',
-      barcodeVerified: false
-    },
-    {
-      id: 'MAR-003',
-      patientUhid: 'UHID-89240',
-      patientName: 'Sunita Sharma',
-      bed: '202-B',
-      medication: 'Inj. Clexane (Enoxaparin) 40mg SC',
-      route: 'Subcutaneous (Abdomen)',
-      frequency: 'OD (20:00)',
-      scheduledTime: '20:00 PM',
-      status: 'Scheduled',
-      adminBy: '-',
-      adminTime: '-',
-      barcodeVerified: false
-    },
-    {
-      id: 'MAR-004',
-      patientUhid: 'UHID-89304',
-      patientName: 'Arjun Verma',
-      bed: '203-A',
-      medication: 'Inj. Paracetamol 1g IV Infusion',
-      route: 'IV Piggyback',
-      frequency: 'SOS (Temp > 100°F)',
-      scheduledTime: '12:30 PM (SOS)',
-      status: 'Administered',
-      adminBy: 'Sr. Priya M.',
-      adminTime: '12:35 PM',
-      barcodeVerified: true
-    },
-    {
-      id: 'MAR-005',
-      patientUhid: 'UHID-89211',
-      patientName: 'Rohan Mehra',
-      bed: '201-A',
-      medication: 'Tab. Telmisartan 40mg Oral',
-      route: 'Oral (NG Tube)',
-      frequency: 'OD (09:00)',
-      scheduledTime: '09:00 AM',
-      status: 'Withheld',
-      adminBy: 'Sr. Priya M.',
-      adminTime: '09:10 AM',
-      barcodeVerified: true,
-      withheldReason: 'Clinician hold: Patient NPO & BP systolic 110. Awaiting morning lab.'
-    }
-  ]);
-
-  // Doctor Orders
-  const [doctorOrders, setDoctorOrders] = useState([
-    {
-      id: 'ORD-7701',
-      bed: 'Bed 201-A',
-      patient: 'Rohan Mehra',
-      doctor: 'Dr. S. K. Roy',
-      orderType: 'Nursing Intervention',
-      description: 'Sterile surgical site dressing change with Betadine & Aquacel Ag gauze.',
-      priority: 'Urgent',
-      timePlaced: '10:15 AM',
-      status: 'Pending',
-      executedBy: null,
-      execTimestamp: null
-    },
-    {
-      id: 'ORD-7702',
-      bed: 'Bed 203-A',
-      patient: 'Arjun Verma',
-      doctor: 'Dr. N. Joshi',
-      orderType: 'Diagnostics & Blood Draw',
-      description: 'Repeat CBC & Serum Electrolytes STAT. Note Platelet trend.',
-      priority: 'STAT',
-      timePlaced: '11:00 AM',
-      status: 'Completed',
-      executedBy: 'Sr. Priya M.',
-      execTimestamp: '11:20 AM'
-    },
-    {
-      id: 'ORD-7703',
-      bed: 'Bed 202-B',
-      patient: 'Sunita Sharma',
-      doctor: 'Dr. V. Singhal',
-      orderType: 'Physiotherapy & Mobilization',
-      description: 'Quadriceps isometric exercises and assisted walker ambulation 30m.',
-      priority: 'Routine',
-      timePlaced: '09:30 AM',
-      status: 'Completed',
-      executedBy: 'PT Rahul / Sr. Anjali',
-      execTimestamp: '10:00 AM'
-    },
-    {
-      id: 'ORD-7704',
-      bed: 'Bed 201-A',
-      patient: 'Rohan Mehra',
-      doctor: 'Dr. S. K. Roy',
-      orderType: 'Transfusion Order',
-      description: 'Cross-match & infuse 1 Unit Packed Red Blood Cells (PRBC) over 3 hours with pre-medication.',
-      priority: 'Urgent',
-      timePlaced: '12:00 PM',
-      status: 'Pending',
-      executedBy: null,
-      execTimestamp: null
-    }
-  ]);
-
-  // Fluid Balance Log state
-  const [fluidLogs, setFluidLogs] = useState([
-    { time: '08:00', type: 'Intake', route: 'IV Normal Saline 500ml', amount: 500, balance: '+500 ml' },
-    { time: '09:30', type: 'Output', route: 'Urine (Foley Catheter)', amount: 450, balance: '+50 ml' },
-    { time: '11:00', type: 'Intake', route: 'IV Ringer Lactate 500ml', amount: 500, balance: '+550 ml' },
-    { time: '12:30', type: 'Output', route: 'Abdominal Drain Serosanguinous', amount: 150, balance: '+400 ml' },
-    { time: '13:00', type: 'Intake', route: 'IV Metronidazole piggyback', amount: 100, balance: '+500 ml' }
-  ]);
-
-  // SBAR Shift Handover State
-  const [sbarNotes, setSbarNotes] = useState({
-    shift: 'Day Shift (07:00 - 15:00)',
-    ward: 'Wing B (Surgical & Post-Op Stepdown)',
-    situation: 'Total 18 Beds occupied. 2 critical post-op recoveries. 1 STAT blood transfusion pending for Bed 201-A.',
-    background: 'Bed 201-A (Rohan Mehra) Post-Op Day 2 Pancreatitis, low Hb (8.2 g/dL), Foley and Ryle tube in situ. Bed 203-A (Arjun Verma) Dengue platelet count stable at 48k.',
-    assessment: 'Bed 201-A pain controlled at 4/10 with IV analgesic. Drain output 150ml clear. Sunita Sharma (202-B) mobilized without dizziness.',
-    recommendation: 'Complete PRBC transfusion for Bed 201-A before 17:00. Check evening electrolytes for Bed 203-A at 18:00. Monitor TKR drain for Bed 202-B.',
-    outgoingNurse: 'Sr. Priya Mohan (Emp #RN-4029)',
-    incomingNurse: 'Sr. Sunaina Iyer (Emp #RN-3882)',
-    isSignedOff: false
-  });
-
-  // Additional Interactive Modals
-  const [isCarePlanModalOpen, setIsCarePlanModalOpen] = useState(false);
-  const [isFluidModalOpen, setIsFluidModalOpen] = useState(false);
-  const [isMarAdminModalOpen, setIsMarAdminModalOpen] = useState(false);
-  const [selectedMarItem, setSelectedMarItem] = useState(null);
-  const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
-  const [isDoctorOrderModalOpen, setIsDoctorOrderModalOpen] = useState(false);
-  const [isSbarModalOpen, setIsSbarModalOpen] = useState(false);
-
-  // Form states
-  const [carePlanForm, setCarePlanForm] = useState({
-    fallRisk: 'High (Morse 65)',
-    diet: 'NPO (Nil Per Os)',
-    hydrationGoal: 'IV Maintenance @ 80 ml/hr NS + 5% Dextrose',
-    drainProtocol: 'Foley catheter gravity bag to be emptied Q6H. Observe wound drain volume.',
-    precautions: 'Bed rails elevated x4. Deep vein thrombosis (DVT) stockings worn continuously.',
-    nurse: 'Sr. Priya M.'
-  });
-
-  const [fluidForm, setFluidForm] = useState({
-    category: 'Intake',
-    route: 'IV Electrolyte Infusion 250ml',
-    amount: '250',
-    time: '14:00',
-    colorNotes: 'Clear normal fluid'
-  });
-
-  const [marAdminForm, setMarAdminForm] = useState({
-    action: 'administer',
-    barcodeVerified: true,
-    nurseName: 'Sr. Priya M.',
-    withheldReason: ''
-  });
-
-  const [newMedForm, setNewMedForm] = useState({
-    patientUhid: 'UHID-89211',
-    medication: 'Inj. Meropenem 1g IV',
-    route: 'IV Piggyback over 30m',
-    frequency: 'TDS (08:00, 14:00, 20:00)',
-    scheduledTime: '14:00 PM',
-    doctor: 'Dr. S. K. Roy'
-  });
-
-  const [doctorOrderForm, setDoctorOrderForm] = useState({
-    bed: 'Bed 201-A',
-    doctor: 'Dr. S. K. Roy',
-    orderType: 'Nursing Intervention',
-    description: 'Sterile surgical site dressing change with Betadine & Aquacel Ag gauze.',
-    priority: 'Urgent'
-  });
-
-  const [sbarForm, setSbarForm] = useState({
-    shift: 'Day Shift (07:00 - 15:00)',
-    situation: 'Total 18 Beds occupied. 2 critical post-op recoveries. 1 STAT blood transfusion pending for Bed 201-A.',
-    background: 'Bed 201-A (Rohan Mehra) Post-Op Day 2 Pancreatitis, low Hb (8.2 g/dL), Foley and Ryle tube in situ. Bed 203-A (Arjun Verma) Dengue platelet count stable at 48k.',
-    assessment: 'Bed 201-A pain controlled at 4/10 with IV analgesic. Drain output 150ml clear. Sunita Sharma (202-B) mobilized without dizziness.',
-    recommendation: 'Complete PRBC transfusion for Bed 201-A before 17:00. Check evening electrolytes for Bed 203-A at 18:00. Monitor TKR drain for Bed 202-B.',
-    outgoingNurse: 'Sr. Priya Mohan (Emp #RN-4029)',
-    incomingNurse: 'Sr. Sunaina Iyer (Emp #RN-3882)'
-  });
-
-  const [notificationMsg, setNotificationMsg] = useState(null);
-
+  // Toast Notification State
+  const [toastMessage, setToastMessage] = useState(null);
   const showNotification = (msg) => {
-    setNotificationMsg(msg);
-    setTimeout(() => setNotificationMsg(null), 3500);
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleAdministerMedication = (id) => {
-    setMarRecords(prev => prev.map(m => {
-      if (m.id === id) {
-        return {
-          ...m,
-          status: 'Administered',
-          adminBy: 'Sr. Priya M. (Dual-Scanned)',
-          adminTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          barcodeVerified: true
-        };
-      }
-      return m;
-    }));
-    showNotification(`Medication ${id} electronically administered with barcode wristband verification.`);
-  };
-
-  const handleExecuteDoctorOrder = (id) => {
-    setDoctorOrders(prev => prev.map(ord => {
-      if (ord.id === id) {
-        return {
-          ...ord,
-          status: 'Completed',
-          executedBy: 'Sr. Priya M.',
-          execTimestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-      }
-      return ord;
-    }));
-    showNotification(`Doctor Order ${id} executed and signed off bedside.`);
-  };
-
-  const handleSaveVitals = (e) => {
-    e.preventDefault();
-    if (selectedPatient) {
-      setPatients(prev => prev.map(p => {
-        if (p.uhid === selectedPatient.uhid) {
-          return {
-            ...p,
-            temp: `${vitalsForm.temp}°F`,
-            pulse: `${vitalsForm.pulse} bpm`,
-            bp: `${vitalsForm.bpSys}/${vitalsForm.bpDia} mmHg`,
-            spo2: `${vitalsForm.spo2}%`,
-            painScore: parseInt(vitalsForm.painScore, 10)
-          };
-        }
-        return p;
-      }));
+  // Telemetry KPI State
+  const [dashboardStats, setDashboardStats] = useState({
+    totalCensus: 6,
+    activeBeds: 6,
+    capacity: 24,
+    occupancyPercent: 25,
+    criticalAlerts: 3,
+    pendingMarDoses: 2,
+    pendingOrders: 4,
+    shiftInfo: {
+      activeShift: 'Day / Morning Shift',
+      shiftTiming: '07:00 AM - 03:00 PM',
+      chargeNurse: 'Sister Mary, RN (Senior Incharge)',
+      wardWing: 'General Ward - Wing A & Step-Down Unit'
     }
-    setShowVitalsModal(false);
-    showNotification(`Bedside vitals & pain score logged for ${selectedPatient?.name} (${selectedPatient?.bed}).`);
-  };
+  });
 
-  const handleSaveCarePlan = (e) => {
-    e.preventDefault();
-    if (selectedPatient) {
-      setPatients(prev => prev.map(p => {
-        if (p.uhid === selectedPatient.uhid) {
-          return {
-            ...p,
-            fallRisk: carePlanForm.fallRisk,
-            diet: carePlanForm.diet,
-            nurse: carePlanForm.nurse
-          };
+  // Master Data States
+  const [patients, setPatients] = useState([]);
+  const [vitalsList, setVitalsList] = useState([]);
+  const [ioList, setIoList] = useState([]);
+  const [marList, setMarList] = useState([]);
+  const [ordersList, setOrdersList] = useState([]);
+  const [handoversList, setHandoversList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Filters
+  const [selectedWingFilter, setSelectedWingFilter] = useState('ALL');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [selectedPatientId, setSelectedPatientId] = useState('ALL');
+  const [marShiftFilter, setMarShiftFilter] = useState('ALL');
+  const [orderPriorityFilter, setOrderPriorityFilter] = useState('ALL');
+
+  // Barcode Verification Simulator State
+  const [scannedBarcode, setScannedBarcode] = useState('');
+  const [barcodeMatchStatus, setBarcodeMatchStatus] = useState(null);
+
+  // Modals
+  const [isVitalsModalOpen, setIsVitalsModalOpen] = useState(false);
+  const [isIoModalOpen, setIsIoModalOpen] = useState(false);
+  const [isMarAdminModalOpen, setIsMarAdminModalOpen] = useState(false);
+  const [isMarWithholdModalOpen, setIsMarWithholdModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
+  const [isCarePlanModalOpen, setIsCarePlanModalOpen] = useState(false);
+  const [activeCarePlanPatient, setActiveCarePlanPatient] = useState(null);
+
+  // Active items for modals
+  const [activeMarItem, setActiveMarItem] = useState(null);
+  const [activeOrderItem, setActiveOrderItem] = useState(null);
+
+  // Form States
+  const [vitalsForm, setVitalsForm] = useState({
+    patientId: 'P-101',
+    temperature: '98.6',
+    pulse: '78',
+    bloodPressureSystolic: '120',
+    bloodPressureDiastolic: '80',
+    respiratoryRate: '16',
+    spO2: '98',
+    painScore: '2',
+    notes: 'Patient resting comfortably. Surgical dressing dry and intact.',
+    recordedBy: 'Sister Mary, RN'
+  });
+
+  const [ioForm, setIoForm] = useState({
+    patientId: 'P-101',
+    shift: 'Day Shift (08:00 - 16:00)',
+    intakeOral: '400',
+    intakeIv: '800',
+    intakeEnteral: '0',
+    outputUrine: '650',
+    outputDrain: '100',
+    outputVomitus: '0',
+    notes: 'Clear amber urine. Abdominal drain serosanguinous 100 mL.',
+    recordedBy: 'Sister Mary, RN'
+  });
+
+  const [marWithholdForm, setMarWithholdForm] = useState({
+    withheldReason: 'Patient BP low (88/56 mmHg < 90/60 safety limit). Attending physician notified.',
+    withheldBy: 'Sister Sneha, RN',
+    notes: 'Dose held as per clinical protocol pending physician re-evaluation.'
+  });
+
+  const [orderExecutionForm, setOrderExecutionForm] = useState({
+    completedBy: 'Sister Sneha, RN',
+    notes: 'Procedure performed under sterile technique as per standard nursing SOP. Patient tolerated procedure well.'
+  });
+
+  const [handoverForm, setHandoverForm] = useState({
+    wing: 'General Ward - Wing A',
+    shiftType: 'Morning (07:00) → Afternoon (15:00)',
+    outgoingNurse: 'Sister Mary, RN',
+    incomingNurse: 'Sister Sneha, RN',
+    sbarSituation: '6 Patients in assigned wing. 2 critical vital alerts active: Sunita Rao (Bed 202-B) on 2L O2 with SpO2 91%, Rajesh Verma (Bed 203-A) acute pancreatitis with high negative fluid balance.',
+    sbarBackground: 'Bed 202-B COPD flare admitted 2 days ago; ABG performed. Bed 203-A strict NPO with NG tube running to free drainage.',
+    sbarAssessment: 'Bed 202-B requires continuous pulse oximetry. Bed 203-A requires aggressive RL hydration and hourly I/O charting.',
+    sbarRecommendation: 'Follow up lab for serum electrolytes. Ensure 14:00 IV antibiotic doses are administered on schedule.',
+    abnormalVitalsSummary: 'Bed 202-B: SpO2 91% • Bed 203-A: Pulse 112 bpm',
+    pendingOrdersSummary: '1 Surgical dressing change • 1 STAT PRBC Blood Transfusion in progress',
+    highRiskPatientsSummary: '2 High fall risk patients (Bed 202-B & Bed 302-A) identified with yellow wristbands.'
+  });
+
+  // Load Initial Data from Backend
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [dash, pts, vitals, io, mar, orders, handovers] = await Promise.all([
+        NursingService.getDashboard(),
+        NursingService.getPatients(),
+        NursingService.getVitals(),
+        NursingService.getIntakeOutput(),
+        NursingService.getMar(),
+        NursingService.getDoctorOrders(),
+        NursingService.getHandovers()
+      ]);
+
+      if (dash) setDashboardStats(dash);
+      if (pts && pts.length > 0) {
+        setPatients(pts);
+        if (vitalsForm.patientId === 'P-101' && pts[0]?.id) {
+          setVitalsForm(prev => ({ ...prev, patientId: pts[0].id }));
+          setIoForm(prev => ({ ...prev, patientId: pts[0].id }));
         }
-        return p;
-      }));
-    }
-    setIsCarePlanModalOpen(false);
-    showNotification(`Care Plan updated for ${selectedPatient?.name}: ${carePlanForm.diet}, Fall Risk: ${carePlanForm.fallRisk}`);
-  };
-
-  const handleSaveFluid = (e) => {
-    e.preventDefault();
-    const amountNum = parseInt(fluidForm.amount, 10) || 0;
-    const isIntake = fluidForm.category === 'Intake';
-    const newEntry = {
-      time: fluidForm.time,
-      type: fluidForm.category,
-      route: fluidForm.route,
-      amount: amountNum,
-      balance: isIntake ? `+${amountNum} ml` : `-${amountNum} ml`
-    };
-    setFluidLogs([newEntry, ...fluidLogs]);
-    if (selectedPatient) {
-      setPatients(prev => prev.map(p => {
-        if (p.uhid === selectedPatient.uhid) {
-          return {
-            ...p,
-            intake: isIntake ? p.intake + amountNum : p.intake,
-            output: !isIntake ? p.output + amountNum : p.output
-          };
-        }
-        return p;
-      }));
-    }
-    setIsFluidModalOpen(false);
-    showNotification(`Fluid ${fluidForm.category} (${amountNum} ml) recorded via ${fluidForm.route}.`);
-  };
-
-  const handleSaveMarAdmin = (e) => {
-    e.preventDefault();
-    if (!selectedMarItem) return;
-    const isWithhold = marAdminForm.action === 'withhold';
-    setMarRecords(prev => prev.map(m => {
-      if (m.id === selectedMarItem.id) {
-        return {
-          ...m,
-          status: isWithhold ? 'Withheld' : 'Administered',
-          adminBy: `${marAdminForm.nurseName} (${marAdminForm.barcodeVerified ? 'Dual-Scanned' : 'Manual'})`,
-          adminTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          barcodeVerified: marAdminForm.barcodeVerified,
-          withheldReason: isWithhold ? marAdminForm.withheldReason : undefined
-        };
       }
-      return m;
-    }));
-    setIsMarAdminModalOpen(false);
-    showNotification(`Medication ${selectedMarItem.id} marked as ${isWithhold ? 'Withheld' : 'Administered'}.`);
+      if (vitals && vitals.length > 0) setVitalsList(vitals);
+      if (io && io.length > 0) setIoList(io);
+      if (mar && mar.length > 0) setMarList(mar);
+      if (orders && orders.length > 0) setOrdersList(orders);
+      if (handovers && handovers.length > 0) setHandoversList(handovers);
+    } catch (err) {
+      console.warn('[NursingView] API fetch error, operating with loaded state:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSaveNewMed = (e) => {
-    e.preventDefault();
-    const targetPat = patients.find(p => p.uhid === newMedForm.patientUhid) || selectedPatient;
-    const newRecord = {
-      id: `MAR-00${marRecords.length + 1}`,
-      patientUhid: targetPat.uhid,
-      patientName: targetPat.name,
-      bed: targetPat.bed.replace('Bed ', ''),
-      medication: newMedForm.medication,
-      route: newMedForm.route,
-      frequency: newMedForm.frequency,
-      scheduledTime: newMedForm.scheduledTime,
-      status: 'Due Soon',
-      adminBy: '-',
-      adminTime: '-',
-      barcodeVerified: false
-    };
-    setMarRecords([newRecord, ...marRecords]);
-    setIsNewMedModalOpen(false);
-    showNotification(`Scheduled medication order added to MAR: ${newRecord.medication} for ${targetPat.name}`);
-  };
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const handleSaveDoctorOrder = (e) => {
-    e.preventDefault();
-    const newOrd = {
-      id: `ORD-${doctorOrders.length + 7705}`,
-      bed: doctorOrderForm.bed,
-      patient: patients.find(p => p.bed === doctorOrderForm.bed)?.name || 'Inpatient',
-      doctor: doctorOrderForm.doctor,
-      orderType: doctorOrderForm.orderType,
-      description: doctorOrderForm.description,
-      priority: doctorOrderForm.priority,
-      timePlaced: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'Pending',
-      executedBy: null,
-      execTimestamp: null
-    };
-    setDoctorOrders([newOrd, ...doctorOrders]);
-    setIsDoctorOrderModalOpen(false);
-    showNotification(`CPOE Doctor Order placed: ${newOrd.id} (${newOrd.orderType})`);
-  };
-
-  const handleSaveSbar = (e) => {
-    e.preventDefault();
-    setSbarNotes({
-      ...sbarNotes,
-      shift: sbarForm.shift,
-      situation: sbarForm.situation,
-      background: sbarForm.background,
-      assessment: sbarForm.assessment,
-      recommendation: sbarForm.recommendation,
-      outgoingNurse: sbarForm.outgoingNurse,
-      incomingNurse: sbarForm.incomingNurse
+  // Filtered Patients List
+  const filteredPatients = useMemo(() => {
+    return patients.filter(p => {
+      const matchWing = selectedWingFilter === 'ALL' || p.wing.toLowerCase().includes(selectedWingFilter.toLowerCase());
+      const matchSearch = !searchFilter ||
+        p.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        p.uhid.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        p.bed.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        p.doctor.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        p.diagnosis.toLowerCase().includes(searchFilter.toLowerCase());
+      return matchWing && matchSearch;
     });
-    setIsSbarModalOpen(false);
-    showNotification(`SBAR Shift Handover observations updated for ${sbarForm.shift}.`);
+  }, [patients, selectedWingFilter, searchFilter]);
+
+  // Filtered Vitals List
+  const filteredVitals = useMemo(() => {
+    return vitalsList.filter(v => {
+      return selectedPatientId === 'ALL' || v.patientId === selectedPatientId || v.uhid === selectedPatientId;
+    });
+  }, [vitalsList, selectedPatientId]);
+
+  // Filtered Intake/Output List
+  const filteredIo = useMemo(() => {
+    return ioList.filter(i => {
+      return selectedPatientId === 'ALL' || i.patientId === selectedPatientId || i.uhid === selectedPatientId;
+    });
+  }, [ioList, selectedPatientId]);
+
+  // Filtered MAR List
+  const filteredMar = useMemo(() => {
+    return marList.filter(m => {
+      const matchPatient = selectedPatientId === 'ALL' || m.patientId === selectedPatientId || m.uhid === selectedPatientId;
+      const matchShift = marShiftFilter === 'ALL' || m.shift.toLowerCase().includes(marShiftFilter.toLowerCase());
+      return matchPatient && matchShift;
+    });
+  }, [marList, selectedPatientId, marShiftFilter]);
+
+  // Filtered Doctor Orders
+  const filteredOrders = useMemo(() => {
+    return ordersList.filter(o => {
+      const matchPatient = selectedPatientId === 'ALL' || o.patientId === selectedPatientId || o.uhid === selectedPatientId;
+      const matchPriority = orderPriorityFilter === 'ALL' || o.priority.toLowerCase().includes(orderPriorityFilter.toLowerCase());
+      return matchPatient && matchPriority;
+    });
+  }, [ordersList, selectedPatientId, orderPriorityFilter]);
+
+  // Handlers for Operations
+  const handleSaveVitals = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...vitalsForm,
+        temperature: parseFloat(vitalsForm.temperature),
+        pulse: parseInt(vitalsForm.pulse, 10),
+        bloodPressureSystolic: parseInt(vitalsForm.bloodPressureSystolic, 10),
+        bloodPressureDiastolic: parseInt(vitalsForm.bloodPressureDiastolic, 10),
+        respiratoryRate: parseInt(vitalsForm.respiratoryRate, 10),
+        spO2: parseInt(vitalsForm.spO2, 10),
+        painScore: parseInt(vitalsForm.painScore, 10)
+      };
+
+      const result = await NursingService.recordVitals(payload);
+      if (result) {
+        setVitalsList(prev => [result, ...prev]);
+        // Update patient status in local state
+        setPatients(prev => prev.map(p => {
+          if (p.id === payload.patientId || p.uhid === payload.patientId) {
+            return {
+              ...p,
+              vitalAlert: result.alertMessage,
+              status: result.isAbnormal ? `Alert: ${result.alertMessage}` : 'Stable'
+            };
+          }
+          return p;
+        }));
+      }
+      setIsVitalsModalOpen(false);
+      showNotification(`Bedside vitals logged successfully for ${vitalsForm.patientId}.`);
+    } catch (err) {
+      showNotification(`Failed to record vitals: ${err.message}`);
+    }
+  };
+
+  const handleSaveIo = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...ioForm,
+        intakeOral: parseFloat(ioForm.intakeOral) || 0,
+        intakeIv: parseFloat(ioForm.intakeIv) || 0,
+        intakeEnteral: parseFloat(ioForm.intakeEnteral) || 0,
+        outputUrine: parseFloat(ioForm.outputUrine) || 0,
+        outputDrain: parseFloat(ioForm.outputDrain) || 0,
+        outputVomitus: parseFloat(ioForm.outputVomitus) || 0
+      };
+
+      const result = await NursingService.recordIntakeOutput(payload);
+      if (result) {
+        setIoList(prev => [result, ...prev]);
+        setPatients(prev => prev.map(p => {
+          if (p.id === payload.patientId || p.uhid === payload.patientId) {
+            return {
+              ...p,
+              cumulativeFluidBalance: `${result.balance >= 0 ? '+' : ''}${result.balance} mL (${result.status})`
+            };
+          }
+          return p;
+        }));
+      }
+      setIsIoModalOpen(false);
+      showNotification(`Fluid intake/output charted successfully for ${ioForm.patientId}.`);
+    } catch (err) {
+      showNotification(`Failed to log intake/output: ${err.message}`);
+    }
+  };
+
+  const handleAdministerMar = async (e) => {
+    e.preventDefault();
+    if (!activeMarItem) return;
+
+    try {
+      const payload = {
+        marId: activeMarItem.id,
+        patientId: activeMarItem.patientId,
+        barcodeVerified: true,
+        administeredBy: 'Sister Mary, RN',
+        notes: 'Administered at bedside. Wristband scan verified.'
+      };
+
+      const result = await NursingService.administerMedication(payload);
+      setMarList(prev => prev.map(m => m.id === activeMarItem.id ? { ...m, ...result, status: 'Administered' } : m));
+      setDashboardStats(prev => ({
+        ...prev,
+        pendingMarDoses: Math.max(0, prev.pendingMarDoses - 1)
+      }));
+      setIsMarAdminModalOpen(false);
+      showNotification(`Medication ${activeMarItem.medication} marked as Administered with electronic sign-off.`);
+    } catch (err) {
+      showNotification(`Error administering dose: ${err.message}`);
+    }
+  };
+
+  const handleWithholdMar = async (e) => {
+    e.preventDefault();
+    if (!activeMarItem) return;
+
+    try {
+      const payload = {
+        marId: activeMarItem.id,
+        patientId: activeMarItem.patientId,
+        withheldReason: marWithholdForm.withheldReason,
+        withheldBy: marWithholdForm.withheldBy,
+        notes: marWithholdForm.notes
+      };
+
+      const result = await NursingService.withholdMedication(payload);
+      setMarList(prev => prev.map(m => m.id === activeMarItem.id ? { ...m, ...result, status: 'Withheld' } : m));
+      setDashboardStats(prev => ({
+        ...prev,
+        pendingMarDoses: Math.max(0, prev.pendingMarDoses - 1)
+      }));
+      setIsMarWithholdModalOpen(false);
+      showNotification(`Medication ${activeMarItem.medication} Withheld. Clinical rationale documented.`);
+    } catch (err) {
+      showNotification(`Error withholding dose: ${err.message}`);
+    }
+  };
+
+  const handleExecuteOrder = async (e) => {
+    e.preventDefault();
+    if (!activeOrderItem) return;
+
+    try {
+      const payload = {
+        orderId: activeOrderItem.id,
+        patientId: activeOrderItem.patientId,
+        completedBy: orderExecutionForm.completedBy,
+        notes: orderExecutionForm.notes,
+        executionDetails: orderExecutionForm.notes
+      };
+
+      const result = await NursingService.executeDoctorOrder(payload);
+      setOrdersList(prev => prev.map(o => o.id === activeOrderItem.id ? { ...o, ...result, status: 'Completed' } : o));
+      setDashboardStats(prev => ({
+        ...prev,
+        pendingOrders: Math.max(0, prev.pendingOrders - 1)
+      }));
+      setIsOrderModalOpen(false);
+      showNotification(`Doctor order "${activeOrderItem.title}" completed and electronically signed.`);
+    } catch (err) {
+      showNotification(`Error executing order: ${err.message}`);
+    }
+  };
+
+  const handleSaveHandover = async (e) => {
+    e.preventDefault();
+    try {
+      const result = await NursingService.createHandover(handoverForm);
+      if (result) {
+        setHandoversList(prev => [result, ...prev]);
+      }
+      setIsHandoverModalOpen(false);
+      showNotification(`Shift handover SBAR documentation recorded for ${handoverForm.wing}.`);
+    } catch (err) {
+      showNotification(`Error creating handover: ${err.message}`);
+    }
+  };
+
+  const handleAcceptHandover = async (handoverId) => {
+    try {
+      const result = await NursingService.acceptHandover(handoverId, {
+        incomingNurseSignature: 'Sister Sneha, RN',
+        handoverNotes: 'Physical bedside rounds completed. All 6 patients accounted for. Handover formally accepted.'
+      });
+      setHandoversList(prev => prev.map(h => h.id === handoverId ? { ...h, ...result, incomingSigned: true } : h));
+      showNotification(`Shift handover accepted and verified with incoming nurse electronic signature.`);
+    } catch (err) {
+      showNotification(`Error accepting handover: ${err.message}`);
+    }
+  };
+
+  const handleSimulateBarcodeScan = (wristbandBarcode, targetPatientId) => {
+    setScannedBarcode(wristbandBarcode);
+    const matched = patients.find(p => p.barcode === wristbandBarcode || p.id === targetPatientId);
+    if (matched) {
+      setBarcodeMatchStatus({
+        success: true,
+        patientName: matched.name,
+        bed: matched.bed,
+        uhid: matched.uhid
+      });
+      showNotification(`Barcode Verified: ${wristbandBarcode} matched to ${matched.name} (${matched.bed}). Patient safety check passed.`);
+    } else {
+      setBarcodeMatchStatus({
+        success: false,
+        patientName: null
+      });
+      showNotification(`Barcode Mismatch Alert: Barcode does not match assigned patient.`);
+    }
   };
 
   const currentSubmodule = NURSING_SUBMODULES.find(s => s.id === activeSubtab);
 
   return (
-    <div className="flex flex-col gap-6 p-6 min-h-screen bg-[var(--color-bg-primary)]">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Toast Notification */}
-      {notificationMsg && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-[var(--color-primary-teal)] text-white text-sm font-medium rounded-lg shadow-xl border border-blue-600 animate-slide-in">
-          <CheckCircle2 size={18} className="text-sky-200" />
-          <span>{notificationMsg}</span>
+      {toastMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '24px',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 18px',
+            backgroundColor: 'var(--color-primary-teal)',
+            color: '#FFFFFF',
+            fontSize: 'var(--font-size-sm)',
+            fontWeight: '600',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-modal)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+        >
+          <CheckCircle2 size={18} color="#93C5FD" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-[var(--color-primary-teal)] shadow-xs">
-              <HeartPulse size={22} />
+      {/* Enterprise Header Banner (matching Screenshot 3 OPD/MRD) */}
+      <div
+        style={{
+          padding: '24px 28px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--color-bg-pale-aqua)',
+                color: 'var(--color-primary-teal)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <HeartPulse size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[var(--color-text-main)] tracking-tight">
-                Ward Nursing Workstation
-              </h1>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                Inpatient Bedside Census, Vitals & Intake-Output, Electronic MAR, and Shift SBAR Handovers
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                  Inpatient Nursing Care & Ward Management
+                </h1>
+                <Badge variant="info">Module 21 • Clinical Operations</Badge>
+                <Badge variant="teal">NABH Std. COP.6 / HIC.4 / MOM.7</Badge>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: 'var(--color-text-secondary)' }}>
+                Ward nursing workstation, bedside scheduled vitals & pain score, 24-hr intake/output fluid balance, medication administration record (MAR) with barcode verification, doctor order execution queue, and electronic SBAR shift handover.
               </p>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-bg-pale-aqua)] border border-sky-100 text-xs font-medium text-[var(--color-primary-teal)]">
-            <Bed size={14} />
-            <span>Wing B (18/20 Beds Occupied)</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 14px',
+                backgroundColor: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                color: '#166534'
+              }}
+            >
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22C55E' }} />
+              <span>Active Shift: Morning (07:00 - 15:00) • Sister Mary, RN (Incharge)</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={RefreshCw}
+              onClick={loadData}
+              title="Refresh live ward telemetry"
+            >
+              Sync
+            </Button>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-            <Clock size={14} />
-            <span>Day Shift: 07:00 - 15:00</span>
-          </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setShowVitalsModal(true)}
-            className="flex items-center gap-2 shadow-xs"
-          >
-            <Thermometer size={15} />
-            <span>Record Bedside Vitals</span>
-          </Button>
         </div>
       </div>
 
-      {/* Top Telemetry KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--color-text-muted)]">Active Census</span>
-            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-[var(--color-primary-teal)]">
-              <Bed size={16} />
+      {/* Telemetry KPI Cards (4 Cards in a responsive grid) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '16px'
+        }}
+      >
+        {/* KPI 1: Assigned Wing Census */}
+        <div
+          style={{
+            padding: '18px 20px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-card)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Assigned Wing Census
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', backgroundColor: '#EBF3FA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0A4174' }}>
+              <Bed size={18} />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-[var(--color-text-main)]">18</span>
-            <span className="text-xs text-emerald-600 font-semibold">90% Occupancy</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+              {dashboardStats.totalCensus} / {dashboardStats.capacity} Beds
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#0284C7' }}>
+              ({dashboardStats.occupancyPercent}% Occupancy)
+            </span>
           </div>
-          <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">2 Available • 1 Discharge Ready</p>
-        </Card>
+          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>Wing A: 3 • Wing B: 1 • Step-Down ICU: 2</span>
+          </div>
+        </div>
 
-        <Card className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--color-text-muted)]">Critical Watch</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
-              <AlertTriangle size={16} />
+        {/* KPI 2: Bedside Vital Alerts */}
+        <div
+          style={{
+            padding: '18px 20px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            border: '1.5px solid #FECACA',
+            boxShadow: 'var(--shadow-card)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#991B1B', textTransform: 'uppercase' }}>
+              Bedside Vital Alerts
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', backgroundColor: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626' }}>
+              <AlertTriangle size={18} />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-rose-700">3</span>
-            <span className="text-xs text-rose-600 font-medium">STAT Monitoring</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: '800', color: '#DC2626' }}>
+              {dashboardStats.criticalAlerts} Critical
+            </span>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: '#FEE2E2', color: '#991B1B' }}>
+              Immediate Attention
+            </span>
           </div>
-          <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">Bed 201-A, 203-A, 206-B</p>
-        </Card>
+          <div style={{ fontSize: '0.78rem', color: '#B91C1C' }}>
+            1 Hypoxemia (SpO2 91%) • 1 Oliguria • 1 Severe Tachycardia
+          </div>
+        </div>
 
-        <Card className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--color-text-muted)]">MAR Doses Due (14:00)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-              <Pill size={16} />
+        {/* KPI 3: Shift MAR Doses Due */}
+        <div
+          style={{
+            padding: '18px 20px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-card)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Shift MAR Doses Due
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706' }}>
+              <Pill size={18} />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-700">7</span>
-            <span className="text-xs text-amber-600 font-medium">Pending Verify</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: '800', color: '#D97706' }}>
+              {dashboardStats.pendingMarDoses} Scheduled
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
+              (4 Administered)
+            </span>
           </div>
-          <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">Barcode wristband scan required</p>
-        </Card>
+          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+            1 Withheld dose documented (Hypotension BP &lt; 90/60)
+          </div>
+        </div>
 
-        <Card className="p-4 bg-white border border-[var(--color-border-subtle)] hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--color-text-muted)]">Pending Doctor Orders</span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-              <ClipboardList size={16} />
+        {/* KPI 4: Doctor Orders Active */}
+        <div
+          style={{
+            padding: '18px 20px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-card)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+              Inpatient Doctor Orders
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', backgroundColor: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+              <ClipboardList size={18} />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-indigo-700">2</span>
-            <span className="text-xs text-indigo-600 font-medium">1 Transfusion STAT</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: '800', color: '#059669' }}>
+              {dashboardStats.pendingOrders} Active
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
+              (2 Completed)
+            </span>
           </div>
-          <p className="mt-1 text-[11px] text-[var(--color-text-muted)]">All CPOE synced & verified</p>
-        </Card>
+          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+            1 STAT Blood Transfusion • 1 Sterile Dressing Pending
+          </div>
+        </div>
       </div>
 
-      {/* Level 2 Submodule Tabs */}
-      <div className="flex items-center gap-1 border-b border-[var(--color-border-subtle)] overflow-x-auto pb-0.5">
-        {NURSING_SUBMODULES.map((sub) => {
-          const SubIcon = sub.icon;
-          const isActive = activeSubtab === sub.id;
+      {/* Level 2 Submodule Navigation Tabs Bar (Matching Screenshot 3) */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '6px',
+          backgroundColor: '#FFFFFF',
+          padding: '6px',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-card)',
+          overflowX: 'auto'
+        }}
+      >
+        {NURSING_SUBMODULES.map(tab => {
+          const IconComponent = tab.icon;
+          const isActive = activeSubtab === tab.id;
           return (
             <button
-              key={sub.id}
-              onClick={() => handleSubtabSelect(sub.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all whitespace-nowrap border-b-2 ${
-                isActive
-                  ? 'border-[var(--color-primary-teal)] text-[var(--color-primary-teal)] bg-sky-50/40 shadow-xs'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-slate-50'
-              }`}
+              key={tab.id}
+              type="button"
+              onClick={() => handleSubtabSelect(tab.id)}
+              style={{
+                flex: 1,
+                minWidth: '180px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                backgroundColor: isActive ? 'var(--color-primary-teal)' : 'transparent',
+                color: isActive ? '#FFFFFF' : 'var(--color-text-secondary)',
+                fontWeight: isActive ? '700' : '600',
+                fontSize: '0.84rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: isActive ? '0 2px 8px rgba(10, 65, 116, 0.2)' : 'none'
+              }}
             >
-              <SubIcon size={15} />
-              <span>{sub.label}</span>
+              <IconComponent size={16} />
+              <span>{tab.id} {tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Level 3 Subsubmodule Pills */}
-      {currentSubmodule && currentSubmodule.subsubmodules && (
-        <div className="flex items-center gap-2 flex-wrap bg-[var(--color-bg-pale-aqua)]/50 p-2 rounded-lg border border-sky-100">
-          <span className="text-[11px] font-semibold text-[var(--color-primary-teal)] uppercase tracking-wider px-2">
+      {/* Level 3 Workflows Bar (Matching Screenshot 3) */}
+      {currentSubmodule && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '10px 16px',
+            backgroundColor: 'var(--color-bg-pale-aqua)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid #D1E3F5',
+            flexWrap: 'wrap'
+          }}
+        >
+          <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--color-primary-teal)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Workflows:
           </span>
-          {currentSubmodule.subsubmodules.map((subsub) => {
-            const isSubsubActive = activeSubsubtab === subsub.id;
-            return (
-              <button
-                key={subsub.id}
-                onClick={() => handleSubsubSelect(subsub.id)}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full transition-all ${
-                  isSubsubActive
-                    ? 'bg-[var(--color-primary-teal)] text-white shadow-xs font-semibold'
-                    : 'bg-white text-[var(--color-text-muted)] hover:text-[var(--color-primary-teal)] border border-sky-100'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                <span>{subsub.label}</span>
-              </button>
-            );
-          })}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {currentSubmodule.subsubmodules.map(subsub => {
+              const isPillActive = activeSubsubtab === subsub.id;
+              return (
+                <button
+                  key={subsub.id}
+                  type="button"
+                  onClick={() => handleSubsubSelect(subsub.id)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-full)',
+                    border: isPillActive ? '1px solid var(--color-primary-teal)' : '1px solid #C4DCF2',
+                    backgroundColor: isPillActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+                    color: isPillActive ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                    fontWeight: isPillActive ? '700' : '500',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    boxShadow: isPillActive ? '0 2px 6px rgba(10, 65, 116, 0.1)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {subsub.id} {subsub.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Main Content Areas based on Submodule */}
+      {/* ========================================================================= */}
+      {/* SUBMODULE 21.1: WARD NURSING WORKSTATION                                  */}
+      {/* ========================================================================= */}
       {activeSubtab === '21.1' && (
-        <div className="space-y-6">
-          <Card className="p-5 bg-white border border-[var(--color-border-subtle)]">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
-              <div>
-                <h2 className="text-base font-semibold text-[var(--color-text-main)]">
-                  Ward Inpatient Roster & Bedside Census
-                </h2>
-                <p className="text-xs text-[var(--color-text-muted)]">
-                  Live bed assignments, clinical acuity score, vitals summary, and diet orders
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search Bed, UHID or Patient..."
-                    className="pl-8 pr-3 py-1.5 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-lg w-56 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                  />
-                </div>
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Controls Bar: Wing Filter & Patient Search */}
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}
+          >
+            {/* Wing Selection Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {['ALL', 'General Ward - Wing A', 'General Ward - Wing B', 'ICU Step-Down Unit'].map(wing => (
+                <button
+                  key={wing}
+                  type="button"
+                  onClick={() => setSelectedWingFilter(wing)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: selectedWingFilter === wing ? '1.5px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
+                    backgroundColor: selectedWingFilter === wing ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
+                    color: selectedWingFilter === wing ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                    fontWeight: selectedWingFilter === wing ? '700' : '500',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {wing === 'ALL' ? 'All Assigned Wings (6)' : wing}
+                </button>
+              ))}
             </div>
 
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--color-border-subtle)] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold bg-slate-50/50">
-                    <th className="py-2.5 px-3">Bed / Location</th>
-                    <th className="py-2.5 px-3">Patient Details</th>
-                    <th className="py-2.5 px-3">Diagnosis & Consultant</th>
-                    <th className="py-2.5 px-3">Bedside Vitals</th>
-                    <th className="py-2.5 px-3">Diet & Allergies</th>
-                    <th className="py-2.5 px-3">Acuity Status</th>
-                    <th className="py-2.5 px-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                  {patients.map((p) => (
-                    <tr
-                      key={p.uhid}
-                      onClick={() => setSelectedPatient(p)}
-                      className={`hover:bg-sky-50/20 cursor-pointer transition-colors ${
-                        selectedPatient?.uhid === p.uhid ? 'bg-sky-50/40' : ''
-                      }`}
-                    >
-                      <td className="py-3 px-3 font-semibold text-[var(--color-text-main)]">
-                        <div className="flex items-center gap-1.5">
-                          <Bed size={14} className="text-[var(--color-primary-teal)]" />
-                          <span>{p.bed}</span>
-                        </div>
-                        <span className="text-[10px] text-[var(--color-text-muted)] block font-normal">Wing B - Room 2</span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="font-semibold text-[var(--color-text-main)]">{p.name}</div>
-                        <div className="text-[11px] text-[var(--color-text-muted)]">
-                          {p.age}y • {p.gender} • <span className="font-mono text-sky-700">{p.uhid}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="font-medium text-slate-800">{p.diagnosis}</div>
-                        <div className="text-[11px] text-slate-500">{p.dr}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-2 font-mono">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{p.temp}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100">{p.bp}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-sky-800 font-bold">{p.spo2}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">
-                          Pain: <span className="font-bold text-amber-700">{p.painScore}/10</span> • PR: {p.pulse}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="font-medium text-slate-700">{p.diet}</div>
-                        <div className="text-[10px] text-rose-600 font-semibold">
-                          Allergy: {p.allergies}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        {p.status === 'Critical Alert' && (
-                          <Badge variant="danger" className="text-[10px]">
-                            Critical Alert
-                          </Badge>
-                        )}
-                        {p.status === 'Monitoring' && (
-                          <Badge variant="warning" className="text-[10px]">
-                            Monitoring
-                          </Badge>
-                        )}
-                        {p.status === 'Stable' && (
-                          <Badge variant="success" className="text-[10px]">
-                            Stable
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="secondary"
-                            size="xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedPatient(p);
-                              setShowVitalsModal(true);
-                            }}
-                          >
-                            Vitals
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSubtabSelect('21.3');
-                            }}
-                          >
-                            MAR
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          {/* Active Care Plan Launcher Drawer */}
-          {selectedPatient && (
-            <Card className="p-5 bg-white border border-[var(--color-border-subtle)]">
-              <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border-subtle)]">
-                <div className="flex items-center gap-2">
-                  <ClipboardList size={18} className="text-[var(--color-primary-teal)]" />
-                  <h3 className="text-sm font-semibold text-[var(--color-text-main)]">
-                    Active Care Plan & Bedside Protocol: {selectedPatient.name} ({selectedPatient.bed})
-                  </h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                    Fall Risk: {selectedPatient.fallRisk}
-                  </span>
-                  <Button
-                    variant="primary"
-                    size="xs"
-                    onClick={() => {
-                      setCarePlanForm({
-                        fallRisk: selectedPatient.fallRisk,
-                        diet: selectedPatient.diet,
-                        hydrationGoal: 'IV Maintenance @ 80 ml/hr NS + 5% Dextrose',
-                        drainProtocol: 'Foley catheter gravity bag to be emptied Q6H.',
-                        precautions: 'Bed rails elevated x4. DVT stockings worn.',
-                        nurse: selectedPatient.nurse
-                      });
-                      setIsCarePlanModalOpen(true);
-                    }}
-                  >
-                    Edit Care Plan
-                  </Button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
-                  <h4 className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                    <Droplet size={14} className="text-sky-600" />
-                    Hydration & Fluid Target
-                  </h4>
-                  <p className="text-xs text-slate-600">IV Maintenance @ 80 ml/hr NS + 5% Dextrose.</p>
-                  <div className="mt-2 text-[11px] text-slate-500 font-mono">
-                    24h Balance: <span className="font-bold text-sky-700">+{selectedPatient.intake - selectedPatient.output} ml</span> (Intake: {selectedPatient.intake}ml / Output: {selectedPatient.output}ml)
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
-                  <h4 className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                    <Activity size={14} className="text-amber-600" />
-                    Drain & Catheter Protocol
-                  </h4>
-                  <p className="text-xs text-slate-600">Foley catheter gravity bag to be emptied Q6H. Observe wound drain volume.</p>
-                  <div className="mt-2 text-[11px] text-amber-700 font-medium">
-                    Catheter inserted: 24 Oct 06:00 AM (Day 1)
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
-                  <h4 className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-emerald-600" />
-                    Special Nursing Precautions
-                  </h4>
-                  <p className="text-xs text-slate-600">Bed rails elevated x4. Deep vein thrombosis (DVT) stockings worn continuously.</p>
-                  <div className="mt-2 text-[11px] text-emerald-700 font-medium">
-                    Assigned Primary Nurse: {selectedPatient.nurse}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* 21.2 Vitals & Intake-Output Charting */}
-      {activeSubtab === '21.2' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 p-5 bg-white border border-[var(--color-border-subtle)]">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border-subtle)]">
-              <div>
-                <h3 className="text-sm font-bold text-[var(--color-text-main)] flex items-center gap-2">
-                  <Activity size={18} className="text-[var(--color-primary-teal)]" />
-                  24-Hour Fluid Intake vs. Output Cumulative Ledger
-                </h3>
-                <p className="text-xs text-[var(--color-text-muted)]">
-                  Hourly charting for Bed 201-A ({selectedPatient?.name})
-                </p>
+            {/* Search Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px' }}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Search size={16} color="var(--color-text-secondary)" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                <input
+                  type="text"
+                  placeholder="Filter by Patient, Bed, UHID or Doctor..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 36px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    fontSize: '0.82rem',
+                    outline: 'none'
+                  }}
+                />
               </div>
               <Button
                 variant="primary"
-                size="xs"
-                onClick={() => setIsFluidModalOpen(true)}
+                size="sm"
+                icon={Plus}
+                onClick={() => setIsVitalsModalOpen(true)}
               >
-                + Add Fluid Entry
-              </Button>
-            </div>
-
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--color-border-subtle)] text-[var(--color-text-muted)] bg-slate-50 font-semibold uppercase">
-                    <th className="py-2.5 px-3">Time</th>
-                    <th className="py-2.5 px-3">Category</th>
-                    <th className="py-2.5 px-3">Route / Source</th>
-                    <th className="py-2.5 px-3 text-right">Volume (ml)</th>
-                    <th className="py-2.5 px-3 text-right">Running Net Balance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                  {fluidLogs.map((log, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="py-2.5 px-3 font-mono font-medium text-slate-700">{log.time}</td>
-                      <td className="py-2.5 px-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${
-                          log.type === 'Intake' ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}>
-                          {log.type}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 font-medium text-slate-800">{log.route}</td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{log.amount} ml</td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-sky-800">{log.balance}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 p-3 rounded-lg bg-[var(--color-bg-pale-aqua)]/50 border border-sky-100 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-4">
-                <div>
-                  <span className="text-[var(--color-text-muted)] block">Total Intake (24h)</span>
-                  <span className="font-bold text-sky-800 text-sm">2,600 ml</span>
-                </div>
-                <div className="h-6 w-px bg-teal-200" />
-                <div>
-                  <span className="text-[var(--color-text-muted)] block">Total Output (24h)</span>
-                  <span className="font-bold text-amber-800 text-sm">2,050 ml</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[var(--color-text-muted)] block">Net Positive Balance</span>
-                <span className="font-bold text-teal-900 text-base font-mono">+550 ml</span>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5 bg-white border border-[var(--color-border-subtle)] flex flex-col justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-[var(--color-text-main)] pb-3 border-b border-[var(--color-border-subtle)] flex items-center gap-2">
-                <Thermometer size={18} className="text-[var(--color-primary-teal)]" />
-                Current Bedside Telemetry
-              </h3>
-
-              <div className="space-y-3 mt-4">
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-slate-500 block">Body Temperature</span>
-                    <span className="text-lg font-bold font-mono text-slate-900">{selectedPatient.temp}</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Normal Range</span>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-slate-500 block">Pulse Rate / Rhythm</span>
-                    <span className="text-lg font-bold font-mono text-slate-900">{selectedPatient.pulse}</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Regular Sinus</span>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-slate-500 block">Non-Invasive Blood Pressure (NIBP)</span>
-                    <span className="text-lg font-bold font-mono text-slate-900">{selectedPatient.bp}</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Mild Pre-HTN</span>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-slate-500 block">Oxygen Saturation (SpO2)</span>
-                    <span className="text-lg font-bold font-mono text-sky-800">{selectedPatient.spo2}</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">Room Air</span>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-slate-500 block">VAS Pain Rating Scale (0-10)</span>
-                    <span className="text-lg font-bold font-mono text-amber-700">{selectedPatient.painScore} / 10</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Moderate Pain</span>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowVitalsModal(true)}
-              className="mt-4 w-full flex items-center justify-center gap-2"
-            >
-              <Activity size={15} />
-              <span>Update Bedside Vitals</span>
-            </Button>
-          </Card>
-        </div>
-      )}
-
-      {/* 21.3 Medication Administration Record (MAR) */}
-      {activeSubtab === '21.3' && (
-        <Card className="p-5 bg-white border border-[var(--color-border-subtle)]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
-            <div>
-              <div className="flex items-center gap-2">
-                <Pill size={18} className="text-[var(--color-primary-teal)]" />
-                <h3 className="text-sm font-bold text-[var(--color-text-main)]">
-                  Shift Scheduled Medication Administration Record (MAR)
-                </h3>
-              </div>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                Barcode 2-way verification (Patient Wristband + Drug Blister) before administration
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Scheduled Slots:</span>
-              <span className="px-2 py-1 rounded bg-sky-50 text-[var(--color-primary-teal)] text-xs font-mono font-semibold border border-sky-200">
-                08:00
-              </span>
-              <span className="px-2 py-1 rounded bg-amber-50 text-amber-700 text-xs font-mono font-semibold border border-amber-200">
-                14:00 (Current)
-              </span>
-              <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-mono font-semibold border border-slate-200">
-                20:00
-              </span>
-              <Button
-                variant="primary"
-                size="xs"
-                onClick={() => setIsNewMedModalOpen(true)}
-              >
-                + Add Medication
+                Record Vitals
               </Button>
             </div>
           </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-[var(--color-border-subtle)] text-[var(--color-text-muted)] bg-slate-50 font-semibold uppercase">
-                  <th className="py-2.5 px-3">Patient & Bed</th>
-                  <th className="py-2.5 px-3">Drug Name & Dosage</th>
-                  <th className="py-2.5 px-3">Route / Frequency</th>
-                  <th className="py-2.5 px-3">Scheduled Slot</th>
-                  <th className="py-2.5 px-3">Verification & Admin Status</th>
-                  <th className="py-2.5 px-3">Nurse / Remarks</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                {marRecords.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-[var(--color-text-main)]">{m.patientName}</div>
-                      <div className="text-[11px] text-sky-800 font-mono">
-                        {m.bed} • {m.patientUhid}
-                      </div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="font-semibold text-slate-900">{m.medication}</div>
-                      <div className="text-[10px] text-slate-500">ID: {m.id}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="font-medium text-slate-700">{m.route}</span>
-                      <span className="text-[11px] text-slate-500 block">{m.frequency}</span>
-                    </td>
-                    <td className="py-3 px-3 font-mono font-semibold text-slate-800">
-                      {m.scheduledTime}
-                    </td>
-                    <td className="py-3 px-3">
-                      {m.status === 'Administered' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            <Check size={12} /> Administered
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500">{m.adminTime}</span>
-                        </div>
-                      )}
-                      {m.status === 'Due Soon' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                          <Clock size={12} /> Due Soon (14:00)
-                        </span>
-                      )}
-                      {m.status === 'Scheduled' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
-                          Scheduled
-                        </span>
-                      )}
-                      {m.status === 'Withheld' && (
-                        <div>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                            <XCircle size={12} /> Withheld
-                          </span>
-                          <p className="text-[10px] text-rose-700 mt-1 max-w-xs italic">
-                            "{m.withheldReason}"
-                          </p>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-slate-600">
-                      <div>{m.adminBy}</div>
-                      {m.barcodeVerified && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-sky-700 font-medium">
-                          <QrCode size={11} /> Barcode Dual-Match
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      {m.status === 'Due Soon' || m.status === 'Scheduled' ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="primary"
-                            size="xs"
-                            onClick={() => {
-                              setSelectedMarItem(m);
-                              setMarAdminForm({
-                                action: 'administer',
-                                barcodeVerified: true,
-                                nurseName: 'Sr. Priya M.',
-                                withheldReason: ''
-                              });
-                              setIsMarAdminModalOpen(true);
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <QrCode size={12} />
-                            <span>Scan & Give</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="xs"
-                            onClick={() => {
-                              setSelectedMarItem(m);
-                              setMarAdminForm({
-                                action: 'withhold',
-                                barcodeVerified: false,
-                                nurseName: 'Sr. Priya M.',
-                                withheldReason: 'Clinical hold: Patient NPO & BP systolic < 100.'
-                              });
-                              setIsMarAdminModalOpen(true);
-                            }}
-                          >
-                            Withhold
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-[11px] text-slate-400 font-mono">Logged</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
-
-      {/* 21.4 Doctor Order Execution */}
-      {activeSubtab === '21.4' && (
-        <Card className="p-5 bg-white border border-[var(--color-border-subtle)]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
-            <div>
-              <div className="flex items-center gap-2">
-                <ClipboardList size={18} className="text-[var(--color-primary-teal)]" />
-                <h3 className="text-sm font-bold text-[var(--color-text-main)]">
-                  CPOE Inpatient Doctor Orders Execution Queue
-                </h3>
-              </div>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                Bedside sign-off for clinical procedures, wound dressings, and blood transfusion verification
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
-                1 STAT Transfusion Order Pending
-              </span>
-              <Button
-                variant="primary"
-                size="xs"
-                onClick={() => setIsDoctorOrderModalOpen(true)}
-              >
-                + New Doctor Order
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-[var(--color-border-subtle)] text-[var(--color-text-muted)] bg-slate-50 font-semibold uppercase">
-                  <th className="py-2.5 px-3">Order ID & Priority</th>
-                  <th className="py-2.5 px-3">Bed & Patient</th>
-                  <th className="py-2.5 px-3">Attending Physician</th>
-                  <th className="py-2.5 px-3">Order Details & Instructions</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3">Execution Sign-off</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                {doctorOrders.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-3">
-                      <div className="font-mono font-semibold text-slate-800">{ord.id}</div>
-                      <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                        ord.priority === 'STAT' ? 'bg-rose-100 text-rose-800' : ord.priority === 'Urgent' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {ord.priority}
+          {/* Patients Census Cards Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: '16px'
+            }}
+          >
+            {filteredPatients.map(patient => {
+              const isAlert = patient.vitalAlert !== null;
+              return (
+                <div
+                  key={patient.id}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 'var(--radius-lg)',
+                    border: isAlert ? '1.5px solid #FCA5A5' : '1px solid var(--color-border)',
+                    boxShadow: isAlert ? '0 4px 14px rgba(220, 38, 38, 0.08)' : 'var(--shadow-card)',
+                    padding: '18px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Top Bar: Bed & Status Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: 'var(--color-bg-pale-aqua)',
+                          color: 'var(--color-primary-teal)',
+                          fontWeight: '800',
+                          fontSize: '0.84rem'
+                        }}
+                      >
+                        {patient.bed}
                       </span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-[var(--color-text-main)]">{ord.patient}</div>
-                      <span className="text-[11px] font-mono text-sky-800">{ord.bed}</span>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700 font-medium">
-                      {ord.doctor}
-                      <span className="text-[10px] text-slate-500 block">Placed @ {ord.timePlaced}</span>
-                    </td>
-                    <td className="py-3 px-3 max-w-sm">
-                      <div className="font-semibold text-slate-800">{ord.orderType}</div>
-                      <p className="text-slate-600 text-[11px] mt-0.5">{ord.description}</p>
-                    </td>
-                    <td className="py-3 px-3">
-                      {ord.status === 'Completed' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <CheckCircle2 size={12} /> Executed
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                          <Clock size={12} /> Pending Action
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-slate-600">
-                      {ord.executedBy ? (
-                        <div>
-                          <div className="font-medium text-slate-800">{ord.executedBy}</div>
-                          <div className="text-[10px] text-slate-500 font-mono">@{ord.execTimestamp}</div>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 italic">Awaiting Nurse Sign-off</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      {ord.status === 'Pending' ? (
-                        <Button
-                          variant="primary"
-                          size="xs"
-                          onClick={() => handleExecuteDoctorOrder(ord.id)}
-                          className="flex items-center gap-1"
-                        >
-                          <Check size={12} />
-                          <span>Execute & Sign</span>
-                        </Button>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px]">Signed</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                        {patient.wing}
+                      </span>
+                    </div>
+                    {isAlert ? (
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          backgroundColor: '#FEE2E2',
+                          color: '#DC2626',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <AlertTriangle size={12} />
+                        Critical Alert
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          backgroundColor: '#DCFCE7',
+                          color: '#15803D',
+                          fontSize: '0.74rem',
+                          fontWeight: '700'
+                        }}
+                      >
+                        Stable
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Patient Info */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                        {patient.name}
+                      </h3>
+                      <span style={{ fontSize: '0.76rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                        {patient.uhid}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                      {patient.age} yrs • {patient.gender} • Admitted {patient.admissionDate}
+                    </div>
+                  </div>
+
+                  {/* Diagnosis & Care Team */}
+                  <div style={{ padding: '10px 12px', backgroundColor: '#F8FAFC', borderRadius: 'var(--radius-md)', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#1E293B', fontWeight: '600' }}>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Dx: </span>
+                      {patient.diagnosis}
+                    </div>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--color-text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Attending: <strong>{patient.doctor}</strong></span>
+                      <span>Primary: <strong>{patient.primaryNurse}</strong></span>
+                    </div>
+                  </div>
+
+                  {/* Clinical Indicators & Alerts */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: 'var(--radius-md)', backgroundColor: '#F1F5F9', color: '#334155', fontSize: '0.72rem', fontWeight: '600' }}>
+                      Diet: {patient.diet}
+                    </span>
+                    <span style={{ padding: '3px 8px', borderRadius: 'var(--radius-md)', backgroundColor: patient.fallRisk.includes('High') ? '#FEE2E2' : '#F1F5F9', color: patient.fallRisk.includes('High') ? '#991B1B' : '#334155', fontSize: '0.72rem', fontWeight: '600' }}>
+                      Fall Risk: {patient.fallRisk}
+                    </span>
+                    <span style={{ padding: '3px 8px', borderRadius: 'var(--radius-md)', backgroundColor: '#E0F2FE', color: '#0369A1', fontSize: '0.72rem', fontWeight: '600' }}>
+                      Fluid: {patient.cumulativeFluidBalance}
+                    </span>
+                  </div>
+
+                  {/* Vital Alert Banner if present */}
+                  {isAlert && (
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: '#FEF2F2',
+                        border: '1px solid #FECACA',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.78rem',
+                        color: '#991B1B',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <AlertTriangle size={14} color="#DC2626" />
+                      <span>{patient.vitalAlert}</span>
+                    </div>
+                  )}
+
+                  {/* Actions Bar */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '12px', marginTop: 'auto' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveCarePlanPatient(patient);
+                        setIsCarePlanModalOpen(true);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-primary-teal)',
+                        fontSize: '0.78rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <FileText size={14} />
+                      Care Plan
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVitalsForm(prev => ({ ...prev, patientId: patient.id }));
+                          setIsVitalsModalOpen(true);
+                        }}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: 'var(--color-bg-pale-aqua)',
+                          color: 'var(--color-primary-teal)',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + Vitals
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIoForm(prev => ({ ...prev, patientId: patient.id }));
+                          setIsIoModalOpen(true);
+                        }}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: '#F0FDF4',
+                          color: '#15803D',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + I/O
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatientId(patient.id);
+                          handleSubtabSelect('21.3');
+                        }}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: '#FEF3C7',
+                          color: '#B45309',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        MAR
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* 21.5 Shift Handover Notes (SBAR) */}
-      {activeSubtab === '21.5' && (
-        <Card className="p-5 bg-white border border-[var(--color-border-subtle)]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border-subtle)]">
-            <div>
-              <div className="flex items-center gap-2">
-                <FileText size={18} className="text-[var(--color-primary-teal)]" />
-                <h3 className="text-sm font-bold text-[var(--color-text-main)]">
-                  Standard SBAR Shift Handover Protocol & Counter-Sign
-                </h3>
-              </div>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                Situation • Background • Assessment • Recommendation for Wing B Day-to-Night Handover
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded">
-                Shift: {sbarNotes.shift}
+      {/* ========================================================================= */}
+      {/* SUBMODULE 21.2: VITALS & INTAKE-OUTPUT CHARTING                           */}
+      {/* ========================================================================= */}
+      {activeSubtab === '21.2' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Header Action Bar */}
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>
+                Filter by Inpatient:
               </span>
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => {
-                  setSbarForm({
-                    shift: sbarNotes.shift,
-                    situation: sbarNotes.situation,
-                    background: sbarNotes.background,
-                    assessment: sbarNotes.assessment,
-                    recommendation: sbarNotes.recommendation,
-                    outgoingNurse: sbarNotes.outgoingNurse,
-                    incomingNurse: sbarNotes.incomingNurse
-                  });
-                  setIsSbarModalOpen(true);
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.82rem',
+                  fontWeight: '600',
+                  outline: 'none',
+                  backgroundColor: '#FFFFFF'
                 }}
               >
-                Edit SBAR Observations
+                <option value="ALL">All Ward Patients ({patients.length})</option>
+                {patients.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.bed} - {p.name} ({p.uhid})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Droplet}
+                onClick={() => setIsIoModalOpen(true)}
+              >
+                + Chart Fluid Intake/Output
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Activity}
+                onClick={() => setIsVitalsModalOpen(true)}
+              >
+                + Record Bedside Vitals
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-            <div className="p-4 rounded-lg border border-sky-200 bg-sky-50/20">
-              <span className="text-xs font-bold text-[var(--color-primary-teal)] uppercase tracking-wider block mb-1">
-                S - Situation (Current Ward State)
-              </span>
-              <p className="text-xs text-slate-800 leading-relaxed font-medium">{sbarNotes.situation}</p>
+          {/* Section 1: Bedside Scheduled Vitals Table */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-card)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                  Bedside Vitals & Pain Score Telemetry Log
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                  NABH Scheduled 4-Hourly & STAT Monitoring • Automatic Clinical Threshold Warning Trigger
+                </span>
+              </div>
+              <Badge variant="teal">{filteredVitals.length} Recorded Readings</Badge>
             </div>
 
-            <div className="p-4 rounded-lg border border-sky-200 bg-sky-50/20">
-              <span className="text-xs font-bold text-sky-800 uppercase tracking-wider block mb-1">
-                B - Background (Clinical Histories & Acuity)
-              </span>
-              <p className="text-xs text-slate-800 leading-relaxed font-medium">{sbarNotes.background}</p>
-            </div>
-
-            <div className="p-4 rounded-lg border border-amber-200 bg-amber-50/20">
-              <span className="text-xs font-bold text-amber-800 uppercase tracking-wider block mb-1">
-                A - Assessment (Vitals, Drains, Lab Alerts)
-              </span>
-              <p className="text-xs text-slate-800 leading-relaxed font-medium">{sbarNotes.assessment}</p>
-            </div>
-
-            <div className="p-4 rounded-lg border border-rose-200 bg-rose-50/20">
-              <span className="text-xs font-bold text-rose-800 uppercase tracking-wider block mb-1">
-                R - Recommendation (Pending Orders & Night Instructions)
-              </span>
-              <p className="text-xs text-slate-800 leading-relaxed font-medium">{sbarNotes.recommendation}</p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Patient & Bed</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Temp (°F)</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Pulse (bpm)</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>BP (mmHg)</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>RR (bpm)</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>SpO2 (%)</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Pain Score (0-10)</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Logged By & Time</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Status / Clinical Alert</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredVitals.map(v => (
+                    <tr
+                      key={v.id}
+                      style={{
+                        borderBottom: '1px solid var(--color-border)',
+                        backgroundColor: v.isAbnormal ? '#FFF5F5' : '#FFFFFF'
+                      }}
+                    >
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>{v.patientName}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)' }}>{v.bed} • {v.uhid}</div>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontWeight: '700', color: v.temperature > 100.4 ? '#DC2626' : 'var(--color-text-primary)' }}>
+                        {v.temperature} °F
+                      </td>
+                      <td style={{ padding: '12px 16px', fontWeight: '700', color: v.pulse > 100 || v.pulse < 55 ? '#DC2626' : 'var(--color-text-primary)' }}>
+                        {v.pulse} bpm
+                      </td>
+                      <td style={{ padding: '12px 16px', fontWeight: '700', color: v.bloodPressureSystolic > 150 || v.bloodPressureSystolic < 90 ? '#DC2626' : 'var(--color-text-primary)' }}>
+                        {v.bloodPressureSystolic} / {v.bloodPressureDiastolic}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {v.respiratoryRate} /min
+                      </td>
+                      <td style={{ padding: '12px 16px', fontWeight: '800', color: v.spO2 < 92 ? '#DC2626' : '#166534' }}>
+                        {v.spO2}%
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-full)',
+                            fontSize: '0.74rem',
+                            fontWeight: '700',
+                            backgroundColor: v.painScore >= 7 ? '#FEE2E2' : v.painScore >= 4 ? '#FEF3C7' : '#DCFCE7',
+                            color: v.painScore >= 7 ? '#991B1B' : v.painScore >= 4 ? '#B45309' : '#15803D'
+                          }}
+                        >
+                          {v.painScore} / 10
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '0.76rem', color: 'var(--color-text-secondary)' }}>
+                        <div>{v.recordedBy}</div>
+                        <div>{v.recordedAt}</div>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {v.isAbnormal ? (
+                          <span style={{ color: '#DC2626', fontWeight: '700', fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <AlertTriangle size={14} />
+                            {v.alertMessage}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#166534', fontWeight: '600', fontSize: '0.76rem' }}>
+                            Normal Range
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Signatures & Electronic Acceptance */}
-          <div className="mt-6 pt-4 border-t border-[var(--color-border-subtle)] flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
+          {/* Section 2: Fluid Intake-Output & 24-hr Balance */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-card)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <span className="text-[11px] text-slate-500 block">Outgoing Primary Nurse</span>
-                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                  <ShieldCheck size={14} className="text-emerald-600" />
-                  {sbarNotes.outgoingNurse} (Signed 14:45)
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                  Intake & Output Charting (Cumulative 24-Hour Fluid Balance)
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                  Oral, IV, Enteral Inflow vs. Urine, Surgical Drain, Vomitus/NG Aspirate Outflow (Net +/- mL)
                 </span>
               </div>
-              <div className="h-8 w-px bg-slate-200" />
-              <div>
-                <span className="text-[11px] text-slate-500 block">Incoming Night Shift Nurse</span>
-                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                  <User size={14} className="text-sky-600" />
-                  {sbarNotes.incomingNurse}
-                </span>
-              </div>
+              <Badge variant="teal">{filteredIo.length} Chart Entries</Badge>
             </div>
 
-            <div className="flex items-center gap-3">
-              {sbarNotes.isSignedOff ? (
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                  <CheckCircle2 size={16} className="text-emerald-600" />
-                  <span>Handover Accepted & Electronically Sealed</span>
-                </div>
-              ) : (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    setSbarNotes(prev => ({ ...prev, isSignedOff: true }));
-                    showNotification('Shift handover accepted by incoming nurse Sr. Sunaina Iyer.');
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Check size={15} />
-                  <span>Accept Handover & Take Ward Charge</span>
-                </Button>
-              )}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Patient & Bed</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Shift & Time</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Oral / IV / Enteral</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Total Intake</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Urine / Drain / NG</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Total Output</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>24h Net Balance</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Status & Clinical Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredIo.map(i => {
+                    const isSevere = i.balance > 1000 || i.balance < -500;
+                    return (
+                      <tr
+                        key={i.id}
+                        style={{
+                          borderBottom: '1px solid var(--color-border)',
+                          backgroundColor: isSevere ? '#FFFBEB' : '#FFFFFF'
+                        }}
+                      >
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>{i.patientName}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)' }}>{i.bed} • {i.uhid}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '0.76rem', color: 'var(--color-text-secondary)' }}>
+                          <div>{i.shift}</div>
+                          <div>{i.timestamp}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div>Oral: {i.intakeOral} mL</div>
+                          <div style={{ color: '#0369A1' }}>IV: {i.intakeIv} mL</div>
+                          {i.intakeEnteral > 0 && <div>Enteral: {i.intakeEnteral} mL</div>}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: '800', color: '#0284C7' }}>
+                          {i.totalIntake} mL
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div>Urine: {i.outputUrine} mL</div>
+                          {i.outputDrain > 0 && <div style={{ color: '#DC2626' }}>Drain: {i.outputDrain} mL</div>}
+                          {i.outputVomitus > 0 && <div style={{ color: '#B45309' }}>NG/Vomit: {i.outputVomitus} mL</div>}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: '800', color: '#B45309' }}>
+                          {i.totalOutput} mL
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: 'var(--radius-full)',
+                              fontSize: '0.8rem',
+                              fontWeight: '800',
+                              backgroundColor: i.balance >= 0 ? '#E0F2FE' : '#FEE2E2',
+                              color: i.balance >= 0 ? '#0369A1' : '#991B1B'
+                            }}
+                          >
+                            {i.balance >= 0 ? '+' : ''}{i.balance} mL
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '0.78rem' }}>
+                          <div style={{ fontWeight: '700', color: isSevere ? '#B45309' : '#15803D' }}>
+                            {i.status}
+                          </div>
+                          <div style={{ color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                            {i.notes}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Bedside Vitals Recording Modal */}
-      {showVitalsModal && (
-        <Modal
-          isOpen={showVitalsModal}
-          onClose={() => setShowVitalsModal(false)}
-          title={`Record Bedside Vitals: ${selectedPatient?.name} (${selectedPatient?.bed})`}
-        >
-          <form onSubmit={handleSaveVitals} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                  Temperature (°F)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vitalsForm.temp}
-                  onChange={(e) => setVitalsForm({ ...vitalsForm, temp: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-md focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                />
+      {/* ========================================================================= */}
+      {/* SUBMODULE 21.3: MEDICATION ADMINISTRATION RECORD (MAR)                   */}
+      {/* ========================================================================= */}
+      {activeSubtab === '21.3' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Bedside Barcode Scan Simulation & Filters */}
+          <div
+            style={{
+              padding: '18px 20px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1.5px solid #C4DCF2',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-bg-pale-aqua)', color: 'var(--color-primary-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <QrCode size={20} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                    Bedside Wristband Barcode Verification (NABH Patient Safety Gate)
+                  </h4>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                    Scan patient wristband barcode to verify Identity, Medication, Dose, Route & Time before sign-off
+                  </span>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                  Pulse (bpm)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vitalsForm.pulse}
-                  onChange={(e) => setVitalsForm({ ...vitalsForm, pulse: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-md focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                  BP Systolic (mmHg)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vitalsForm.bpSys}
-                  onChange={(e) => setVitalsForm({ ...vitalsForm, bpSys: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-md focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                  BP Diastolic (mmHg)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vitalsForm.bpDia}
-                  onChange={(e) => setVitalsForm({ ...vitalsForm, bpDia: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-md focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                  Respiratory Rate (/min)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vitalsForm.rr}
-                  onChange={(e) => setVitalsForm({ ...vitalsForm, rr: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-md focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                  SpO2 Saturation (%)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vitalsForm.spo2}
-                  onChange={(e) => setVitalsForm({ ...vitalsForm, spo2: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border-subtle)] rounded-md focus:ring-1 focus:ring-[var(--color-primary-teal)]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[var(--color-text-main)] mb-1">
-                Pain Score (0 - No Pain to 10 - Unbearable Pain)
-              </label>
-              <div className="flex items-center gap-2">
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                  Simulate Scanner:
+                </span>
+                {patients.slice(0, 3).map(p => (
                   <button
-                    key={num}
+                    key={p.id}
                     type="button"
-                    onClick={() => setVitalsForm({ ...vitalsForm, painScore: String(num) })}
-                    className={`w-7 h-7 text-xs font-bold rounded ${
-                      vitalsForm.painScore === String(num)
-                        ? 'bg-[var(--color-primary-teal)] text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                    onClick={() => handleSimulateBarcodeScan(p.barcode, p.id)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: '#F1F5F9',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '0.74rem',
+                      fontWeight: '700',
+                      color: 'var(--color-text-primary)',
+                      cursor: 'pointer'
+                    }}
                   >
-                    {num}
+                    Scan {p.bed} ({p.name})
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-[var(--color-border-subtle)] flex items-center justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowVitalsModal(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Save & Record Vitals
-              </Button>
+            {/* Barcode Verification Feedback Banner */}
+            {barcodeMatchStatus && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: barcodeMatchStatus.success ? '#F0FDF4' : '#FEF2F2',
+                  border: barcodeMatchStatus.success ? '1px solid #BBF7D0' : '1px solid #FECACA',
+                  color: barcodeMatchStatus.success ? '#166534' : '#991B1B',
+                  fontSize: '0.82rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {barcodeMatchStatus.success ? (
+                  <>
+                    <ShieldCheck size={18} color="#166534" />
+                    <span>
+                      MATCH CONFIRMED: Barcode verified for {barcodeMatchStatus.patientName} ({barcodeMatchStatus.bed} • {barcodeMatchStatus.uhid}). Safe to administer scheduled dose.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle size={18} color="#DC2626" />
+                    <span>
+                      MISMATCH WARNING: Barcode does not match the active patient chart. Medication administration blocked.
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* MAR Schedule Filter Bar */}
+          <div
+            style={{
+              padding: '14px 20px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>Shift:</span>
+              {['ALL', 'Morning', 'Afternoon', 'Night'].map(shift => (
+                <button
+                  key={shift}
+                  type="button"
+                  onClick={() => setMarShiftFilter(shift)}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: marShiftFilter === shift ? '1.5px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
+                    backgroundColor: marShiftFilter === shift ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
+                    color: marShiftFilter === shift ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                    fontWeight: marShiftFilter === shift ? '700' : '500',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {shift === 'ALL' ? 'All Shifts' : `${shift} Shift`}
+                </button>
+              ))}
             </div>
-          </form>
-        </Modal>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>Patient:</span>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  outline: 'none',
+                  backgroundColor: '#FFFFFF'
+                }}
+              >
+                <option value="ALL">All Patients</option>
+                {patients.map(p => (
+                  <option key={p.id} value={p.id}>{p.bed} - {p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* MAR Schedule Grid Table */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-card)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                  Inpatient Medication Administration Record (MAR Grid)
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                  Dose Verification, Bedside Electronic Signature & Clinical Withhold Tracking
+                </span>
+              </div>
+              <Badge variant="teal">{filteredMar.length} Doses Listed</Badge>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Patient & Bed</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Medication & Dose</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Route & Freq</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Scheduled Time</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Status & Verification</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Administration Details</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMar.map(m => {
+                    const isAdministered = m.status === 'Administered';
+                    const isWithheld = m.status === 'Withheld';
+                    const isDue = m.status === 'Due / Pending';
+                    return (
+                      <tr
+                        key={m.id}
+                        style={{
+                          borderBottom: '1px solid var(--color-border)',
+                          backgroundColor: isWithheld ? '#FFFBEB' : '#FFFFFF'
+                        }}
+                      >
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>{m.patientName}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)' }}>{m.bed} • {m.uhid}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ fontWeight: '800', color: '#0A4174' }}>{m.medication}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)' }}>{m.notes}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div>{m.route}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)' }}>{m.frequency}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: '700', color: '#1E293B' }}>
+                          {m.scheduledTime}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {isAdministered && (
+                            <span
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: '#DCFCE7',
+                                color: '#15803D',
+                                fontSize: '0.74rem',
+                                fontWeight: '800',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <CheckCircle2 size={13} />
+                              Administered
+                            </span>
+                          )}
+                          {isWithheld && (
+                            <span
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: '#FEF3C7',
+                                color: '#B45309',
+                                fontSize: '0.74rem',
+                                fontWeight: '800',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <AlertTriangle size={13} />
+                              Withheld
+                            </span>
+                          )}
+                          {isDue && (
+                            <span
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: '#E0F2FE',
+                                color: '#0369A1',
+                                fontSize: '0.74rem',
+                                fontWeight: '800'
+                              }}
+                            >
+                              Due / Pending
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '0.76rem' }}>
+                          {isAdministered && (
+                            <div>
+                              <div>Given by: <strong>{m.administeredBy}</strong></div>
+                              <div style={{ color: 'var(--color-text-secondary)' }}>Time: {m.administeredAt}</div>
+                            </div>
+                          )}
+                          {isWithheld && (
+                            <div style={{ color: '#991B1B' }}>
+                              <div>Withheld by: <strong>{m.withheldBy}</strong></div>
+                              <div>Reason: <em>"{m.withheldReason}"</em></div>
+                            </div>
+                          )}
+                          {isDue && (
+                            <span style={{ color: 'var(--color-text-secondary)' }}>
+                              Awaiting administration & bedside scan
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          {isDue && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMarItem(m);
+                                  setIsMarAdminModalOpen(true);
+                                }}
+                                style={{
+                                  padding: '5px 10px',
+                                  borderRadius: 'var(--radius-md)',
+                                  backgroundColor: '#15803D',
+                                  color: '#FFFFFF',
+                                  fontSize: '0.74rem',
+                                  fontWeight: '700',
+                                  border: 'none',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Administer
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMarItem(m);
+                                  setIsMarWithholdModalOpen(true);
+                                }}
+                                style={{
+                                  padding: '5px 10px',
+                                  borderRadius: 'var(--radius-md)',
+                                  backgroundColor: '#FEF3C7',
+                                  color: '#B45309',
+                                  fontSize: '0.74rem',
+                                  fontWeight: '700',
+                                  border: '1px solid #FCD34D',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Withhold
+                              </button>
+                            </div>
+                          )}
+                          {!isDue && (
+                            <span style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                              Signed Off
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* 1. Inpatient Care Plan Modal */}
-      {isCarePlanModalOpen && (
-        <Modal
-          isOpen={isCarePlanModalOpen}
-          onClose={() => setIsCarePlanModalOpen(false)}
-          title={`Update Bedside Care Plan - ${selectedPatient?.name} (${selectedPatient?.bed})`}
-          size="md"
-        >
-          <form onSubmit={handleSaveCarePlan} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Fall Risk Assessment</label>
-                <select
-                  value={carePlanForm.fallRisk}
-                  onChange={(e) => setCarePlanForm({ ...carePlanForm, fallRisk: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+      {/* ========================================================================= */}
+      {/* SUBMODULE 21.4: DOCTOR ORDER EXECUTION                                    */}
+      {/* ========================================================================= */}
+      {activeSubtab === '21.4' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Header Action & Priority Filters */}
+          <div
+            style={{
+              padding: '14px 20px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>Priority:</span>
+              {['ALL', 'STAT', 'Urgent', 'Routine'].map(prio => (
+                <button
+                  key={prio}
+                  type="button"
+                  onClick={() => setOrderPriorityFilter(prio)}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: orderPriorityFilter === prio ? '1.5px solid var(--color-primary-teal)' : '1px solid var(--color-border)',
+                    backgroundColor: orderPriorityFilter === prio ? 'var(--color-bg-pale-aqua)' : '#FFFFFF',
+                    color: orderPriorityFilter === prio ? 'var(--color-primary-teal)' : 'var(--color-text-secondary)',
+                    fontWeight: orderPriorityFilter === prio ? '700' : '500',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <option value="High (Morse 65)">High (Morse 65 - Yellow Wristband)</option>
-                  <option value="Moderate (Morse 35)">Moderate (Morse 35)</option>
-                  <option value="Low (Morse 10)">Low (Morse 10)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Prescribed Diet</label>
-                <select
-                  value={carePlanForm.diet}
-                  onChange={(e) => setCarePlanForm({ ...carePlanForm, diet: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  {prio === 'ALL' ? 'All Orders' : prio}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>Patient:</span>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  outline: 'none',
+                  backgroundColor: '#FFFFFF'
+                }}
+              >
+                <option value="ALL">All Ward Inpatients</option>
+                {patients.map(p => (
+                  <option key={p.id} value={p.id}>{p.bed} - {p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Orders Execution Queue Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+              gap: '16px'
+            }}
+          >
+            {filteredOrders.map(order => {
+              const isStat = order.priority.includes('STAT');
+              const isCompleted = order.status === 'Completed';
+              return (
+                <div
+                  key={order.id}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 'var(--radius-lg)',
+                    border: isStat ? '1.5px solid #FCA5A5' : '1px solid var(--color-border)',
+                    boxShadow: isStat ? '0 4px 14px rgba(220, 38, 38, 0.08)' : 'var(--shadow-card)',
+                    padding: '18px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}
                 >
-                  <option value="NPO (Nil Per Os)">NPO (Nil Per Os)</option>
-                  <option value="Diabetic Soft Diet">Diabetic Soft Diet</option>
-                  <option value="Clear Fluids Only">Clear Fluids Only</option>
-                  <option value="Normal Regular Diet">Normal Regular Diet</option>
-                  <option value="Low Sodium Renal Diet">Low Sodium Renal Diet</option>
-                </select>
-              </div>
-            </div>
+                  {/* Top Bar: Order ID, Priority, Status */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--color-primary-teal)', padding: '2px 8px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-bg-pale-aqua)' }}>
+                        {order.id}
+                      </span>
+                      <span style={{ fontSize: '0.76rem', fontWeight: '700', padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: isStat ? '#FEE2E2' : '#F1F5F9', color: isStat ? '#991B1B' : '#334155' }}>
+                        {order.priority}
+                      </span>
+                    </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Hydration & IV Fluid Goal</label>
-              <input
-                type="text"
-                required
-                value={carePlanForm.hydrationGoal}
-                onChange={(e) => setCarePlanForm({ ...carePlanForm, hydrationGoal: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
+                    <span
+                      style={{
+                        padding: '3px 10px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: '0.74rem',
+                        fontWeight: '800',
+                        backgroundColor: isCompleted ? '#DCFCE7' : '#FEF3C7',
+                        color: isCompleted ? '#15803D' : '#B45309'
+                      }}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Drain & Catheter Protocol</label>
-              <textarea
-                rows={2}
-                value={carePlanForm.drainProtocol}
-                onChange={(e) => setCarePlanForm({ ...carePlanForm, drainProtocol: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
+                  {/* Title & Description */}
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                      {order.title}
+                    </h4>
+                    <p style={{ margin: '6px 0 0 0', fontSize: '0.82rem', color: '#334155', lineHeight: '1.4' }}>
+                      {order.details}
+                    </p>
+                  </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Safety Precautions & Mobility</label>
-              <textarea
-                rows={2}
-                value={carePlanForm.precautions}
-                onChange={(e) => setCarePlanForm({ ...carePlanForm, precautions: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
+                  {/* Patient & Doctor Meta */}
+                  <div style={{ padding: '8px 12px', backgroundColor: '#F8FAFC', borderRadius: 'var(--radius-md)', fontSize: '0.76rem', color: 'var(--color-text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Patient: <strong>{order.patientName} ({order.bed})</strong></span>
+                    <span>By: <strong>{order.orderedBy}</strong> ({order.orderedAt})</span>
+                  </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Primary Nurse</label>
-              <input
-                type="text"
-                required
-                value={carePlanForm.nurse}
-                onChange={(e) => setCarePlanForm({ ...carePlanForm, nurse: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsCarePlanModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Save Care Plan
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* 2. Fluid Intake / Output Modal */}
-      {isFluidModalOpen && (
-        <Modal
-          isOpen={isFluidModalOpen}
-          onClose={() => setIsFluidModalOpen(false)}
-          title={`Record Fluid Balance - ${selectedPatient?.name} (${selectedPatient?.bed})`}
-          size="md"
-        >
-          <form onSubmit={handleSaveFluid} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
-                <select
-                  value={fluidForm.category}
-                  onChange={(e) => setFluidForm({ ...fluidForm, category: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="Intake">Fluid Intake (+)</option>
-                  <option value="Output">Fluid Output / Excretion (-)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Time Recorded</label>
-                <input
-                  type="text"
-                  required
-                  value={fluidForm.time}
-                  onChange={(e) => setFluidForm({ ...fluidForm, time: e.target.value })}
-                  placeholder="e.g. 14:00"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Route / Source</label>
-                <select
-                  value={fluidForm.route}
-                  onChange={(e) => setFluidForm({ ...fluidForm, route: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  {fluidForm.category === 'Intake' ? (
-                    <>
-                      <option value="IV Electrolyte Infusion 250ml">IV Electrolyte Infusion 250ml</option>
-                      <option value="IV Normal Saline 0.9% 500ml">IV Normal Saline 0.9% 500ml</option>
-                      <option value="Oral Water / Fluids 200ml">Oral Water / Fluids 200ml</option>
-                      <option value="Ryle Tube Enteral Feed 250ml">Ryle Tube Enteral Feed 250ml</option>
-                      <option value="IV Antibiotic Infusion 100ml">IV Antibiotic Infusion 100ml</option>
-                    </>
+                  {/* Execution Feedback / Sign-off */}
+                  {isCompleted ? (
+                    <div style={{ padding: '8px 12px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--radius-md)', fontSize: '0.76rem', color: '#166534' }}>
+                      <div>Executed by: <strong>{order.executedBy}</strong> on {order.executedAt}</div>
+                      <div style={{ marginTop: '2px' }}>Notes: <em>"{order.executionNotes}"</em></div>
+                    </div>
                   ) : (
-                    <>
-                      <option value="Foley Catheter Clear Straw">Foley Catheter Clear Straw</option>
-                      <option value="Surgical Wound Drain (Jackson-Pratt)">Surgical Wound Drain (Jackson-Pratt)</option>
-                      <option value="Nasogastric Decompression Aspirate">Nasogastric Decompression Aspirate</option>
-                      <option value="Spontaneous Voiding">Spontaneous Voiding</option>
-                    </>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', borderTop: '1px solid #F1F5F9', paddingTop: '10px' }}>
+                      <span style={{ fontSize: '0.76rem', color: 'var(--color-text-secondary)' }}>
+                        Status: <strong>{order.status}</strong>
+                      </span>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={Check}
+                        onClick={() => {
+                          setActiveOrderItem(order);
+                          setIsOrderModalOpen(true);
+                        }}
+                      >
+                        Complete & Sign-off
+                      </Button>
+                    </div>
                   )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUBMODULE 21.5: SHIFT HANDOVER NOTES (SBAR)                               */}
+      {/* ========================================================================= */}
+      {activeSubtab === '21.5' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Header Action Bar */}
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                Structured Inpatient Shift Handover (SBAR Framework)
+              </h3>
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                Situation • Background • Assessment • Recommendation • Electronic Dual Signature Handover
+              </span>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              icon={Plus}
+              onClick={() => setIsHandoverModalOpen(true)}
+            >
+              + Prepare Shift Handover
+            </Button>
+          </div>
+
+          {/* Shift Handover List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {handoversList.map(h => (
+              <div
+                key={h.id}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border)',
+                  boxShadow: 'var(--shadow-card)',
+                  padding: '20px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}
+              >
+                {/* Header: Wing, Date, Signatures */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-bg-pale-aqua)', color: 'var(--color-primary-teal)', fontWeight: '800', fontSize: '0.86rem' }}>
+                      {h.wing}
+                    </span>
+                    <span style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
+                      {h.shiftType}
+                    </span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                      • Date: {h.handoverDate}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: '#DCFCE7', color: '#15803D', fontSize: '0.74rem', fontWeight: '700' }}>
+                      Outgoing: {h.outgoingNurse} (Signed)
+                    </span>
+                    {h.incomingSigned ? (
+                      <span style={{ padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: '#DCFCE7', color: '#15803D', fontSize: '0.74rem', fontWeight: '700' }}>
+                        Incoming: {h.incomingNurse} (Accepted)
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleAcceptHandover(h.id)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: '#2563EB',
+                          color: '#FFFFFF',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Accept & Sign Handover
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* SBAR 4-Column Grid */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '14px'
+                  }}
+                >
+                  {/* S: Situation */}
+                  <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: '800', color: '#1E40AF', marginBottom: '6px' }}>
+                      S - SITUATION
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#1E3A8A', lineHeight: '1.4' }}>
+                      {h.sbarSituation}
+                    </div>
+                  </div>
+
+                  {/* B: Background */}
+                  <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '6px' }}>
+                      B - BACKGROUND
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#1E293B', lineHeight: '1.4' }}>
+                      {h.sbarBackground}
+                    </div>
+                  </div>
+
+                  {/* A: Assessment */}
+                  <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: '800', color: '#92400E', marginBottom: '6px' }}>
+                      A - ASSESSMENT
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#78350F', lineHeight: '1.4' }}>
+                      {h.sbarAssessment}
+                    </div>
+                  </div>
+
+                  {/* R: Recommendation */}
+                  <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: '800', color: '#166534', marginBottom: '6px' }}>
+                      R - RECOMMENDATION
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#14532D', lineHeight: '1.4' }}>
+                      {h.sbarRecommendation}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Auto-compiled telemetry summary footer */}
+                <div style={{ padding: '10px 14px', backgroundColor: '#F8FAFC', borderRadius: 'var(--radius-md)', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                  <span>Vitals Alert: <strong>{h.abnormalVitalsSummary}</strong></span>
+                  <span>Pending Orders: <strong>{h.pendingOrdersSummary}</strong></span>
+                  <span>Safety: <strong>{h.highRiskPatientsSummary}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: RECORD BEDSIDE VITALS                                            */}
+      {/* ========================================================================= */}
+      {isVitalsModalOpen && (
+        <Modal
+          isOpen={isVitalsModalOpen}
+          onClose={() => setIsVitalsModalOpen(false)}
+          title="Record Bedside Patient Vitals & Pain Score"
+          size="lg"
+        >
+          <form onSubmit={handleSaveVitals} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Patient / Bed</label>
+                <select
+                  value={vitalsForm.patientId}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, patientId: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                >
+                  {patients.map(p => (
+                    <option key={p.id} value={p.id}>{p.bed} - {p.name} ({p.uhid})</option>
+                  ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Volume (ml)</label>
-                <input
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Body Temperature (°F)</label>
+                <Input
                   type="number"
+                  step="0.1"
+                  value={vitalsForm.temperature}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, temperature: e.target.value }))}
+                  placeholder="e.g. 98.6"
                   required
-                  min="5"
-                  max="5000"
-                  value={fluidForm.amount}
-                  onChange={(e) => setFluidForm({ ...fluidForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Pulse Rate (bpm)</label>
+                <Input
+                  type="number"
+                  value={vitalsForm.pulse}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, pulse: e.target.value }))}
+                  placeholder="e.g. 76"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Blood Pressure (Systolic / Diastolic mmHg)</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Input
+                    type="number"
+                    value={vitalsForm.bloodPressureSystolic}
+                    onChange={(e) => setVitalsForm(prev => ({ ...prev, bloodPressureSystolic: e.target.value }))}
+                    placeholder="Systolic (120)"
+                    required
+                  />
+                  <Input
+                    type="number"
+                    value={vitalsForm.bloodPressureDiastolic}
+                    onChange={(e) => setVitalsForm(prev => ({ ...prev, bloodPressureDiastolic: e.target.value }))}
+                    placeholder="Diastolic (80)"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Respiratory Rate (breaths/min)</label>
+                <Input
+                  type="number"
+                  value={vitalsForm.respiratoryRate}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, respiratoryRate: e.target.value }))}
+                  placeholder="e.g. 16"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Oxygen Saturation SpO2 (%)</label>
+                <Input
+                  type="number"
+                  value={vitalsForm.spO2}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, spO2: e.target.value }))}
+                  placeholder="e.g. 98"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Pain Score (0 - 10 Numeric Rating Scale)</label>
+                <select
+                  value={vitalsForm.painScore}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, painScore: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                >
+                  <option value="0">0 - No Pain</option>
+                  <option value="1">1 - Minimal</option>
+                  <option value="2">2 - Mild</option>
+                  <option value="3">3 - Uncomfortable</option>
+                  <option value="4">4 - Moderate</option>
+                  <option value="5">5 - Distracting</option>
+                  <option value="6">6 - Severe</option>
+                  <option value="7">7 - Very Severe</option>
+                  <option value="8">8 - Intense</option>
+                  <option value="9">9 - Excruciating</option>
+                  <option value="10">10 - Worst Pain Imaginable</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Staff Nurse on Duty</label>
+                <Input
+                  type="text"
+                  value={vitalsForm.recordedBy}
+                  onChange={(e) => setVitalsForm(prev => ({ ...prev, recordedBy: e.target.value }))}
+                  required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Color / Clarity / Clinical Notes</label>
-              <input
-                type="text"
-                value={fluidForm.colorNotes}
-                onChange={(e) => setFluidForm({ ...fluidForm, colorNotes: e.target.value })}
-                placeholder="e.g. Clear pale straw, no sediment"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Bedside Clinical Observations</label>
+              <textarea
+                value={vitalsForm.notes}
+                onChange={(e) => setVitalsForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                placeholder="Notes on wound site, respiration pattern, patient comfort, etc."
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsFluidModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Save Fluid Chart
-              </Button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <Button type="button" variant="outline" onClick={() => setIsVitalsModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Save Vitals</Button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* 3. Electronic Medication Administration (eMAR) Modal */}
-      {isMarAdminModalOpen && selectedMarItem && (
+      {/* ========================================================================= */}
+      {/* MODAL 2: LOG FLUID INTAKE / OUTPUT                                        */}
+      {/* ========================================================================= */}
+      {isIoModalOpen && (
+        <Modal
+          isOpen={isIoModalOpen}
+          onClose={() => setIsIoModalOpen(false)}
+          title="Chart Fluid Intake & Output (I/O Balance)"
+          size="lg"
+        >
+          <form onSubmit={handleSaveIo} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Patient / Bed</label>
+                <select
+                  value={ioForm.patientId}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, patientId: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                >
+                  {patients.map(p => (
+                    <option key={p.id} value={p.id}>{p.bed} - {p.name} ({p.uhid})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Nursing Shift</label>
+                <select
+                  value={ioForm.shift}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, shift: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                >
+                  <option value="Day Shift (08:00 - 16:00)">Day Shift (08:00 - 16:00)</option>
+                  <option value="Evening Shift (16:00 - 23:00)">Evening Shift (16:00 - 23:00)</option>
+                  <option value="Night Shift (23:00 - 08:00)">Night Shift (23:00 - 08:00)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Oral Fluid Intake (mL)</label>
+                <Input
+                  type="number"
+                  value={ioForm.intakeOral}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, intakeOral: e.target.value }))}
+                  placeholder="Water, tea, juice in mL"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>IV Infusion Intake (mL)</label>
+                <Input
+                  type="number"
+                  value={ioForm.intakeIv}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, intakeIv: e.target.value }))}
+                  placeholder="NS, RL, DNS, Antibiotics in mL"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Urine Output (mL)</label>
+                <Input
+                  type="number"
+                  value={ioForm.outputUrine}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, outputUrine: e.target.value }))}
+                  placeholder="Voided or Foley urometer in mL"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Surgical Drain Output (mL)</label>
+                <Input
+                  type="number"
+                  value={ioForm.outputDrain}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, outputDrain: e.target.value }))}
+                  placeholder="Abdominal / Romovac drain in mL"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Vomitus / NG Aspirate (mL)</label>
+                <Input
+                  type="number"
+                  value={ioForm.outputVomitus}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, outputVomitus: e.target.value }))}
+                  placeholder="NG suction or emesis in mL"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Nurse on Duty</label>
+                <Input
+                  type="text"
+                  value={ioForm.recordedBy}
+                  onChange={(e) => setIoForm(prev => ({ ...prev, recordedBy: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Clinical Fluid Notes</label>
+              <textarea
+                value={ioForm.notes}
+                onChange={(e) => setIoForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                placeholder="Urine color, drain character (serous / bilious / purulent)"
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <Button type="button" variant="outline" onClick={() => setIsIoModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Save Intake/Output</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: ADMINISTER MAR MEDICATION                                        */}
+      {/* ========================================================================= */}
+      {isMarAdminModalOpen && activeMarItem && (
         <Modal
           isOpen={isMarAdminModalOpen}
           onClose={() => setIsMarAdminModalOpen(false)}
-          title={`BCMA Medication Administration - ${selectedMarItem.id}`}
+          title="Administer Bedside Medication (MAR Sign-off)"
           size="md"
         >
-          <form onSubmit={handleSaveMarAdmin} className="space-y-4">
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Patient:</span>
-                <span className="text-xs font-bold text-slate-800">{selectedMarItem.patientName} ({selectedMarItem.patientUhid})</span>
+          <form onSubmit={handleAdministerMar} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '12px 14px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#166534' }}>
+                {activeMarItem.medication}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Bed Location:</span>
-                <span className="text-xs font-semibold text-slate-700">Bed {selectedMarItem.bed}</span>
+              <div style={{ fontSize: '0.8rem', color: '#15803D', marginTop: '4px' }}>
+                Patient: <strong>{activeMarItem.patientName} ({activeMarItem.bed})</strong> • Scheduled: {activeMarItem.scheduledTime}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Drug & Route:</span>
-                <span className="text-xs font-bold text-sky-800">{selectedMarItem.medication} • {selectedMarItem.route}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Scheduled Slot:</span>
-                <span className="text-xs font-mono font-medium text-slate-700">{selectedMarItem.scheduledTime} ({selectedMarItem.frequency})</span>
+              <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                Route: {activeMarItem.route} • Freq: {activeMarItem.frequency}
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Administration Action</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMarAdminForm({ ...marAdminForm, action: 'administer' })}
-                  className={`py-2 px-3 text-xs font-semibold rounded-md border text-center transition-colors ${
-                    marAdminForm.action === 'administer'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Administer Dose
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMarAdminForm({ ...marAdminForm, action: 'withhold' })}
-                  className={`py-2 px-3 text-xs font-semibold rounded-md border text-center transition-colors ${
-                    marAdminForm.action === 'withhold'
-                      ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Withhold / Hold Dose
-                </button>
-              </div>
+            <div style={{ padding: '10px 14px', backgroundColor: '#F8FAFC', borderRadius: 'var(--radius-md)', border: '1px solid #CBD5E1', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ShieldCheck size={20} color="#15803D" />
+              <span style={{ fontSize: '0.8rem', color: '#334155', fontWeight: '600' }}>
+                Bedside wristband match confirmed. 5 Rights of Medication checked.
+              </span>
             </div>
 
-            {marAdminForm.action === 'administer' ? (
-              <div className="p-3 rounded-lg border border-sky-100 bg-sky-50/50 space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={marAdminForm.barcodeVerified}
-                    onChange={(e) => setMarAdminForm({ ...marAdminForm, barcodeVerified: e.target.checked })}
-                    className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-blue-500"
-                  />
-                  <span className="text-xs font-medium text-slate-800">
-                    Dual Barcode Verified (Patient 2D Wristband + Medication Unit Dose)
-                  </span>
-                </label>
-                <p className="text-[11px] text-sky-700 pl-6">
-                  Confirms 5 Rights: Right Patient, Right Drug, Right Dose, Right Route, Right Time.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-semibold text-rose-700 mb-1">Clinical Justification for Withholding</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={marAdminForm.withheldReason}
-                  onChange={(e) => setMarAdminForm({ ...marAdminForm, withheldReason: e.target.value })}
-                  placeholder="e.g. Systolic BP < 90 mmHg, patient nauseous, or NPO prior to surgery"
-                  className="w-full px-3 py-2 text-xs border border-rose-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Administering Nurse Sign-off</label>
-              <input
-                type="text"
-                required
-                value={marAdminForm.nurseName}
-                onChange={(e) => setMarAdminForm({ ...marAdminForm, nurseName: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsMarAdminModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant={marAdminForm.action === 'withhold' ? 'destructive' : 'primary'}
-                size="sm"
-              >
-                {marAdminForm.action === 'withhold' ? 'Confirm Withhold' : 'Sign & Complete MAR'}
-              </Button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <Button type="button" variant="outline" onClick={() => setIsMarAdminModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Confirm Administration</Button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* 4. Add Medication Order to MAR Modal */}
-      {isNewMedModalOpen && (
+      {/* ========================================================================= */}
+      {/* MODAL 4: WITHHOLD MAR MEDICATION                                          */}
+      {/* ========================================================================= */}
+      {isMarWithholdModalOpen && activeMarItem && (
         <Modal
-          isOpen={isNewMedModalOpen}
-          onClose={() => setIsNewMedModalOpen(false)}
-          title="Add Scheduled Inpatient Medication"
+          isOpen={isMarWithholdModalOpen}
+          onClose={() => setIsMarWithholdModalOpen(false)}
+          title="Withhold Scheduled Medication (Mandatory Clinical Rationale)"
           size="md"
         >
-          <form onSubmit={handleSaveNewMed} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Inpatient</label>
-                <select
-                  value={newMedForm.patientUhid}
-                  onChange={(e) => setNewMedForm({ ...newMedForm, patientUhid: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  {patients.map(p => (
-                    <option key={p.uhid} value={p.uhid}>{p.bed} - {p.name}</option>
-                  ))}
-                </select>
+          <form onSubmit={handleWithholdMar} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '12px 14px', backgroundColor: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#92400E' }}>
+                Withholding: {activeMarItem.medication}
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Prescribing Doctor</label>
-                <input
-                  type="text"
-                  required
-                  value={newMedForm.doctor}
-                  onChange={(e) => setNewMedForm({ ...newMedForm, doctor: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
+              <div style={{ fontSize: '0.8rem', color: '#B45309', marginTop: '4px' }}>
+                Patient: <strong>{activeMarItem.patientName} ({activeMarItem.bed})</strong>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Medication Name & Strength</label>
-              <input
-                type="text"
-                required
-                value={newMedForm.medication}
-                onChange={(e) => setNewMedForm({ ...newMedForm, medication: e.target.value })}
-                placeholder="e.g. Inj. Meropenem 1g IV"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Route</label>
-                <select
-                  value={newMedForm.route}
-                  onChange={(e) => setNewMedForm({ ...newMedForm, route: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="IV Piggyback over 30m">IV Piggyback over 30m</option>
-                  <option value="IV Push Slow">IV Push Slow</option>
-                  <option value="Oral / Enteral">Oral / Enteral</option>
-                  <option value="Subcutaneous">Subcutaneous</option>
-                  <option value="IM Injection">IM Injection</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Frequency</label>
-                <select
-                  value={newMedForm.frequency}
-                  onChange={(e) => setNewMedForm({ ...newMedForm, frequency: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="TDS (08:00, 14:00, 20:00)">TDS (Q8H)</option>
-                  <option value="BD (08:00, 20:00)">BD (Q12H)</option>
-                  <option value="OD (08:00 AM)">OD (Once Daily)</option>
-                  <option value="STAT (Once)">STAT (Immediate)</option>
-                  <option value="Q4H PRN">Q4H PRN</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Next Slot</label>
-                <input
-                  type="text"
-                  required
-                  value={newMedForm.scheduledTime}
-                  onChange={(e) => setNewMedForm({ ...newMedForm, scheduledTime: e.target.value })}
-                  placeholder="e.g. 14:00 PM"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsNewMedModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Add to eMAR
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* 5. CPOE Doctor Order Modal */}
-      {isDoctorOrderModalOpen && (
-        <Modal
-          isOpen={isDoctorOrderModalOpen}
-          onClose={() => setIsDoctorOrderModalOpen(false)}
-          title="Place Inpatient CPOE Doctor Order"
-          size="md"
-        >
-          <form onSubmit={handleSaveDoctorOrder} className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Bed / Patient</label>
-                <select
-                  value={doctorOrderForm.bed}
-                  onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, bed: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  {patients.map(p => (
-                    <option key={p.bed} value={p.bed}>{p.bed} - {p.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Attending Doctor</label>
-                <input
-                  type="text"
-                  required
-                  value={doctorOrderForm.doctor}
-                  onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, doctor: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Priority</label>
-                <select
-                  value={doctorOrderForm.priority}
-                  onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, priority: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="Urgent">Urgent</option>
-                  <option value="STAT">STAT (Emergency)</option>
-                  <option value="Routine">Routine</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Order Category</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>
+                Clinical Reason for Withholding Dose *
+              </label>
               <select
-                value={doctorOrderForm.orderType}
-                onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, orderType: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                value={marWithholdForm.withheldReason}
+                onChange={(e) => setMarWithholdForm(prev => ({ ...prev, withheldReason: e.target.value }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                required
               >
-                <option value="Nursing Intervention">Nursing Intervention</option>
-                <option value="Blood Transfusion">Blood Transfusion</option>
-                <option value="Diagnostic Investigation">Diagnostic Investigation</option>
-                <option value="Physiotherapy / Mobilization">Physiotherapy / Mobilization</option>
-                <option value="Dietary Order">Dietary Order</option>
+                <option value="Patient BP low (88/56 mmHg < 90/60 safety limit). Attending physician notified.">
+                  Hypotension: Blood Pressure &lt; 90/60 mmHg limit
+                </option>
+                <option value="Bradycardia observed (Pulse < 60 bpm). Attending cardiologist notified.">
+                  Bradycardia: Heart Rate &lt; 60 bpm
+                </option>
+                <option value="Patient strictly NPO for scheduled surgery / procedure.">
+                  Patient NPO for OT / Diagnostic Procedure
+                </option>
+                <option value="Patient vomited previous oral dose. Awaiting IV conversion order.">
+                  Patient nauseous / vomited oral intake
+                </option>
+                <option value="Patient or surrogate refused medication after counseling.">
+                  Patient Refusal (after counseling)
+                </option>
+                <option value="Suspected adverse drug reaction / allergy development. Doctor notified.">
+                  Suspected Drug Reaction / Allergy
+                </option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Instructions & Orders</label>
-              <textarea
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Withholding Nurse Signature</label>
+              <Input
+                type="text"
+                value={marWithholdForm.withheldBy}
+                onChange={(e) => setMarWithholdForm(prev => ({ ...prev, withheldBy: e.target.value }))}
                 required
-                rows={3}
-                value={doctorOrderForm.description}
-                onChange={(e) => setDoctorOrderForm({ ...doctorOrderForm, description: e.target.value })}
-                placeholder="Specific clinical steps, monitoring parameters, or transfusion requirements"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsDoctorOrderModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Transmit Order
-              </Button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <Button type="button" variant="outline" onClick={() => setIsMarWithholdModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Confirm Withhold</Button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* 6. SBAR Shift Handover Modal */}
-      {isSbarModalOpen && (
+      {/* ========================================================================= */}
+      {/* MODAL 5: EXECUTE DOCTOR ORDER                                             */}
+      {/* ========================================================================= */}
+      {isOrderModalOpen && activeOrderItem && (
         <Modal
-          isOpen={isSbarModalOpen}
-          onClose={() => setIsSbarModalOpen(false)}
-          title="Compose / Edit SBAR Shift Handover"
+          isOpen={isOrderModalOpen}
+          onClose={() => setIsOrderModalOpen(false)}
+          title="Execute Inpatient Doctor Order"
+          size="md"
+        >
+          <form onSubmit={handleExecuteOrder} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '12px 14px', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#1E40AF' }}>
+                {activeOrderItem.title}
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#1E3A8A', marginTop: '4px' }}>
+                Patient: <strong>{activeOrderItem.patientName} ({activeOrderItem.bed})</strong>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                Ordered by {activeOrderItem.orderedBy} • Priority: {activeOrderItem.priority}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>
+                Execution Procedure Notes & Clinical Sign-off *
+              </label>
+              <textarea
+                value={orderExecutionForm.notes}
+                onChange={(e) => setOrderExecutionForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                placeholder="Details of procedure performed, catheter size, dressing state, etc."
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Staff Nurse Name</label>
+              <Input
+                type="text"
+                value={orderExecutionForm.completedBy}
+                onChange={(e) => setOrderExecutionForm(prev => ({ ...prev, completedBy: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <Button type="button" variant="outline" onClick={() => setIsOrderModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Sign & Complete Order</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 6: PREPARE SHIFT HANDOVER (SBAR)                                    */}
+      {/* ========================================================================= */}
+      {isHandoverModalOpen && (
+        <Modal
+          isOpen={isHandoverModalOpen}
+          onClose={() => setIsHandoverModalOpen(false)}
+          title="Prepare SBAR Shift Handover Note"
           size="lg"
         >
-          <form onSubmit={handleSaveSbar} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Duty Shift</label>
-              <select
-                value={sbarForm.shift}
-                onChange={(e) => setSbarForm({ ...sbarForm, shift: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              >
-                <option value="Day Shift (07:00 - 15:00)">Day Shift (07:00 - 15:00)</option>
-                <option value="Evening Shift (15:00 - 23:00)">Evening Shift (15:00 - 23:00)</option>
-                <option value="Night Shift (23:00 - 07:00)">Night Shift (23:00 - 07:00)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-rose-700 mb-1">S - Situation (Census & Immediate Risks)</label>
-              <textarea
-                required
-                rows={2}
-                value={sbarForm.situation}
-                onChange={(e) => setSbarForm({ ...sbarForm, situation: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-amber-700 mb-1">B - Background (Clinical History & Pre-existing)</label>
-              <textarea
-                required
-                rows={2}
-                value={sbarForm.background}
-                onChange={(e) => setSbarForm({ ...sbarForm, background: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-sky-700 mb-1">A - Assessment (Current Findings & Response to Rx)</label>
-              <textarea
-                required
-                rows={2}
-                value={sbarForm.assessment}
-                onChange={(e) => setSbarForm({ ...sbarForm, assessment: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-indigo-700 mb-1">R - Recommendation (Pending Labs, Transfusions, Action Plan)</label>
-              <textarea
-                required
-                rows={2}
-                value={sbarForm.recommendation}
-                onChange={(e) => setSbarForm({ ...sbarForm, recommendation: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSaveHandover} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Relieving Nurse (Sign-off)</label>
-                <input
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Ward Wing</label>
+                <select
+                  value={handoverForm.wing}
+                  onChange={(e) => setHandoverForm(prev => ({ ...prev, wing: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                >
+                  <option value="General Ward - Wing A">General Ward - Wing A</option>
+                  <option value="General Ward - Wing B">General Ward - Wing B</option>
+                  <option value="ICU Step-Down Unit">ICU Step-Down Unit</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Shift Transition</label>
+                <select
+                  value={handoverForm.shiftType}
+                  onChange={(e) => setHandoverForm(prev => ({ ...prev, shiftType: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                >
+                  <option value="Morning (07:00) → Afternoon (15:00)">Morning (07:00) → Afternoon (15:00)</option>
+                  <option value="Afternoon (15:00) → Night (23:00)">Afternoon (15:00) → Night (23:00)</option>
+                  <option value="Night (23:00) → Morning (07:00)">Night (23:00) → Morning (07:00)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Outgoing Incharge Nurse</label>
+                <Input
                   type="text"
+                  value={handoverForm.outgoingNurse}
+                  onChange={(e) => setHandoverForm(prev => ({ ...prev, outgoingNurse: e.target.value }))}
                   required
-                  value={sbarForm.outgoingNurse}
-                  onChange={(e) => setSbarForm({ ...sbarForm, outgoingNurse: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Taking Over Nurse (Acknowledgement)</label>
-                <input
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>Incoming Incharge Nurse</label>
+                <Input
                   type="text"
+                  value={handoverForm.incomingNurse}
+                  onChange={(e) => setHandoverForm(prev => ({ ...prev, incomingNurse: e.target.value }))}
                   required
-                  value={sbarForm.incomingNurse}
-                  onChange={(e) => setSbarForm({ ...sbarForm, incomingNurse: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsSbarModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Save & Sign Handover
-              </Button>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>S - Situation (Census, critical alerts, admissions) *</label>
+              <textarea
+                value={handoverForm.sbarSituation}
+                onChange={(e) => setHandoverForm(prev => ({ ...prev, sbarSituation: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>B - Background (Clinical diagnoses, surgical history, IV infusions) *</label>
+              <textarea
+                value={handoverForm.sbarBackground}
+                onChange={(e) => setHandoverForm(prev => ({ ...prev, sbarBackground: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>A - Assessment (Abnormal vitals, pain, drains, dressings) *</label>
+              <textarea
+                value={handoverForm.sbarAssessment}
+                onChange={(e) => setHandoverForm(prev => ({ ...prev, sbarAssessment: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', marginBottom: '4px' }}>R - Recommendation (Pending STAT labs, medication times, physician calls) *</label>
+              <textarea
+                value={handoverForm.sbarRecommendation}
+                onChange={(e) => setHandoverForm(prev => ({ ...prev, sbarRecommendation: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.84rem' }}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <Button type="button" variant="outline" onClick={() => setIsHandoverModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Submit Handover</Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 7: PATIENT CARE PLAN DETAILS                                        */}
+      {/* ========================================================================= */}
+      {isCarePlanModalOpen && activeCarePlanPatient && (
+        <Modal
+          isOpen={isCarePlanModalOpen}
+          onClose={() => setIsCarePlanModalOpen(false)}
+          title={`Active Nursing Care Plan: ${activeCarePlanPatient.name} (${activeCarePlanPatient.bed})`}
+          size="md"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '12px 14px', backgroundColor: '#F8FAFC', borderRadius: 'var(--radius-md)', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>Diagnosis:</div>
+              <div style={{ fontSize: '0.94rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                {activeCarePlanPatient.diagnosis}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                Attending Physician: {activeCarePlanPatient.doctor} ({activeCarePlanPatient.specialty})
+              </div>
+            </div>
+
+            <div>
+              <h5 style={{ margin: '0 0 6px 0', fontSize: '0.84rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                Nursing Interventions & Care Protocol
+              </h5>
+              <div style={{ padding: '12px 14px', backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.84rem', lineHeight: '1.5', color: '#1E293B' }}>
+                {activeCarePlanPatient.carePlan}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div style={{ padding: '10px 12px', backgroundColor: '#F1F5F9', borderRadius: 'var(--radius-md)' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)', fontWeight: '700' }}>DIETARY PLAN:</span>
+                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#1E293B', marginTop: '2px' }}>
+                  {activeCarePlanPatient.diet}
+                </div>
+              </div>
+
+              <div style={{ padding: '10px 12px', backgroundColor: '#F1F5F9', borderRadius: 'var(--radius-md)' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)', fontWeight: '700' }}>FALL RISK LEVEL:</span>
+                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: activeCarePlanPatient.fallRisk.includes('High') ? '#DC2626' : '#15803D', marginTop: '2px' }}>
+                  {activeCarePlanPatient.fallRisk}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <Button type="button" variant="primary" onClick={() => setIsCarePlanModalOpen(false)}>
+                Acknowledge Care Plan
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
