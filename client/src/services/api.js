@@ -2103,3 +2103,121 @@ export const RadiologyService = {
     }
   }
 };
+
+/* ==========================================================================
+   22. OPD (OUT-PATIENT DEPARTMENT) CLINICAL DESK & QUEUE SERVICE
+   ========================================================================== */
+
+export const OpdService = {
+  // 22.1 OPD Clinic Desk Dashboard
+  async getDashboard() {
+    try {
+      const res = await apiFetch('/opd/dashboard');
+      return res?.data;
+    } catch (err) {
+      console.warn('[OpdService] getDashboard fallback:', err.message);
+      return null;
+    }
+  },
+
+  async getCabins() {
+    try {
+      const res = await apiFetch('/opd/cabins');
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[OpdService] getCabins fallback:', err.message);
+      return [];
+    }
+  },
+
+  async activateSession(data) {
+    const res = await apiFetch('/opd/cabins/session', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  // 22.2 Patient Arrival & Check-in & 22.3 Queue Management
+  async getQueue(params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await apiFetch(`/opd/queue${qs ? '?' + qs : ''}`);
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[OpdService] getQueue fallback:', err.message);
+      return [];
+    }
+  },
+
+  async checkIn(data) {
+    const res = await apiFetch('/opd/check-in', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async callNext(cabin) {
+    const res = await apiFetch('/opd/queue/call-next', {
+      method: 'POST',
+      body: JSON.stringify({ cabin })
+    });
+    return res?.data;
+  },
+
+  async setPriority(id, priorityData) {
+    const res = await apiFetch(`/opd/queue/${encodeURIComponent(id)}/priority`, {
+      method: 'PATCH',
+      body: JSON.stringify(priorityData)
+    });
+    return res?.data;
+  },
+
+  // 22.4 OPD Visit Slip Printout
+  async getVisitSlip(id) {
+    try {
+      const res = await apiFetch(`/opd/visit-slip/${encodeURIComponent(id)}`);
+      return res?.data;
+    } catch (err) {
+      console.warn('[OpdService] getVisitSlip fallback:', err.message);
+      return null;
+    }
+  },
+
+  // 22.5 Follow-up Tracking
+  async getFollowUps() {
+    try {
+      const res = await apiFetch('/opd/follow-ups');
+      return res?.data || [];
+    } catch (err) {
+      console.warn('[OpdService] getFollowUps fallback:', err.message);
+      return [];
+    }
+  },
+
+  async scheduleFollowUp(data) {
+    const res = await apiFetch('/opd/follow-ups', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res?.data;
+  },
+
+  async sendFollowUpReminder(id) {
+    const res = await apiFetch(`/opd/follow-ups/${encodeURIComponent(id)}/remind`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+    return res?.data;
+  },
+
+  async broadcastReminders() {
+    const res = await apiFetch('/opd/follow-ups/broadcast', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+    return res?.data;
+  }
+};
+

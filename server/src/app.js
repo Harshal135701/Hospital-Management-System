@@ -57,6 +57,7 @@ const financeRoutes = require("./modules/finance/finance.routes");
 const assetRoutes = require("./modules/assets/assets.routes");
 const enterpriseRoutes = require("./modules/enterprise/enterprise.routes");
 const radiologyRoutes = require("./modules/radiology/radiology.routes");
+const opdRoutes = require("./modules/opd/opd.routes");
 
 const app = express();
 
@@ -160,6 +161,7 @@ app.use("/api/finance", financeRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/enterprise", enterpriseRoutes);
 app.use("/api/radiology", radiologyRoutes);
+app.use("/api/opd", opdRoutes);
 
 // Error Handling (must remain last)
 app.use(notFoundHandler);
